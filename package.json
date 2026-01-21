@@ -1,0 +1,10 @@
+{
+  "name": "terminus",
+  "version": "0.1.0",
+  "main": "dist/main/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "npm run build:main && npm run dev:renderer",
+    "build": "npm run build:main && npm run build:renderer"
+  }
+}

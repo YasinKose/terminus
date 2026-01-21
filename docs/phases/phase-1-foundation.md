@@ -11,8 +11,8 @@ Establish the high-performance Electron application structure using **React Serv
 ## Tasks
 
 ### Architecture & Build (RSC + Cross-Platform)
-- [ ] Initialize project with React 19 RSC architecture.
-- [ ] Configure IPC to act as the "Server Action" bridge securely.
+- [x] Initialize project with React 19 RSC architecture.
+- [x] Configure IPC to act as the "Server Action" bridge securely.
 - [ ] Setup `electron-builder` with multi-platform configuration (dmg, nsis, AppImage).
 - [ ] Configure `electron-rebuild` hook to handle `node-pty` compilation automatically after install.
 - [ ] Configure ESLint/Prettier for RSC patterns (separating client/server components).

@@ -1,35 +1,35 @@
-# Phase 1: Foundation (Updated)
+# Phase 1: Foundation (Tauri + Svelte)
 
 ## Overview
-Establish the high-performance Electron application structure using **React Server Components (RSC)** architecture. Configure the build pipeline for **Cross-Platform** support (Mac, Windows, Linux) and implement the "Native App" shell UI using pure HeroUI components.
+Establish the high-performance Tauri application structure. Configure the Rust backend and Svelte frontend with Bits UI to create a polished, native-feeling application shell.
 
 ## Goals
-1.  Set up Electron with React 19 RSC support (using Vite/Waku or similar RSC-compatible bundler).
-2.  Ensure `node-pty` and native modules compile correctly for all platforms.
-3.  Build the custom, frameless UI shell and Sidebar using only HeroUI atoms.
+1.  Initialize Tauri v2 project with Svelte 5 and TypeScript.
+2.  Setup Tailwind CSS and Bits UI for headless, customizable components.
+3.  Build the custom, frameless UI shell and Sidebar.
 
 ## Tasks
 
-### Architecture & Build (RSC + Cross-Platform)
-- [x] Initialize project with React 19 RSC architecture.
-- [x] Configure IPC to act as the "Server Action" bridge securely.
-- [ ] Setup `electron-builder` with multi-platform configuration (dmg, nsis, AppImage).
-- [ ] Configure `electron-rebuild` hook to handle `node-pty` compilation automatically after install.
-- [ ] Configure ESLint/Prettier for RSC patterns (separating client/server components).
+### Architecture & Setup
+- [ ] Initialize Tauri project (`npm create tauri-app@latest`).
+- [ ] Configure `tauri.conf.json` for frameless window (`decorations: false`, `transparent: true`).
+- [ ] Setup Svelte 5 with Vite.
+- [ ] Install and configure Tailwind CSS.
+- [ ] Install Bits UI (`npm install bits-ui`).
+- [ ] Setup `lucide-svelte` for icons.
 
 ### Native Shell UI
-- [ ] Implement `BrowserWindow` with `frame: false` and platform-specific window controls.
-- [ ] Apply global CSS: `user-select: none`, custom scrollbars, system font integration.
-- [ ] Implement "Drag Regions" carefully to allow window movement without blocking clicks.
+- [ ] Create `TitleBar` component with window controls (minimize, maximize, close) using Tauri APIs.
+- [ ] Implement "Drag Regions" (`data-tauri-drag-region`) for window movement.
+- [ ] Apply global styles for native feel (system fonts, no text selection, custom scrollbars).
 
-### Custom Sidebar (HeroUI)
-- [ ] Design `Sidebar` component using HeroUI `Accordion` (for collapsible projects) and `Listbox`.
-- [ ] Create `ProjectItem` component with status badges and active states.
-- [ ] Implement smooth collapse/expand animations (using Framer Motion if HeroUI built-in isn't enough).
-- [ ] Ensure the Sidebar is accessible via keyboard navigation.
+### Sidebar & Navigation
+- [ ] Create `Sidebar` component using Bits UI primitives (collapsible sections).
+- [ ] Define Project Store (Svelte Rune/Store) to manage list of projects.
+- [ ] Create `ProjectItem` component with active/inactive states.
+- [ ] Implement smooth transitions for sidebar collapse/expand.
 
 ## Deliverables
-*   A running Electron app with React Server Components architecture.
-*   Cross-platform build scripts confirmed working (or ready for CI).
-*   A polished, native-feeling Sidebar built with HeroUI.
-
+*   A running Tauri app with Svelte 5.
+*   Frameless window with working custom title bar.
+*   Sidebar with dummy project list, styled with Bits UI + Tailwind.

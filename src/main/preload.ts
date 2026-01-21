@@ -1,6 +1,6 @@
-import { contextBridge } from 'electron';
+import { contextBridge, ipcRenderer } from 'electron';
+import { AppAction } from '../shared/types.js';
 
 contextBridge.exposeInMainWorld('api', {
-  version: process.versions.electron,
-  test: () => 'Main process connection successful',
+  dispatch: (action: AppAction) => ipcRenderer.invoke('dispatch-action', action),
 });

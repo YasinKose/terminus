@@ -1,8 +1,13 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { handleAction } from './lib/action-handler.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+ipcMain.handle('dispatch-action', async (_, action) => {
+  return handleAction(action);
+});
 
 function createWindow() {
   const mainWindow = new BrowserWindow({

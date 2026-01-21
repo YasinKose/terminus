@@ -6,4 +6,5 @@ export default defineConfig({
   format: ['esm'],
   platform: 'node',
   clean: true,
+  external: ['electron'],
 });

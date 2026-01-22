@@ -1,13 +1,15 @@
 <script lang="ts">
   import { getCurrentWindow } from '@tauri-apps/api/window';
+  import { type } from '@tauri-apps/plugin-os';
   import { Minus, Square, X } from 'lucide-svelte';
   import { onMount } from 'svelte';
 
   const appWindow = getCurrentWindow();
   let isMac = $state(false);
 
-  onMount(() => {
-    isMac = navigator.userAgent.includes('Mac');
+  onMount(async () => {
+    const osType = await type();
+    isMac = osType === 'macos';
   });
 
   function minimize() {

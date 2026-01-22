@@ -17,9 +17,8 @@
       if (selected && typeof selected === 'string') {
         // Use folder name as project name
         const name = selected.split(/[\\/]/).pop() || 'Untitled';
-        const projectId = projectStore.addProject(name, selected);
-        // Create initial tab
-        projectStore.createTab(projectId);
+        // addProject now automatically creates a workspace with a terminal
+        projectStore.addProject(name, selected);
       }
     } catch (err) {
       console.error('Failed to open directory:', err);

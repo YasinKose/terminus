@@ -1,8 +1,8 @@
 <script lang="ts">
   import TitleBar from './lib/components/TitleBar.svelte';
   import Sidebar from './lib/components/Sidebar.svelte';
-  import Terminal from './lib/components/Terminal.svelte';
-  import TerminalTabs from './lib/components/TerminalTabs.svelte';
+  import WorkspaceTabs from './lib/components/WorkspaceTabs.svelte';
+  import SplitPaneContainer from './lib/components/SplitPaneContainer.svelte';
   import KanbanBoard from './lib/components/KanbanBoard.svelte';
   import CommandPalette from './lib/components/CommandPalette.svelte';
   import { fade, fly } from 'svelte/transition';
@@ -28,9 +28,38 @@
       e.preventDefault();
       isTaskBoardOpen.update(v => !v);
     }
+    // Cmd+T for new workspace
+    if ((e.metaKey || e.ctrlKey) && e.key === 't') {
+      e.preventDefault();
+      if (activeProject) {
+        projectStore.createWorkspace(activeProject.id);
+      }
+    }
+    // Cmd+D for horizontal split
+    if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key === 'd') {
+      e.preventDefault();
+      if (activeProject && activeWorkspace && activeWorkspace.activeTerminalId) {
+        projectStore.splitPane(activeProject.id, activeWorkspace.id, activeWorkspace.activeTerminalId, 'horizontal');
+      }
+    }
+    // Cmd+Shift+D for vertical split
+    if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'd') {
+      e.preventDefault();
+      if (activeProject && activeWorkspace && activeWorkspace.activeTerminalId) {
+        projectStore.splitPane(activeProject.id, activeWorkspace.id, activeWorkspace.activeTerminalId, 'vertical');
+      }
+    }
+    // Cmd+W for close pane
+    if ((e.metaKey || e.ctrlKey) && e.key === 'w') {
+      e.preventDefault();
+      if (activeProject && activeWorkspace && activeWorkspace.activeTerminalId) {
+        projectStore.closePane(activeProject.id, activeWorkspace.id, activeWorkspace.activeTerminalId);
+      }
+    }
   }
 
   $: activeProject = $projectStore.find(p => p.id === $activeProjectId);
+  $: activeWorkspace = activeProject?.workspaces.find(w => w.id === activeProject?.activeWorkspaceId);
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
@@ -47,16 +76,22 @@
 
     <main class="flex-1 relative bg-zinc-950/50 flex flex-col overflow-hidden min-w-0">
       {#if activeProject}
-        <TerminalTabs project={activeProject} />
+        <WorkspaceTabs project={activeProject} />
 
         <div class="flex-1 relative overflow-hidden">
-          {#each activeProject.tabs as tab (tab.id)}
-             <Terminal
-               projectId={activeProject.id}
-               termId={tab.id}
-               visible={activeProject.activeTabId === tab.id}
-               cwd={activeProject.path}
-             />
+          {#each activeProject.workspaces as workspace (workspace.id)}
+            <div
+              class="absolute inset-0 h-full w-full"
+              class:hidden={workspace.id !== activeProject.activeWorkspaceId}
+              style:display={workspace.id === activeProject.activeWorkspaceId ? 'block' : 'none'}
+            >
+              <SplitPaneContainer
+                node={workspace.root}
+                projectId={activeProject.id}
+                workspaceId={workspace.id}
+                projectPath={activeProject.path}
+              />
+            </div>
           {/each}
         </div>
       {:else}

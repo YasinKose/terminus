@@ -26,4 +26,5 @@ tauri-plugin-log = "2.0.0-rc"
 portable-pty = "0.8.1"
 tokio = { version = "1", features = ["full"] }
 tauri-plugin-dialog = "2.0.0-beta.0"
+tauri-plugin-os = "2.0.0-rc"
 

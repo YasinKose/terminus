@@ -1,4 +1,4 @@
-use portable_pty::{native_pty_system, CommandBuilder, PtySize, MasterPty};
+use portable_pty::{native_pty_system, CommandBuilder, MasterPty, PtySize};
 use std::{
     collections::HashMap,
     io::{Read, Write},
@@ -57,14 +57,13 @@ pub fn spawn_pty(
     let mut reader = pair.master.try_clone_reader().map_err(|e| e.to_string())?;
     let writer = pair.master.take_writer().map_err(|e| e.to_string())?;
 
-    state
-        .ptys
-        .lock()
-        .unwrap()
-        .insert(id.clone(), PtySession {
+    state.ptys.lock().unwrap().insert(
+        id.clone(),
+        PtySession {
             master: pair.master,
             writer,
-        });
+        },
+    );
 
     let app_reader = app.clone();
     let app_exit = app.clone();
@@ -109,13 +108,15 @@ pub fn resize_pty(
     cols: u16,
 ) -> Result<(), String> {
     if let Some(session) = state.ptys.lock().unwrap().get_mut(&id) {
-        session.master.resize(PtySize {
-            rows,
-            cols,
-            pixel_width: 0,
-            pixel_height: 0,
-        })
-        .map_err(|e| e.to_string())?;
+        session
+            .master
+            .resize(PtySize {
+                rows,
+                cols,
+                pixel_width: 0,
+                pixel_height: 0,
+            })
+            .map_err(|e| e.to_string())?;
     }
     Ok(())
 }

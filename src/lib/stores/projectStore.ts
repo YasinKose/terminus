@@ -1,23 +1,27 @@
 import { writable, get } from 'svelte/store';
 import { v4 as uuidv4 } from 'uuid';
+import type { Project, Workspace, PaneNode, TerminalLeaf, SplitContainer, SplitDirection } from '../types/workspace';
+import { migrateProjects } from './migration';
 
-export interface TerminalTab {
-  id: string;
-  title: string;
-}
-
-export interface Project {
-  id: string;
-  name: string;
-  path: string;
-  tabs: TerminalTab[];
-  activeTabId: string | null;
-}
+// Re-export types for convenience
+export type { Project, Workspace, PaneNode, TerminalLeaf, SplitContainer, SplitDirection };
 
 function createProjectStore() {
-  // Load initial state from localStorage
+  // Load initial state from localStorage and migrate if needed
   const savedProjects = localStorage.getItem('terminus_projects');
-  const initialProjects: Project[] = savedProjects ? JSON.parse(savedProjects) : [];
+  let initialProjects: Project[] = [];
+
+  if (savedProjects) {
+    try {
+      const parsed = JSON.parse(savedProjects);
+      initialProjects = migrateProjects(parsed);
+      // Save migrated projects back to localStorage
+      localStorage.setItem('terminus_projects', JSON.stringify(initialProjects));
+    } catch (e) {
+      console.error('Failed to parse projects from localStorage:', e);
+      initialProjects = [];
+    }
+  }
 
   const savedActiveId = localStorage.getItem('terminus_active_project');
 
@@ -35,17 +39,104 @@ function createProjectStore() {
     else localStorage.removeItem('terminus_active_project');
   });
 
+  // Helper function to find a node in the tree by ID
+  function findNode(root: PaneNode, id: string): PaneNode | null {
+    if (root.id === id) return root;
+    if (root.type === 'split') {
+      for (const child of root.children) {
+        const found = findNode(child, id);
+        if (found) return found;
+      }
+    }
+    return null;
+  }
+
+  // Helper function to find parent of a node
+  function findParent(root: PaneNode, id: string): SplitContainer | null {
+    if (root.type === 'split') {
+      for (const child of root.children) {
+        if (child.id === id) return root;
+        const found = findParent(child, id);
+        if (found) return found;
+      }
+    }
+    return null;
+  }
+
+  // Helper function to collect all terminal IDs from a tree
+  function collectTerminalIds(node: PaneNode): string[] {
+    if (node.type === 'terminal') {
+      return [node.id];
+    }
+    return node.children.flatMap(child => collectTerminalIds(child));
+  }
+
+  // Helper function to replace a node in the tree
+  function replaceNode(root: PaneNode, targetId: string, newNode: PaneNode): PaneNode {
+    if (root.id === targetId) return newNode;
+    if (root.type === 'split') {
+      return {
+        ...root,
+        children: root.children.map(child => replaceNode(child, targetId, newNode))
+      };
+    }
+    return root;
+  }
+
+  // Helper function to remove a node from the tree
+  function removeNode(root: PaneNode, targetId: string): PaneNode | null {
+    if (root.id === targetId) return null;
+    if (root.type === 'split') {
+      const newChildren = root.children
+        .map(child => removeNode(child, targetId))
+        .filter((child): child is PaneNode => child !== null);
+
+      if (newChildren.length === 0) return null;
+      if (newChildren.length === 1) return newChildren[0]; // Collapse single-child container
+
+      // Recalculate sizes proportionally
+      const totalSize = root.sizes.reduce((sum, size, i) => {
+        const childExists = root.children[i] &&
+          (root.children[i].id !== targetId);
+        return childExists ? sum + size : sum;
+      }, 0);
+
+      const newSizes = root.sizes
+        .filter((_, i) => root.children[i]?.id !== targetId)
+        .map(size => (size / totalSize) * 100);
+
+      return {
+        ...root,
+        children: newChildren,
+        sizes: newSizes
+      };
+    }
+    return root;
+  }
+
   return {
     subscribe,
     activeProjectId,
 
     addProject: (name: string, path: string) => {
+      const terminalId = uuidv4();
+      const workspaceId = uuidv4();
+
       const newProject: Project = {
         id: uuidv4(),
         name,
         path,
-        tabs: [],
-        activeTabId: null
+        workspaces: [{
+          id: workspaceId,
+          name: 'Workspace 1',
+          root: {
+            type: 'terminal',
+            id: terminalId,
+            title: 'Terminal 1'
+          },
+          activeTerminalId: terminalId
+        }],
+        activeWorkspaceId: workspaceId
       };
 
       update(projects => {
@@ -61,36 +152,48 @@ function createProjectStore() {
     },
 
     removeProject: (id: string) => {
-        update(projects => {
-            const updated = projects.filter(p => p.id !== id);
-            saveState(updated);
-            return updated;
-        });
-        const current = get(activeProjectId);
-        if (current === id) {
-            const all = get(projectStore);
-            activeProjectId.set(all.length > 0 ? all[0].id : null);
-        }
+      update(projects => {
+        const updated = projects.filter(p => p.id !== id);
+        saveState(updated);
+        return updated;
+      });
+      const current = get(activeProjectId);
+      if (current === id) {
+        const all = get(projectStore);
+        activeProjectId.set(all.length > 0 ? all[0].id : null);
+      }
     },
 
     setActiveProject: (id: string) => {
       activeProjectId.set(id);
     },
 
-    createTab: (projectId: string) => {
-      let newTabId: string = "";
+    // Workspace methods
+    createWorkspace: (projectId: string, name?: string) => {
+      let newWorkspaceId: string = "";
       update(projects => {
         const updated = projects.map(p => {
           if (p.id === projectId) {
-            const tab: TerminalTab = {
-              id: uuidv4(),
-              title: 'Terminal'
+            const terminalId = uuidv4();
+            const workspaceId = uuidv4();
+            newWorkspaceId = workspaceId;
+            const workspaceCount = p.workspaces.length + 1;
+
+            const newWorkspace: Workspace = {
+              id: workspaceId,
+              name: name || `Workspace ${workspaceCount}`,
+              root: {
+                type: 'terminal',
+                id: terminalId,
+                title: 'Terminal 1'
+              },
+              activeTerminalId: terminalId
             };
-            newTabId = tab.id;
+
             return {
               ...p,
-              tabs: [...p.tabs, tab],
-              activeTabId: tab.id
+              workspaces: [...p.workspaces, newWorkspace],
+              activeWorkspaceId: workspaceId
             };
           }
           return p;
@@ -98,22 +201,39 @@ function createProjectStore() {
         saveState(updated);
         return updated;
       });
-      return newTabId;
+      return newWorkspaceId;
     },
 
-    closeTab: (projectId: string, tabId: string) => {
+    deleteWorkspace: (projectId: string, workspaceId: string) => {
       update(projects => {
         const updated = projects.map(p => {
           if (p.id === projectId) {
-            const newTabs = p.tabs.filter(t => t.id !== tabId);
-            let newActive = p.activeTabId;
-            if (p.activeTabId === tabId) {
-                newActive = newTabs.length > 0 ? newTabs[newTabs.length - 1].id : null;
+            const newWorkspaces = p.workspaces.filter(w => w.id !== workspaceId);
+            if (newWorkspaces.length === 0) {
+              // Don't allow deleting the last workspace, create a new one
+              const terminalId = uuidv4();
+              const newWorkspaceId = uuidv4();
+              newWorkspaces.push({
+                id: newWorkspaceId,
+                name: 'Workspace 1',
+                root: {
+                  type: 'terminal',
+                  id: terminalId,
+                  title: 'Terminal 1'
+                },
+                activeTerminalId: terminalId
+              });
             }
+
+            let newActiveId = p.activeWorkspaceId;
+            if (p.activeWorkspaceId === workspaceId) {
+              newActiveId = newWorkspaces[newWorkspaces.length - 1].id;
+            }
+
             return {
               ...p,
-              tabs: newTabs,
-              activeTabId: newActive
+              workspaces: newWorkspaces,
+              activeWorkspaceId: newActiveId
             };
           }
           return p;
@@ -123,17 +243,311 @@ function createProjectStore() {
       });
     },
 
-    setActiveTab: (projectId: string, tabId: string) => {
+    setActiveWorkspace: (projectId: string, workspaceId: string) => {
       update(projects => {
         const updated = projects.map(p => {
           if (p.id === projectId) {
-            return { ...p, activeTabId: tabId };
+            return { ...p, activeWorkspaceId: workspaceId };
           }
           return p;
         });
         saveState(updated);
         return updated;
       });
+    },
+
+    renameWorkspace: (projectId: string, workspaceId: string, newName: string) => {
+      update(projects => {
+        const updated = projects.map(p => {
+          if (p.id === projectId) {
+            return {
+              ...p,
+              workspaces: p.workspaces.map(w =>
+                w.id === workspaceId ? { ...w, name: newName } : w
+              )
+            };
+          }
+          return p;
+        });
+        saveState(updated);
+        return updated;
+      });
+    },
+
+    // Pane methods
+    splitPane: (projectId: string, workspaceId: string, paneId: string, direction: SplitDirection) => {
+      let newTerminalId: string = "";
+      update(projects => {
+        const updated = projects.map(p => {
+          if (p.id === projectId) {
+            return {
+              ...p,
+              workspaces: p.workspaces.map(w => {
+                if (w.id === workspaceId) {
+                  const parent = findParent(w.root, paneId);
+                  newTerminalId = uuidv4();
+                  const newTerminal: TerminalLeaf = {
+                    type: 'terminal',
+                    id: newTerminalId,
+                    title: 'Terminal'
+                  };
+
+                  let newRoot: PaneNode;
+                  if (parent && parent.direction === direction) {
+                    // Directions match: Add as sibling to the target pane
+                    const targetIndex = parent.children.findIndex(c => c.id === paneId);
+                    const newChildren = [...parent.children];
+                    newChildren.splice(targetIndex + 1, 0, newTerminal);
+
+                    // Recalculate sizes equally
+                    const equalSize = 100 / newChildren.length;
+                    const newSizes = newChildren.map(() => equalSize);
+
+                    const updatedParent: SplitContainer = {
+                      ...parent,
+                      children: newChildren,
+                      sizes: newSizes
+                    };
+
+                    newRoot = replaceNode(w.root, parent.id, updatedParent);
+                  } else {
+                    // Directions differ or no parent: Create new nested SplitContainer
+                    const targetNode = findNode(w.root, paneId);
+                    if (!targetNode) return w;
+
+                    const newContainer: SplitContainer = {
+                      type: 'split',
+                      id: uuidv4(),
+                      direction,
+                      children: [targetNode, newTerminal],
+                      sizes: [50, 50]
+                    };
+                    newRoot = replaceNode(w.root, paneId, newContainer);
+                  }
+
+                  return {
+                    ...w,
+                    root: newRoot,
+                    activeTerminalId: newTerminalId
+                  };
+                }
+                return w;
+              })
+            };
+          }
+          return p;
+        });
+        saveState(updated);
+        return updated;
+      });
+      return newTerminalId;
+    },
+
+    closePane: (projectId: string, workspaceId: string, paneId: string) => {
+      update(projects => {
+        const updated = projects.map(p => {
+          if (p.id === projectId) {
+            return {
+              ...p,
+              workspaces: p.workspaces.map(w => {
+                if (w.id === workspaceId) {
+                  // If this is the root and only terminal, don't close it
+                  if (w.root.id === paneId && w.root.type === 'terminal') {
+                    return w;
+                  }
+
+                  const newRoot = removeNode(w.root, paneId);
+                  if (!newRoot) return w; // Shouldn't happen
+
+                  // Update active terminal if needed
+                  let newActiveId = w.activeTerminalId;
+                  if (w.activeTerminalId === paneId) {
+                    const allTerminals = collectTerminalIds(newRoot);
+                    newActiveId = allTerminals[0] || null;
+                  }
+
+                  return {
+                    ...w,
+                    root: newRoot,
+                    activeTerminalId: newActiveId
+                  };
+                }
+                return w;
+              })
+            };
+          }
+          return p;
+        });
+        saveState(updated);
+        return updated;
+      });
+    },
+
+    resizePanes: (projectId: string, workspaceId: string, containerId: string, sizes: number[]) => {
+      update(projects => {
+        const updated = projects.map(p => {
+          if (p.id === projectId) {
+            return {
+              ...p,
+              workspaces: p.workspaces.map(w => {
+                if (w.id === workspaceId) {
+                  const updateSizes = (node: PaneNode): PaneNode => {
+                    if (node.type === 'split') {
+                      if (node.id === containerId) {
+                        return { ...node, sizes };
+                      }
+                      return {
+                        ...node,
+                        children: node.children.map(child => updateSizes(child))
+                      };
+                    }
+                    return node;
+                  };
+
+                  return {
+                    ...w,
+                    root: updateSizes(w.root)
+                  };
+                }
+                return w;
+              })
+            };
+          }
+          return p;
+        });
+        saveState(updated);
+        return updated;
+      });
+    },
+
+    setActiveTerminal: (projectId: string, workspaceId: string, terminalId: string) => {
+      update(projects => {
+        const updated = projects.map(p => {
+          if (p.id === projectId) {
+            return {
+              ...p,
+              workspaces: p.workspaces.map(w =>
+                w.id === workspaceId ? { ...w, activeTerminalId: terminalId } : w
+              )
+            };
+          }
+          return p;
+        });
+        saveState(updated);
+        return updated;
+      });
+    },
+
+    moveTerminal: (projectId: string, sourceWorkspaceId: string, targetWorkspaceId: string, terminalId: string) => {
+      if (sourceWorkspaceId === targetWorkspaceId) return;
+
+      update(projects => {
+        const updated = projects.map(p => {
+          if (p.id === projectId) {
+            const sourceWorkspace = p.workspaces.find(w => w.id === sourceWorkspaceId);
+            if (!sourceWorkspace) return p;
+
+            const terminalNode = findNode(sourceWorkspace.root, terminalId);
+            if (!terminalNode || terminalNode.type !== 'terminal') return p;
+
+            // Capture terminal data before removal
+            const terminalToMove = { ...terminalNode };
+
+            return {
+              ...p,
+              workspaces: p.workspaces.map(w => {
+                // Source Workspace Logic
+                if (w.id === sourceWorkspaceId) {
+                  let newRoot = removeNode(w.root, terminalId);
+
+                  // Don't leave workspace empty - create default if needed
+                  if (!newRoot) {
+                    const newId = uuidv4();
+                    newRoot = {
+                      type: 'terminal',
+                      id: newId,
+                      title: 'Terminal 1'
+                    };
+                  }
+
+                  // Update active terminal if needed
+                  let newActiveId = w.activeTerminalId;
+                  if (w.activeTerminalId === terminalId) {
+                    const allTerminals = collectTerminalIds(newRoot);
+                    newActiveId = allTerminals[0] || null;
+                  }
+
+                  return { ...w, root: newRoot, activeTerminalId: newActiveId };
+                }
+
+                // Target Workspace Logic
+                if (w.id === targetWorkspaceId) {
+                  let newRoot: PaneNode;
+                  const activeId = w.activeTerminalId;
+
+                  if (activeId) {
+                    const parent = findParent(w.root, activeId);
+                    // Default to horizontal insertion if possible
+                    const direction: SplitDirection = 'horizontal';
+
+                    if (parent && parent.direction === direction) {
+                      // Insert as sibling (N-way split logic)
+                      const targetIndex = parent.children.findIndex(c => c.id === activeId);
+                      const newChildren = [...parent.children];
+                      newChildren.splice(targetIndex + 1, 0, terminalToMove);
+
+                      const equalSize = 100 / newChildren.length;
+                      const newSizes = newChildren.map(() => equalSize);
+
+                      const updatedParent = {
+                        ...parent,
+                        children: newChildren,
+                        sizes: newSizes
+                      };
+
+                      newRoot = replaceNode(w.root, parent.id, updatedParent);
+                    } else {
+                      // Insert as new split
+                      const targetNode = findNode(w.root, activeId);
+                      if (!targetNode) {
+                        newRoot = terminalToMove; // Should not happen if activeId exists
+                      } else {
+                        newRoot = replaceNode(w.root, activeId, {
+                          type: 'split',
+                          id: uuidv4(),
+                          direction,
+                          children: [targetNode, terminalToMove],
+                          sizes: [50, 50]
+                        });
+                      }
+                    }
+                  } else {
+                    // Empty workspace case
+                    newRoot = terminalToMove;
+                  }
+
+                  return { ...w, root: newRoot, activeTerminalId: terminalId };
+                }
+
+                return w;
+              })
+            };
+          }
+          return p;
+        });
+        saveState(updated);
+        return updated;
+      });
+    },
+
+    // Helper to get all terminal IDs from a workspace
+    getWorkspaceTerminalIds: (projectId: string, workspaceId: string): string[] => {
+      const projects = get(projectStore);
+      const project = projects.find(p => p.id === projectId);
+      if (!project) return [];
+      const workspace = project.workspaces.find(w => w.id === workspaceId);
+      if (!workspace) return [];
+      return collectTerminalIds(workspace.root);
     }
   };
 }

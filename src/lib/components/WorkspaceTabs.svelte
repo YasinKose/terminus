@@ -8,6 +8,8 @@
   let editingName = '';
   let contextMenuWorkspaceId: string | null = null;
   let contextMenuPosition = { x: 0, y: 0 };
+  let draggedWorkspaceId: string | null = null;
+  let dragOverWorkspaceId: string | null = null;
 
   function selectWorkspace(workspaceId: string) {
     projectStore.setActiveWorkspace(project.id, workspaceId);
@@ -19,6 +21,13 @@
 
   function closeWorkspace(workspaceId: string) {
     projectStore.deleteWorkspace(project.id, workspaceId);
+  }
+
+  function handleMiddleClick(e: MouseEvent, workspaceId: string) {
+    if (e.button === 1 && project.workspaces.length > 1) {
+      e.preventDefault();
+      closeWorkspace(workspaceId);
+    }
   }
 
   function handleContextMenu(e: MouseEvent, workspaceId: string) {
@@ -64,14 +73,49 @@
     }
   }
 
+  function handleWorkspaceDragStart(e: DragEvent, workspaceId: string) {
+    draggedWorkspaceId = workspaceId;
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', JSON.stringify({
+        type: 'WORKSPACE_REORDER',
+        workspaceId
+      }));
+    }
+  }
+
+  function handleWorkspaceDragEnd() {
+    draggedWorkspaceId = null;
+    dragOverWorkspaceId = null;
+  }
+
+  function handleWorkspaceDragOver(e: DragEvent, workspaceId: string) {
+    e.preventDefault();
+    if (draggedWorkspaceId && draggedWorkspaceId !== workspaceId) {
+      dragOverWorkspaceId = workspaceId;
+    }
+  }
+
+  function handleWorkspaceDragLeave() {
+    dragOverWorkspaceId = null;
+  }
+
   function handleDrop(e: DragEvent, targetWorkspaceId: string) {
     e.preventDefault();
+    dragOverWorkspaceId = null;
     if (!e.dataTransfer) return;
 
     try {
       const data = JSON.parse(e.dataTransfer.getData('text/plain'));
 
-      if (data.type === 'TERMINAL_DRAG' && data.workspaceId !== targetWorkspaceId) {
+      if (data.type === 'WORKSPACE_REORDER' && data.workspaceId !== targetWorkspaceId) {
+        const fromIndex = project.workspaces.findIndex(w => w.id === data.workspaceId);
+        const toIndex = project.workspaces.findIndex(w => w.id === targetWorkspaceId);
+        if (fromIndex !== -1 && toIndex !== -1) {
+          projectStore.reorderWorkspaces(project.id, fromIndex, toIndex);
+        }
+        draggedWorkspaceId = null;
+      } else if (data.type === 'TERMINAL_DRAG' && data.workspaceId !== targetWorkspaceId) {
         projectStore.moveTerminal(data.projectId, data.workspaceId, targetWorkspaceId, data.terminalId);
       }
     } catch (err) {
@@ -93,10 +137,17 @@
       <div
         class="tab"
         class:active={project.activeWorkspaceId === workspace.id}
+        class:drag-over={dragOverWorkspaceId === workspace.id}
+        class:dragging={draggedWorkspaceId === workspace.id}
         on:click={() => selectWorkspace(workspace.id)}
+        on:mousedown={(e) => handleMiddleClick(e, workspace.id)}
         on:contextmenu={(e) => handleContextMenu(e, workspace.id)}
         on:keydown={(e) => e.key === 'Enter' && selectWorkspace(workspace.id)}
-        on:dragover={handleDragOver}
+        draggable="true"
+        on:dragstart={(e) => handleWorkspaceDragStart(e, workspace.id)}
+        on:dragend={handleWorkspaceDragEnd}
+        on:dragover={(e) => handleWorkspaceDragOver(e, workspace.id)}
+        on:dragleave={handleWorkspaceDragLeave}
         on:drop={(e) => handleDrop(e, workspace.id)}
         role="tab"
         tabindex="0"
@@ -201,6 +252,15 @@
   .tab.active {
     color: #e4e4e7;
     background-color: #27272a;
+  }
+
+  .tab.dragging {
+    opacity: 0.5;
+  }
+
+  .tab.drag-over {
+    background-color: #3b82f6;
+    box-shadow: inset 0 0 0 2px #60a5fa;
   }
 
   .tab-name {

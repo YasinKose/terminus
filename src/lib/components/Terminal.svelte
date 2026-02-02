@@ -1,12 +1,13 @@
 <script lang="ts">
   import { onMount, onDestroy, createEventDispatcher } from 'svelte';
-  import { Terminal } from 'xterm';
-  import { FitAddon } from 'xterm-addon-fit';
+  import { Terminal } from '@xterm/xterm';
+  import { FitAddon } from '@xterm/addon-fit';
+  import { WebglAddon } from '@xterm/addon-webgl';
   import { invoke } from '@tauri-apps/api/core';
   import { listen } from '@tauri-apps/api/event';
   import { projectStore } from '$lib/stores/projectStore';
   import { get } from 'svelte/store';
-  import 'xterm/css/xterm.css';
+  import '@xterm/xterm/css/xterm.css';
 
   export let projectId: string;
   export let termId: string;
@@ -20,6 +21,7 @@
   let terminalContainer: HTMLDivElement;
   let term: Terminal;
   let fitAddon: FitAddon;
+  let webglAddon: WebglAddon | null = null;
   let unlisten: () => void;
   let exitUnlisten: () => void;
   let resizeObserver: ResizeObserver;
@@ -72,6 +74,15 @@
     term.loadAddon(fitAddon);
     term.open(terminalContainer);
 
+    // Try to load WebGL addon for better performance
+    try {
+      webglAddon = new WebglAddon();
+      term.loadAddon(webglAddon);
+    } catch (e) {
+      console.warn('WebGL addon could not be loaded, falling back to canvas renderer:', e);
+      webglAddon = null;
+    }
+
     setTimeout(() => fitAddon.fit(), 100);
 
     term.onData((data) => {
@@ -83,10 +94,18 @@
     });
 
     exitUnlisten = await listen(`pty-exit-${termId}`, () => {
-      // Find the workspace containing this terminal and close the pane
+      // Find the workspace containing this terminal
       const workspaceId = getCurrentWorkspaceId();
       if (workspaceId) {
-        projectStore.closePane(projectId, workspaceId, termId);
+        // Check if this is the only terminal in the workspace
+        const terminalIds = projectStore.getWorkspaceTerminalIds(projectId, workspaceId);
+        if (terminalIds.length <= 1) {
+          // Last terminal - close the entire workspace
+          projectStore.deleteWorkspace(projectId, workspaceId);
+        } else {
+          // More terminals exist - just close this pane
+          projectStore.closePane(projectId, workspaceId, termId);
+        }
       }
     });
 
@@ -115,7 +134,10 @@
     if (resizeObserver) resizeObserver.disconnect();
     if (unlisten) unlisten();
     if (exitUnlisten) exitUnlisten();
+    if (webglAddon) webglAddon.dispose();
     if (term) term.dispose();
+    // Close the PTY session on the backend
+    invoke('close_pty', { id: termId }).catch(console.error);
   });
 
   export function focus() {

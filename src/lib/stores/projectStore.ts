@@ -274,6 +274,25 @@ function createProjectStore() {
       });
     },
 
+    reorderWorkspaces: (projectId: string, fromIndex: number, toIndex: number) => {
+      update(projects => {
+        const updated = projects.map(p => {
+          if (p.id === projectId) {
+            const newWorkspaces = [...p.workspaces];
+            const [moved] = newWorkspaces.splice(fromIndex, 1);
+            newWorkspaces.splice(toIndex, 0, moved);
+            return {
+              ...p,
+              workspaces: newWorkspaces
+            };
+          }
+          return p;
+        });
+        saveState(updated);
+        return updated;
+      });
+    },
+
     // Pane methods
     splitPane: (projectId: string, workspaceId: string, paneId: string, direction: SplitDirection) => {
       let newTerminalId: string = "";
@@ -548,6 +567,179 @@ function createProjectStore() {
       const workspace = project.workspaces.find(w => w.id === workspaceId);
       if (!workspace) return [];
       return collectTerminalIds(workspace.root);
+    },
+
+    // Swap two terminals (for center drop zone)
+    swapTerminals: (
+      targetProjectId: string,
+      targetWorkspaceId: string,
+      targetTerminalId: string,
+      sourceProjectId: string,
+      sourceWorkspaceId: string,
+      sourceTerminalId: string
+    ) => {
+      // Same workspace swap
+      if (targetWorkspaceId === sourceWorkspaceId && targetProjectId === sourceProjectId) {
+        update(projects => {
+          const updated = projects.map(p => {
+            if (p.id === targetProjectId) {
+              return {
+                ...p,
+                workspaces: p.workspaces.map(w => {
+                  if (w.id === targetWorkspaceId) {
+                    // Swap nodes in tree
+                    const swapNodes = (node: PaneNode): PaneNode => {
+                      if (node.id === targetTerminalId) {
+                        const sourceNode = findNode(w.root, sourceTerminalId);
+                        return sourceNode ? { ...sourceNode, id: targetTerminalId } : node;
+                      }
+                      if (node.id === sourceTerminalId) {
+                        const targetNode = findNode(w.root, targetTerminalId);
+                        return targetNode ? { ...targetNode, id: sourceTerminalId } : node;
+                      }
+                      if (node.type === 'split') {
+                        return {
+                          ...node,
+                          children: node.children.map(child => swapNodes(child))
+                        };
+                      }
+                      return node;
+                    };
+                    return { ...w, root: swapNodes(w.root) };
+                  }
+                  return w;
+                })
+              };
+            }
+            return p;
+          });
+          saveState(updated);
+          return updated;
+        });
+      }
+      // Cross-workspace swap not implemented for simplicity
+    },
+
+    // Insert terminal at specific position (for directional drop zones)
+    insertTerminalAtPosition: (
+      targetProjectId: string,
+      targetWorkspaceId: string,
+      targetTerminalId: string,
+      sourceProjectId: string,
+      sourceWorkspaceId: string,
+      sourceTerminalId: string,
+      direction: SplitDirection,
+      insertBefore: boolean
+    ) => {
+      update(projects => {
+        let terminalToMove: TerminalLeaf | null = null;
+
+        // First pass: extract terminal from source
+        const afterExtract = projects.map(p => {
+          if (p.id === sourceProjectId) {
+            return {
+              ...p,
+              workspaces: p.workspaces.map(w => {
+                if (w.id === sourceWorkspaceId) {
+                  const node = findNode(w.root, sourceTerminalId);
+                  if (node && node.type === 'terminal') {
+                    terminalToMove = { ...node };
+                  }
+
+                  let newRoot = removeNode(w.root, sourceTerminalId);
+
+                  // Don't leave workspace empty
+                  if (!newRoot) {
+                    const newId = uuidv4();
+                    newRoot = {
+                      type: 'terminal',
+                      id: newId,
+                      title: 'Terminal 1'
+                    };
+                  }
+
+                  // Update active terminal if needed
+                  let newActiveId = w.activeTerminalId;
+                  if (w.activeTerminalId === sourceTerminalId) {
+                    const allTerminals = collectTerminalIds(newRoot);
+                    newActiveId = allTerminals[0] || null;
+                  }
+
+                  return { ...w, root: newRoot, activeTerminalId: newActiveId };
+                }
+                return w;
+              })
+            };
+          }
+          return p;
+        });
+
+        if (!terminalToMove) return projects;
+
+        // Second pass: insert terminal at target
+        const updated = afterExtract.map(p => {
+          if (p.id === targetProjectId) {
+            return {
+              ...p,
+              workspaces: p.workspaces.map(w => {
+                if (w.id === targetWorkspaceId) {
+                  const parent = findParent(w.root, targetTerminalId);
+
+                  let newRoot: PaneNode;
+
+                  if (parent && parent.direction === direction) {
+                    // Same direction: add as sibling
+                    const targetIndex = parent.children.findIndex(c => c.id === targetTerminalId);
+                    const insertIndex = insertBefore ? targetIndex : targetIndex + 1;
+                    const newChildren = [...parent.children];
+                    newChildren.splice(insertIndex, 0, terminalToMove!);
+
+                    const equalSize = 100 / newChildren.length;
+                    const newSizes = newChildren.map(() => equalSize);
+
+                    const updatedParent: SplitContainer = {
+                      ...parent,
+                      children: newChildren,
+                      sizes: newSizes
+                    };
+
+                    newRoot = replaceNode(w.root, parent.id, updatedParent);
+                  } else {
+                    // Different direction: create new split container
+                    const targetNode = findNode(w.root, targetTerminalId);
+                    if (!targetNode) return w;
+
+                    const children = insertBefore
+                      ? [terminalToMove!, targetNode]
+                      : [targetNode, terminalToMove!];
+
+                    const newContainer: SplitContainer = {
+                      type: 'split',
+                      id: uuidv4(),
+                      direction,
+                      children,
+                      sizes: [50, 50]
+                    };
+
+                    newRoot = replaceNode(w.root, targetTerminalId, newContainer);
+                  }
+
+                  return {
+                    ...w,
+                    root: newRoot,
+                    activeTerminalId: terminalToMove!.id
+                  };
+                }
+                return w;
+              })
+            };
+          }
+          return p;
+        });
+
+        saveState(updated);
+        return updated;
+      });
     }
   };
 }

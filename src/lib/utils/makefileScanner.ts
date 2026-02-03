@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { snippetStore } from '../stores/snippetStore';
+import { categoryStore } from '../stores/categoryStore';
 import { get } from 'svelte/store';
-import type { Snippet } from '../types/snippet';
 
 export interface MakefileTarget {
   name: string;
@@ -74,6 +74,9 @@ export async function addMakefileSnippets(
       .map(s => s.command)
   );
 
+  // Ensure "Makefile" category exists
+  const categoryId = categoryStore.ensureCategory('Makefile', 'FileCode');
+
   let addedCount = 0;
 
   for (const target of targets) {
@@ -86,7 +89,7 @@ export async function addMakefileSnippets(
       name: `make ${target.name}`,
       command: target.command,
       description: target.description || `Makefile target: ${target.name}`,
-      category: 'make',
+      category: categoryId,
       scope: 'project',
       projectId: projectId,
       isFavorite: false

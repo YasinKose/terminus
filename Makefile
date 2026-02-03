@@ -1,25 +1,23 @@
 # Terminus Geliştirme Komutları
 
-# Varsayılan hedef: Yardım mesajını göster
 .DEFAULT_GOAL := help
 
-.PHONY: help dev build tauri-dev clean
+.PHONY: help dev build check clean install
 
 help: ## Kullanılabilir komutları listeler
-	@echo "Kullanılabilir komutlar:"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-12s\033[0m %s\n", $$1, $$2}'
 
-install: ## Proje bağımlılıklarını yükler (npm install)
-	npm install
-
-dev: ## Sadece web arayüzünü (Vite) tarayıcıda çalıştırır
-	npm run dev
-
-tauri-dev: ## Masaüstü uygulamasını geliştirme modunda başlatır (Tauri + Vite)
+dev: ## Uygulamayı geliştirme modunda başlatır
 	npm run tauri dev
 
-build: ## Uygulamanın production sürümünü derler
+build: ## Production sürümünü derler
 	npm run tauri build
 
-clean: ## Derleme çıktılarını ve önbellekleri temizler
+check: ## Tip kontrollerini çalıştırır
+	npm run check
+
+clean: ## Derleme çıktılarını temizler
 	rm -rf dist src-tauri/target
+
+install: ## Bağımlılıkları yükler
+	npm install

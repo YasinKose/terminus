@@ -2,6 +2,7 @@ import { writable, get } from 'svelte/store';
 import { v4 as uuidv4 } from 'uuid';
 import type { Project, Workspace, PaneNode, TerminalLeaf, SplitContainer, SplitDirection } from '../types/workspace';
 import { migrateProjects } from './migration';
+import { addMakefileSnippets } from '../utils/makefileScanner';
 
 // Re-export types for convenience
 export type { Project, Workspace, PaneNode, TerminalLeaf, SplitContainer, SplitDirection };
@@ -148,6 +149,14 @@ function createProjectStore() {
       });
 
       activeProjectId.set(newProject.id);
+
+      // Auto-scan Makefile and add snippets
+      addMakefileSnippets(newProject.id, path).then(count => {
+        if (count > 0) {
+          console.log(`Added ${count} Makefile snippets for project ${name}`);
+        }
+      });
+
       return newProject.id;
     },
 

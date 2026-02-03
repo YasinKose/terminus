@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "terminus",
   "version": "0.1.0",
-  "identifier": "com.tauri.dev",
+  "identifier": "com.yasinkose.terminus",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
@@ -25,7 +25,7 @@
     ],
     "macOSPrivateApi": true,
     "security": {
-      "csp": null
+      "csp": "default-src 'self' ipc: http://ipc.localhost; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: asset: http://asset.localhost; font-src 'self' data:; connect-src ipc: http://ipc.localhost"
     }
   },
   "bundle": {

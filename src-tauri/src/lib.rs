@@ -1,5 +1,6 @@
 mod pty;
 mod task;
+mod makefile;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -10,8 +11,10 @@ pub fn run() {
             pty::spawn_pty,
             pty::write_to_pty,
             pty::resize_pty,
+            pty::close_pty,
             task::load_board,
-            task::save_board
+            task::save_board,
+            makefile::scan_makefile
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {

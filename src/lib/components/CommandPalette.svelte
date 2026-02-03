@@ -2,13 +2,45 @@
   import { onMount, tick } from 'svelte';
   import { fade, fly } from 'svelte/transition';
   import { isCommandPaletteOpen, isTaskBoardOpen, isSidebarOpen } from '../stores/uiStore';
-  import { Search, Terminal, Layout, CheckSquare, X } from 'lucide-svelte';
+  import { projectStore } from '../stores/projectStore';
+  import { rescanMakefileSnippets } from '../utils/makefileScanner';
+  import { Search, Terminal, Layout, CheckSquare, X, RefreshCw } from 'lucide-svelte';
+  import { get } from 'svelte/store';
 
   let inputElement: HTMLInputElement;
   let query = '';
   let selectedIndex = 0;
+  let syncStatus = '';
+
+  async function syncMakefile() {
+    const projects = get(projectStore);
+    const activeId = get(projectStore.activeProjectId);
+    const activeProject = projects.find(p => p.id === activeId);
+
+    if (!activeProject) {
+      syncStatus = 'No active project';
+      setTimeout(() => syncStatus = '', 2000);
+      return;
+    }
+
+    syncStatus = 'Syncing...';
+    const result = await rescanMakefileSnippets(activeProject.id, activeProject.path);
+
+    if (result.added > 0 || result.removed > 0) {
+      syncStatus = `Synced: -${result.removed} +${result.added}`;
+    } else {
+      syncStatus = 'No Makefile found';
+    }
+    setTimeout(() => syncStatus = '', 2000);
+  }
 
   const commands = [
+    {
+      id: 'sync-makefile',
+      label: 'Sync Makefile Snippets',
+      icon: RefreshCw,
+      action: syncMakefile
+    },
     {
       id: 'toggle-tasks',
       label: 'Toggle Task Board',

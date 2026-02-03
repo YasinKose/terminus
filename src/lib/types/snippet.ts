@@ -28,6 +28,7 @@ export interface SnippetFormData {
 }
 
 export const DEFAULT_CATEGORIES: SnippetCategory[] = [
+  { id: 'make', name: 'Makefile', icon: 'FileCode' },
   { id: 'build', name: 'Build', icon: 'Hammer' },
   { id: 'deploy', name: 'Deploy', icon: 'Rocket' },
   { id: 'git', name: 'Git', icon: 'GitBranch' },

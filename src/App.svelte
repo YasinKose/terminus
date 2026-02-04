@@ -6,7 +6,7 @@
   import KanbanBoard from './lib/components/KanbanBoard.svelte';
   import CommandPalette from './lib/components/CommandPalette.svelte';
   import { fade, fly } from 'svelte/transition';
-  import { isSidebarOpen, isTaskBoardOpen, isCommandPaletteOpen, isZenMode, pendingSnippet } from './lib/stores/uiStore';
+  import { isSidebarOpen, isTaskBoardOpen, isCommandPaletteOpen, isZenMode, isSnippetModalOpen, pendingSnippet } from './lib/stores/uiStore';
   import { projectStore } from './lib/stores/projectStore';
   import { FolderPlus } from 'lucide-svelte';
   import { calculatePaneRects, findAdjacentPane } from './lib/utils/layoutUtils';
@@ -138,6 +138,11 @@
       if (activeProject && activeWorkspace && activeWorkspace.activeTerminalId) {
         projectStore.closePane(activeProject.id, activeWorkspace.id, activeWorkspace.activeTerminalId);
       }
+    }
+    // Cmd+Shift+S for Run Snippet modal
+    if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 's') {
+      e.preventDefault();
+      isSnippetModalOpen.update(v => !v);
     }
   }
 

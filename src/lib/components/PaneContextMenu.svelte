@@ -5,6 +5,7 @@
   import { snippetStore } from '../stores/snippetStore';
   import { categoryStore } from '../stores/categoryStore';
   import { projectStore } from '../stores/projectStore';
+  import { isSnippetModalOpen } from '../stores/uiStore';
   import { invoke } from '@tauri-apps/api/core';
   import { Code2, ChevronRight, Star, Search, Folder, Plus, X } from 'lucide-svelte';
   import { DEFAULT_CATEGORIES } from '../types/snippet';
@@ -16,7 +17,11 @@
 
   const { activeProjectId } = projectStore;
 
-  let showSnippetsSubmenu = false;
+  // Get active terminal ID (from prop or from active workspace)
+  $: activeProject = $projectStore.find(p => p.id === $activeProjectId);
+  $: activeWorkspace = activeProject?.workspaces.find(w => w.id === activeProject?.activeWorkspaceId);
+  $: activeTerminalId = terminalId || activeWorkspace?.activeTerminalId || '';
+
   let searchQuery = '';
   let expandedCategory: string | null = null;
   let searchInputRef: HTMLInputElement;
@@ -113,7 +118,9 @@
   }
 
   async function handleRunSnippet(command: string) {
-    await invoke('write_to_pty', { id: terminalId, data: command + '\n' });
+    const targetTerminalId = activeTerminalId;
+    if (!targetTerminalId) return;
+    await invoke('write_to_pty', { id: targetTerminalId, data: command + '\n' });
     closeSnippetModal();
   }
 
@@ -123,7 +130,7 @@
 
   function toggleSnippetsSubmenu(e: MouseEvent) {
     e.stopPropagation();
-    showSnippetsSubmenu = true;
+    isSnippetModalOpen.set(true);
     dispatch('hide'); // Close context menu first
     expandedCategory = null;
     searchQuery = '';
@@ -134,7 +141,7 @@
   }
 
   function closeSnippetModal() {
-    showSnippetsSubmenu = false;
+    isSnippetModalOpen.set(false);
     searchQuery = '';
     expandedCategory = null;
     selectedIndex = 0;
@@ -160,7 +167,7 @@
         searchQuery = '';
         selectedIndex = 0;
       } else {
-        showSnippetsSubmenu = false;
+        closeSnippetModal();
       }
       e.preventDefault();
     } else if (e.key === 'ArrowDown') {
@@ -211,6 +218,16 @@
     newCategoryName = '';
   }
 
+  // Focus search input when modal opens (via shortcut or context menu)
+  $: if ($isSnippetModalOpen) {
+    expandedCategory = null;
+    searchQuery = '';
+    selectedIndex = 0;
+    showAddCategory = false;
+    newCategoryName = '';
+    setTimeout(() => searchInputRef?.focus(), 50);
+  }
+
   $: adjustedX = Math.min(x, window.innerWidth - 200);
   $: adjustedY = Math.min(y, window.innerHeight - 250);
 </script>
@@ -248,7 +265,7 @@
       <button class="menu-item" on:click={toggleSnippetsSubmenu} role="menuitem">
         <Code2 size={16} />
         <span>Run Snippet</span>
-        <ChevronRight size={14} />
+        <span class="shortcut">⇧⌘S</span>
       </button>
     </div>
 
@@ -265,7 +282,7 @@
 {/if}
 
 <!-- Snippet Modal (Center of screen) -->
-{#if showSnippetsSubmenu}
+{#if $isSnippetModalOpen}
   <div
     class="snippet-modal-backdrop"
     transition:fade={{ duration: 150 }}
@@ -302,6 +319,10 @@
           type="text"
           placeholder="Search snippets..."
           class="modal-search-input"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck="false"
         />
       </div>
 

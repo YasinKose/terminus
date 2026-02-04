@@ -4,6 +4,7 @@ export const isSidebarOpen = writable(true);
 export const isTaskBoardOpen = writable(false);
 export const isCommandPaletteOpen = writable(false);
 export const isZenMode = writable(false);
+export const isSnippetModalOpen = writable(false);
 
 // Pending snippet command to execute
 export interface PendingSnippet {

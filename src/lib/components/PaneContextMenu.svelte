@@ -1,11 +1,13 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { fade, fly } from 'svelte/transition';
   import type { SplitDirection } from '../types/workspace';
   import { snippetStore } from '../stores/snippetStore';
   import { categoryStore } from '../stores/categoryStore';
   import { projectStore } from '../stores/projectStore';
   import { invoke } from '@tauri-apps/api/core';
   import { Code2, ChevronRight, Star, Search, Folder, Plus, X } from 'lucide-svelte';
+  import { DEFAULT_CATEGORIES } from '../types/snippet';
 
   export let x: number;
   export let y: number;
@@ -37,11 +39,37 @@
 
   $: favorites = snippets.filter(s => s.isFavorite).sort((a, b) => b.updatedAt - a.updatedAt);
 
-  $: categoriesWithSnippets = $categoryStore
-    .map(cat => ({
-      ...cat,
-      snippets: snippets.filter(s => s.category === cat.id).sort((a, b) => b.updatedAt - a.updatedAt)
-    }))
+  // Collect all unique categories from snippets and merge with store + defaults
+  $: allCategoryIds = [...new Set(snippets.map(s => s.category))];
+
+  $: categoriesWithSnippets = allCategoryIds
+    .map(catId => {
+      // First check categoryStore
+      const storeCategory = $categoryStore.find(c => c.id === catId);
+      if (storeCategory) {
+        return {
+          ...storeCategory,
+          snippets: snippets.filter(s => s.category === catId).sort((a, b) => b.updatedAt - a.updatedAt)
+        };
+      }
+
+      // Then check DEFAULT_CATEGORIES
+      const defaultCategory = DEFAULT_CATEGORIES.find(c => c.id === catId);
+      if (defaultCategory) {
+        return {
+          ...defaultCategory,
+          snippets: snippets.filter(s => s.category === catId).sort((a, b) => b.updatedAt - a.updatedAt)
+        };
+      }
+
+      // Fallback for unknown categories (dynamic ones)
+      return {
+        id: catId,
+        name: catId.charAt(0).toUpperCase() + catId.slice(1),
+        icon: 'Folder',
+        snippets: snippets.filter(s => s.category === catId).sort((a, b) => b.updatedAt - a.updatedAt)
+      };
+    })
     .filter(cat => cat.snippets.length > 0);
 
   $: searchResults = searchQuery.trim()
@@ -82,14 +110,29 @@
 
   function toggleSnippetsSubmenu(e: MouseEvent) {
     e.stopPropagation();
-    showSnippetsSubmenu = !showSnippetsSubmenu;
+    showSnippetsSubmenu = true;
+    dispatch('hide'); // Close context menu first
     expandedCategory = null;
     searchQuery = '';
     selectedIndex = 0;
     showAddCategory = false;
     newCategoryName = '';
-    if (showSnippetsSubmenu) {
-      setTimeout(() => searchInputRef?.focus(), 50);
+    setTimeout(() => searchInputRef?.focus(), 100);
+  }
+
+  function closeSnippetModal() {
+    showSnippetsSubmenu = false;
+    searchQuery = '';
+    expandedCategory = null;
+    selectedIndex = 0;
+    showAddCategory = false;
+    newCategoryName = '';
+  }
+
+  function handleModalKeydown(e: KeyboardEvent) {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      closeSnippetModal();
     }
   }
 
@@ -148,7 +191,6 @@
   }
 
   $: if (!visible) {
-    showSnippetsSubmenu = false;
     searchQuery = '';
     expandedCategory = null;
     selectedIndex = 0;
@@ -193,151 +235,8 @@
       <button class="menu-item" on:click={toggleSnippetsSubmenu} role="menuitem">
         <Code2 size={16} />
         <span>Run Snippet</span>
-        <ChevronRight size={14} class="submenu-arrow {showSnippetsSubmenu ? 'rotated' : ''}" />
+        <ChevronRight size={14} />
       </button>
-
-      {#if showSnippetsSubmenu}
-        <div class="submenu" on:click|stopPropagation>
-          <!-- Search -->
-          <div class="submenu-section">
-            <div class="search-input-wrapper">
-              <Search size={14} />
-              <input
-                bind:this={searchInputRef}
-                bind:value={searchQuery}
-                on:keydown={handleSearchKeydown}
-                type="text"
-                placeholder="Search snippets..."
-                class="search-input"
-              />
-            </div>
-            {#if searchQuery.trim()}
-              <div class="snippet-list">
-                {#if searchResults.length > 0}
-                  {#each searchResults as snippet, i (snippet.id)}
-                    <button
-                      class="menu-item snippet-item {i === selectedIndex ? 'selected' : ''}"
-                      on:click={() => handleRunSnippet(snippet.command)}
-                      on:mouseenter={() => selectedIndex = i}
-                      role="menuitem"
-                      title={snippet.command}
-                    >
-                      {#if snippet.isFavorite}
-                        <Star size={12} class="favorite-icon" />
-                      {/if}
-                      <span class="snippet-name">{snippet.name}</span>
-                      <span class="snippet-cmd">{snippet.command}</span>
-                    </button>
-                  {/each}
-                {:else}
-                  <div class="no-results">No snippets found</div>
-                {/if}
-              </div>
-            {/if}
-          </div>
-
-          {#if !searchQuery.trim()}
-            <div class="submenu-separator"></div>
-
-            <!-- Favorites -->
-            {#if favorites.length > 0}
-              <div class="category-group">
-                <button
-                  class="menu-item category-header"
-                  on:click={(e) => toggleCategory('favorites', e)}
-                  role="menuitem"
-                >
-                  <Star size={16} class="icon-favorites" />
-                  <span>Favorites</span>
-                  <span class="category-count">{favorites.length}</span>
-                  <ChevronRight size={14} class="expand-arrow {expandedCategory === 'favorites' ? 'rotated' : ''}" />
-                </button>
-
-                {#if expandedCategory === 'favorites'}
-                  <div class="category-items">
-                    {#each favorites as snippet (snippet.id)}
-                      <button
-                        class="menu-item snippet-item"
-                        on:click={() => handleRunSnippet(snippet.command)}
-                        role="menuitem"
-                        title={snippet.command}
-                      >
-                        <Star size={12} class="favorite-icon" />
-                        <span class="snippet-name">{snippet.name}</span>
-                        <span class="snippet-cmd">{snippet.command}</span>
-                      </button>
-                    {/each}
-                  </div>
-                {/if}
-              </div>
-
-              {#if categoriesWithSnippets.length > 0}
-                <div class="submenu-separator"></div>
-              {/if}
-            {/if}
-
-            <!-- User Categories -->
-            {#each categoriesWithSnippets as category (category.id)}
-              <div class="category-group">
-                <button
-                  class="menu-item category-header"
-                  on:click={(e) => toggleCategory(category.id, e)}
-                  role="menuitem"
-                >
-                  <Folder size={16} />
-                  <span>{category.name}</span>
-                  <span class="category-count">{category.snippets.length}</span>
-                  <ChevronRight size={14} class="expand-arrow {expandedCategory === category.id ? 'rotated' : ''}" />
-                </button>
-
-                {#if expandedCategory === category.id}
-                  <div class="category-items">
-                    {#each category.snippets as snippet (snippet.id)}
-                      <button
-                        class="menu-item snippet-item"
-                        on:click={() => handleRunSnippet(snippet.command)}
-                        role="menuitem"
-                        title={snippet.command}
-                      >
-                        {#if snippet.isFavorite}
-                          <Star size={12} class="favorite-icon" />
-                        {/if}
-                        <span class="snippet-name">{snippet.name}</span>
-                        <span class="snippet-cmd">{snippet.command}</span>
-                      </button>
-                    {/each}
-                  </div>
-                {/if}
-              </div>
-            {/each}
-
-            <div class="submenu-separator"></div>
-
-            <!-- Add Category -->
-            {#if showAddCategory}
-              <div class="add-category-input-wrapper">
-                <Folder size={14} />
-                <input
-                  bind:this={newCategoryInputRef}
-                  bind:value={newCategoryName}
-                  on:keydown={handleAddCategoryKeydown}
-                  type="text"
-                  placeholder="Category name..."
-                  class="add-category-input"
-                />
-                <button class="cancel-btn" on:click={toggleAddCategory}>
-                  <X size={14} />
-                </button>
-              </div>
-            {:else}
-              <button class="menu-item add-category-btn" on:click={toggleAddCategory} role="menuitem">
-                <Plus size={16} />
-                <span>Add Category</span>
-              </button>
-            {/if}
-          {/if}
-        </div>
-      {/if}
     </div>
 
     <div class="separator"></div>
@@ -349,6 +248,186 @@
       <span>Close Pane</span>
       <span class="shortcut">⌘W</span>
     </button>
+  </div>
+{/if}
+
+<!-- Snippet Modal (Center of screen) -->
+{#if showSnippetsSubmenu}
+  <div
+    class="snippet-modal-backdrop"
+    transition:fade={{ duration: 150 }}
+    on:click={closeSnippetModal}
+    on:keydown={handleModalKeydown}
+    role="dialog"
+    aria-modal="true"
+    tabindex="-1"
+  >
+    <div
+      class="snippet-modal"
+      transition:fly={{ y: -20, duration: 200 }}
+      on:click|stopPropagation
+      role="presentation"
+    >
+      <!-- Header -->
+      <div class="modal-header">
+        <div class="modal-title">
+          <Code2 size={18} />
+          <span>Run Snippet</span>
+        </div>
+        <button class="close-btn" on:click={closeSnippetModal}>
+          <X size={16} />
+        </button>
+      </div>
+
+      <!-- Search -->
+      <div class="modal-search">
+        <Search size={16} />
+        <input
+          bind:this={searchInputRef}
+          bind:value={searchQuery}
+          on:keydown={handleSearchKeydown}
+          type="text"
+          placeholder="Search snippets..."
+          class="modal-search-input"
+        />
+      </div>
+
+      <!-- Content -->
+      <div class="modal-content">
+        {#if searchQuery.trim()}
+          <!-- Search Results -->
+          {#if searchResults.length > 0}
+            {#each searchResults as snippet, i (snippet.id)}
+              <button
+                class="snippet-row {i === selectedIndex ? 'selected' : ''}"
+                on:click={() => handleRunSnippet(snippet.command)}
+                on:mouseenter={() => selectedIndex = i}
+                role="menuitem"
+              >
+                <div class="snippet-info">
+                  {#if snippet.isFavorite}
+                    <Star size={14} class="star-icon" />
+                  {/if}
+                  <span class="snippet-name">{snippet.name}</span>
+                  {#if snippet.description}
+                    <span class="snippet-desc">{snippet.description}</span>
+                  {/if}
+                </div>
+                <code class="snippet-command">{snippet.command}</code>
+              </button>
+            {/each}
+          {:else}
+            <div class="empty-state">No snippets found</div>
+          {/if}
+        {:else}
+          <!-- Favorites -->
+          {#if favorites.length > 0}
+            <div class="section">
+              <button
+                class="section-header"
+                on:click={(e) => toggleCategory('favorites', e)}
+              >
+                <Star size={16} class="star-icon filled" />
+                <span>Favorites</span>
+                <span class="count">{favorites.length}</span>
+                <ChevronRight size={14} class="chevron {expandedCategory === 'favorites' ? 'rotated' : ''}" />
+              </button>
+              {#if expandedCategory === 'favorites'}
+                <div class="section-items">
+                  {#each favorites as snippet (snippet.id)}
+                    <button
+                      class="snippet-row"
+                      on:click={() => handleRunSnippet(snippet.command)}
+                      role="menuitem"
+                    >
+                      <div class="snippet-info">
+                        <Star size={14} class="star-icon filled" />
+                        <span class="snippet-name">{snippet.name}</span>
+                      </div>
+                      <code class="snippet-command">{snippet.command}</code>
+                    </button>
+                  {/each}
+                </div>
+              {/if}
+            </div>
+          {/if}
+
+          <!-- Categories -->
+          {#each categoriesWithSnippets as category (category.id)}
+            <div class="section">
+              <button
+                class="section-header"
+                on:click={(e) => toggleCategory(category.id, e)}
+              >
+                <Folder size={16} />
+                <span>{category.name}</span>
+                <span class="count">{category.snippets.length}</span>
+                <ChevronRight size={14} class="chevron {expandedCategory === category.id ? 'rotated' : ''}" />
+              </button>
+              {#if expandedCategory === category.id}
+                <div class="section-items">
+                  {#each category.snippets as snippet (snippet.id)}
+                    <button
+                      class="snippet-row"
+                      on:click={() => handleRunSnippet(snippet.command)}
+                      role="menuitem"
+                    >
+                      <div class="snippet-info">
+                        {#if snippet.isFavorite}
+                          <Star size={14} class="star-icon filled" />
+                        {/if}
+                        <span class="snippet-name">{snippet.name}</span>
+                      </div>
+                      <code class="snippet-command">{snippet.command}</code>
+                    </button>
+                  {/each}
+                </div>
+              {/if}
+            </div>
+          {/each}
+
+          <!-- Add Category -->
+          <div class="section add-section">
+            {#if showAddCategory}
+              <div class="add-category-row">
+                <Folder size={14} />
+                <input
+                  bind:this={newCategoryInputRef}
+                  bind:value={newCategoryName}
+                  on:keydown={handleAddCategoryKeydown}
+                  type="text"
+                  placeholder="Category name..."
+                  class="add-category-input"
+                />
+                <button class="cancel-add" on:click={toggleAddCategory}>
+                  <X size={14} />
+                </button>
+              </div>
+            {:else}
+              <button class="add-category-btn" on:click={toggleAddCategory}>
+                <Plus size={16} />
+                <span>Add Category</span>
+              </button>
+            {/if}
+          </div>
+
+          {#if snippets.length === 0}
+            <div class="empty-state">
+              <Code2 size={32} />
+              <p>No snippets yet</p>
+              <span>Create snippets to quickly run commands</span>
+            </div>
+          {/if}
+        {/if}
+      </div>
+
+      <!-- Footer -->
+      <div class="modal-footer">
+        <span class="hint"><kbd>↑↓</kbd> Navigate</span>
+        <span class="hint"><kbd>Enter</kbd> Run</span>
+        <span class="hint"><kbd>Esc</kbd> Close</span>
+      </div>
+    </div>
   </div>
 {/if}
 
@@ -635,5 +714,364 @@
   .cancel-btn:hover {
     color: #ff6b6b;
     background-color: #3a1c1c;
+  }
+
+  /* Snippet Modal Styles */
+  .snippet-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+  }
+
+  .snippet-modal {
+    width: 100%;
+    max-width: 520px;
+    background-color: #1c1c1e;
+    border: 1px solid #38383a;
+    border-radius: 16px;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8);
+    display: flex;
+    flex-direction: column;
+    max-height: 70vh;
+    overflow: hidden;
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #38383a;
+  }
+
+  .modal-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #e5e5e7;
+  }
+
+  .modal-title :global(svg) {
+    opacity: 0.8;
+  }
+
+  .close-btn {
+    background: transparent;
+    border: none;
+    color: #6e6e73;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+  }
+
+  .close-btn:hover {
+    background-color: #2c2c2e;
+    color: #e5e5e7;
+  }
+
+  .modal-search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 20px;
+    background-color: #0d0d0d;
+    border-bottom: 1px solid #38383a;
+  }
+
+  .modal-search :global(svg) {
+    color: #6e6e73;
+    flex-shrink: 0;
+  }
+
+  .modal-search-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #e5e5e7;
+    font-size: 14px;
+  }
+
+  .modal-search-input::placeholder {
+    color: #6e6e73;
+  }
+
+  .modal-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .modal-content::-webkit-scrollbar {
+    display: none;
+  }
+
+  .section {
+    margin-bottom: 4px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    color: #e5e5e7;
+    font-size: 13px;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background-color 0.1s ease;
+  }
+
+  .section-header:hover {
+    background-color: #2c2c2e;
+  }
+
+  .section-header :global(svg) {
+    opacity: 0.6;
+    flex-shrink: 0;
+  }
+
+  .section-header .count {
+    font-size: 11px;
+    color: #6e6e73;
+    background-color: #2c2c2e;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: auto;
+  }
+
+  .section-header .chevron {
+    opacity: 0.4;
+    transition: transform 0.15s ease;
+  }
+
+  .section-header .chevron.rotated {
+    transform: rotate(90deg);
+  }
+
+  .section-items {
+    margin-left: 16px;
+    padding-left: 12px;
+    border-left: 1px solid #38383a;
+    margin-top: 4px;
+  }
+
+  .snippet-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    color: #e5e5e7;
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background-color 0.1s ease;
+  }
+
+  .snippet-row:hover {
+    background-color: #2c2c2e;
+  }
+
+  .snippet-row.selected {
+    background-color: #3b82f6;
+  }
+
+  .snippet-row.selected .snippet-command {
+    color: #93c5fd;
+  }
+
+  .snippet-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .snippet-info .snippet-name {
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .snippet-info .snippet-desc {
+    font-size: 11px;
+    color: #6e6e73;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .snippet-command {
+    font-size: 11px;
+    color: #6e6e73;
+    font-family: 'SF Mono', Monaco, monospace;
+    background-color: #0d0d0d;
+    padding: 4px 8px;
+    border-radius: 4px;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .star-icon {
+    color: #6e6e73;
+    flex-shrink: 0;
+  }
+
+  .star-icon.filled {
+    color: #fbbf24;
+    fill: #fbbf24;
+  }
+
+  .add-section {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #38383a;
+  }
+
+  .add-category-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background-color: #0d0d0d;
+    border: 1px solid #38383a;
+    border-radius: 8px;
+  }
+
+  .add-category-row :global(svg) {
+    color: #6e6e73;
+    flex-shrink: 0;
+  }
+
+  .add-category-row .add-category-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #e5e5e7;
+    font-size: 13px;
+  }
+
+  .add-category-row .add-category-input::placeholder {
+    color: #6e6e73;
+  }
+
+  .cancel-add {
+    background: transparent;
+    border: none;
+    color: #6e6e73;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .cancel-add:hover {
+    color: #ff6b6b;
+    background-color: #3a1c1c;
+  }
+
+  .add-section .add-category-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    color: #6e6e73;
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.1s ease;
+  }
+
+  .add-section .add-category-btn:hover {
+    background-color: #2c2c2e;
+    color: #e5e5e7;
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    color: #6e6e73;
+    text-align: center;
+  }
+
+  .empty-state :global(svg) {
+    opacity: 0.3;
+    margin-bottom: 12px;
+  }
+
+  .empty-state p {
+    font-size: 14px;
+    font-weight: 500;
+    margin: 0 0 4px;
+    color: #8e8e93;
+  }
+
+  .empty-state span {
+    font-size: 12px;
+  }
+
+  .modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 12px 20px;
+    border-top: 1px solid #38383a;
+    background-color: #0d0d0d;
+  }
+
+  .hint {
+    font-size: 11px;
+    color: #6e6e73;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .hint kbd {
+    background-color: #2c2c2e;
+    border: 1px solid #38383a;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 10px;
   }
 </style>

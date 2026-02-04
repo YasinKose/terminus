@@ -4,7 +4,8 @@
   import type { Snippet } from '../types/snippet';
   import { DEFAULT_CATEGORIES } from '../types/snippet';
   import { projectStore } from '../stores/projectStore';
-  import { X, Save } from 'lucide-svelte';
+  import { categoryStore } from '../stores/categoryStore';
+  import { X, Save, Plus } from 'lucide-svelte';
 
   export let snippet: Snippet | undefined = undefined;
   export let projectId: string | undefined = undefined;
@@ -25,6 +26,20 @@
     name: '',
     command: ''
   };
+
+  let showNewCategory = false;
+  let newCategoryName = '';
+
+  // Combine default and user categories
+  $: allCategories = [...DEFAULT_CATEGORIES, ...$categoryStore];
+
+  function addNewCategory() {
+    if (!newCategoryName.trim()) return;
+    const id = categoryStore.addCategory(newCategoryName.trim(), 'Folder');
+    formData.category = id;
+    newCategoryName = '';
+    showNewCategory = false;
+  }
 
   onMount(() => {
     nameInput?.focus();
@@ -160,15 +175,44 @@
           <label for="snippet-category" class="block text-sm font-medium text-zinc-300 mb-2">
             Category
           </label>
-          <select
-            id="snippet-category"
-            bind:value={formData.category}
-            class="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all cursor-pointer"
-          >
-            {#each DEFAULT_CATEGORIES as category}
-              <option value={category.id}>{category.name}</option>
-            {/each}
-          </select>
+          <div class="flex gap-2">
+            <select
+              id="snippet-category"
+              bind:value={formData.category}
+              class="flex-1 px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all cursor-pointer"
+            >
+              {#each allCategories as category}
+                <option value={category.id}>{category.name}</option>
+              {/each}
+            </select>
+            <button
+              type="button"
+              on:click={() => showNewCategory = !showNewCategory}
+              class="px-3 py-2 bg-zinc-700 hover:bg-zinc-600 text-zinc-300 rounded-lg transition-colors"
+              title="Add new category"
+            >
+              <Plus class="w-4 h-4" />
+            </button>
+          </div>
+          {#if showNewCategory}
+            <div class="mt-2 flex gap-2">
+              <input
+                type="text"
+                bind:value={newCategoryName}
+                placeholder="New category name"
+                class="flex-1 px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-200 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-sm"
+                on:keydown={(e) => e.key === 'Enter' && (e.preventDefault(), addNewCategory())}
+              />
+              <button
+                type="button"
+                on:click={addNewCategory}
+                disabled={!newCategoryName.trim()}
+                class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white rounded-lg transition-colors text-sm"
+              >
+                Add
+              </button>
+            </div>
+          {/if}
         </div>
 
         <!-- Scope Selection -->

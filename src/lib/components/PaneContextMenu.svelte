@@ -69,8 +69,21 @@
         icon: 'Folder',
         snippets: snippets.filter(s => s.category === catId).sort((a, b) => b.updatedAt - a.updatedAt)
       };
-    })
-    .filter(cat => cat.snippets.length > 0);
+    });
+
+  // All categories including empty ones (from store + defaults)
+  $: allCategories = [
+    ...DEFAULT_CATEGORIES.map(cat => ({
+      ...cat,
+      snippets: snippets.filter(s => s.category === cat.id).sort((a, b) => b.updatedAt - a.updatedAt)
+    })),
+    ...$categoryStore
+      .filter(cat => !DEFAULT_CATEGORIES.find(d => d.id === cat.id))
+      .map(cat => ({
+        ...cat,
+        snippets: snippets.filter(s => s.category === cat.id).sort((a, b) => b.updatedAt - a.updatedAt)
+      }))
+  ];
 
   $: searchResults = searchQuery.trim()
     ? snippets.filter(s =>
@@ -101,7 +114,7 @@
 
   async function handleRunSnippet(command: string) {
     await invoke('write_to_pty', { id: terminalId, data: command + '\n' });
-    dispatch('hide');
+    closeSnippetModal();
   }
 
   function handleClickOutside() {
@@ -353,18 +366,24 @@
           {/if}
 
           <!-- Categories -->
-          {#each categoriesWithSnippets as category (category.id)}
+          {#each allCategories as category (category.id)}
+            {@const isEmpty = category.snippets.length === 0}
             <div class="section">
               <button
-                class="section-header"
-                on:click={(e) => toggleCategory(category.id, e)}
+                class="section-header {isEmpty ? 'empty' : ''}"
+                on:click={(e) => !isEmpty && toggleCategory(category.id, e)}
+                disabled={isEmpty}
               >
                 <Folder size={16} />
                 <span>{category.name}</span>
-                <span class="count">{category.snippets.length}</span>
-                <ChevronRight size={14} class="chevron {expandedCategory === category.id ? 'rotated' : ''}" />
+                {#if isEmpty}
+                  <span class="empty-label">empty</span>
+                {:else}
+                  <span class="count">{category.snippets.length}</span>
+                  <ChevronRight size={14} class="chevron {expandedCategory === category.id ? 'rotated' : ''}" />
+                {/if}
               </button>
-              {#if expandedCategory === category.id}
+              {#if expandedCategory === category.id && !isEmpty}
                 <div class="section-items">
                   {#each category.snippets as snippet (snippet.id)}
                     <button
@@ -856,6 +875,29 @@
     padding: 2px 8px;
     border-radius: 10px;
     margin-left: auto;
+  }
+
+  .section-header.empty {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .section-header.empty:hover {
+    background-color: transparent;
+  }
+
+  .section-header:disabled {
+    cursor: default;
+  }
+
+  .empty-label {
+    font-size: 10px;
+    color: #52525b;
+    background-color: #27272a;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: auto;
+    font-style: italic;
   }
 
   .section-header .chevron {

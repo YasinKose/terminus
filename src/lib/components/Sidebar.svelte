@@ -91,10 +91,6 @@
       placeholder={activeTab === 'projects' ? 'Search projects...' : 'Search snippets...'}
       class="search-input"
     />
-    <div class="search-shortcut">
-      <Command size={10} />
-      <span>K</span>
-    </div>
   </div>
 
   <!-- Tab Navigation -->

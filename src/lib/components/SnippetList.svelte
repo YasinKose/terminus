@@ -61,7 +61,7 @@
     return true;
   });
 
-  // Group snippets by category
+  // Group snippets by category (include empty categories)
   $: groupedSnippets = categories
     .map(cat => ({
       ...cat,
@@ -71,8 +71,7 @@
           if (a.isFavorite !== b.isFavorite) return b.isFavorite ? 1 : -1;
           return b.updatedAt - a.updatedAt;
         })
-    }))
-    .filter(cat => cat.snippets.length > 0);
+    }));
 
   // Favorites
   $: favorites = filteredSnippets.filter(s => s.isFavorite);
@@ -223,18 +222,24 @@
 
       <!-- Category Sections -->
       {#each groupedSnippets as category (category.id)}
+        {@const isEmpty = category.snippets.length === 0}
         <div class="category-section">
           <button
-            class="category-header"
-            on:click={() => toggleCategory(category.id)}
+            class="category-header {isEmpty ? 'empty' : ''}"
+            on:click={() => !isEmpty && toggleCategory(category.id)}
+            disabled={isEmpty}
           >
             <Folder size={14} />
             <span class="category-name">{category.name}</span>
-            <span class="category-count">{category.snippets.length}</span>
-            <ChevronRight size={14} class="chevron {expandedCategories.has(category.id) ? 'rotated' : ''}" />
+            {#if isEmpty}
+              <span class="category-empty-label">empty</span>
+            {:else}
+              <span class="category-count">{category.snippets.length}</span>
+              <ChevronRight size={14} class="chevron {expandedCategories.has(category.id) ? 'rotated' : ''}" />
+            {/if}
           </button>
 
-          {#if expandedCategories.has(category.id)}
+          {#if expandedCategories.has(category.id) && !isEmpty}
             <div class="category-items">
               {#each category.snippets as snippet (snippet.id)}
                 <div
@@ -442,6 +447,28 @@
 
   .category-header:hover {
     background-color: #27272a;
+  }
+
+  .category-header.empty {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .category-header.empty:hover {
+    background-color: transparent;
+  }
+
+  .category-header:disabled {
+    cursor: default;
+  }
+
+  .category-empty-label {
+    font-size: 10px;
+    padding: 2px 6px;
+    background-color: #27272a;
+    border-radius: 8px;
+    color: #52525b;
+    font-style: italic;
   }
 
   .category-header :global(svg) {

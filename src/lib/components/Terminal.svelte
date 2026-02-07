@@ -6,10 +6,9 @@
   import { invoke } from '@tauri-apps/api/core';
   import { listen } from '@tauri-apps/api/event';
   import { projectStore } from '$lib/stores/projectStore';
-  import { get } from 'svelte/store';
   import '@xterm/xterm/css/xterm.css';
 
-  export let projectId: string;
+  export let workspaceId: string;
   export let termId: string;
   export let cwd: string | undefined = undefined;
   export let visible: boolean = true;
@@ -26,30 +25,14 @@
   let exitUnlisten: () => void;
   let resizeObserver: ResizeObserver;
 
-  // Get current workspace ID for this terminal
-  function getCurrentWorkspaceId(): string | null {
-    const projects = get(projectStore);
-    const project = projects.find(p => p.id === projectId);
-    if (!project) return null;
-
-    // Find workspace containing this terminal
-    for (const workspace of project.workspaces) {
-      const terminalIds = projectStore.getWorkspaceTerminalIds(projectId, workspace.id);
-      if (terminalIds.includes(termId)) {
-        return workspace.id;
-      }
-    }
-    return null;
-  }
-
   $: if (visible && fitAddon) {
     setTimeout(() => {
-        fitAddon.fit();
-        invoke('resize_pty', {
-            id: termId,
-            rows: term.rows,
-            cols: term.cols
-        }).catch(console.error);
+      fitAddon.fit();
+      invoke('resize_pty', {
+        id: termId,
+        rows: term.rows,
+        cols: term.cols
+      }).catch(console.error);
     }, 50);
   }
 
@@ -64,17 +47,16 @@
       fontSize: 14,
       cursorBlink: true,
       theme: {
-        background: '#09090b', // zinc-950
-        foreground: '#e4e4e7', // zinc-200
+        background: '#09090b',
+        foreground: '#e4e4e7'
       },
-      allowTransparency: true,
+      allowTransparency: true
     });
 
     fitAddon = new FitAddon();
     term.loadAddon(fitAddon);
     term.open(terminalContainer);
 
-    // Try to load WebGL addon for better performance
     try {
       webglAddon = new WebglAddon();
       term.loadAddon(webglAddon);
@@ -86,7 +68,7 @@
     setTimeout(() => fitAddon.fit(), 100);
 
     term.onData((data) => {
-      invoke('write_to_pty', { id: termId, data });
+      invoke('write_to_pty', { id: termId, data }).catch(console.error);
     });
 
     unlisten = await listen<string>(`pty-output-${termId}`, (event) => {
@@ -94,19 +76,7 @@
     });
 
     exitUnlisten = await listen(`pty-exit-${termId}`, () => {
-      // Find the workspace containing this terminal
-      const workspaceId = getCurrentWorkspaceId();
-      if (workspaceId) {
-        // Check if this is the only terminal in the workspace
-        const terminalIds = projectStore.getWorkspaceTerminalIds(projectId, workspaceId);
-        if (terminalIds.length <= 1) {
-          // Last terminal - close the entire workspace
-          projectStore.deleteWorkspace(projectId, workspaceId);
-        } else {
-          // More terminals exist - just close this pane
-          projectStore.closePane(projectId, workspaceId, termId);
-        }
-      }
+      projectStore.handleTerminalExit(workspaceId, termId);
     });
 
     try {
@@ -136,8 +106,7 @@
     if (exitUnlisten) exitUnlisten();
     if (webglAddon) webglAddon.dispose();
     if (term) term.dispose();
-    // Close the PTY session on the backend
-    invoke('close_pty', { id: termId }).catch(console.error);
+    // PTY is intentionally kept alive across component unmounts.
   });
 
   export function focus() {

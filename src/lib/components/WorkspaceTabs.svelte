@@ -1,33 +1,38 @@
 <script lang="ts">
-  import type { Project } from '../stores/projectStore';
+  import type { Project, Workspace } from '../stores/projectStore';
   import { projectStore } from '../stores/projectStore';
 
-  export let project: Project;
+  export let projects: Project[] = [];
+  export let workspaces: Workspace[] = [];
+  export let activeProjectId: string | null = null;
+  export let activeWorkspaceId: string | null = null;
 
   let editingWorkspaceId: string | null = null;
   let editingName = '';
   let contextMenuWorkspaceId: string | null = null;
   let contextMenuPosition = { x: 0, y: 0 };
-  let draggedWorkspaceId: string | null = null;
   let dragOverWorkspaceId: string | null = null;
 
-  function selectWorkspace(workspaceId: string) {
-    projectStore.setActiveWorkspace(project.id, workspaceId);
+  function getProjectName(projectId: string): string {
+    return projects.find(project => project.id === projectId)?.name || 'Unknown';
+  }
+
+  function selectWorkspace(workspace: Workspace) {
+    projectStore.setActiveWorkspace(workspace.projectId, workspace.id);
   }
 
   function addWorkspace() {
-    projectStore.createWorkspace(project.id);
+    if (!activeProjectId) return;
+    projectStore.createWorkspace(activeProjectId);
   }
 
-  function closeWorkspace(workspaceId: string) {
-    projectStore.deleteWorkspace(project.id, workspaceId);
+  function closeWorkspace(workspace: Workspace) {
+    projectStore.deleteWorkspace(workspace.projectId, workspace.id);
   }
 
-  function handleMiddleClick(e: MouseEvent, workspaceId: string) {
-    if (e.button === 1 && project.workspaces.length > 1) {
-      e.preventDefault();
-      closeWorkspace(workspaceId);
-    }
+  function handleMiddleClick(e: MouseEvent, workspace: Workspace) {
+    e.preventDefault();
+    closeWorkspace(workspace);
   }
 
   function handleContextMenu(e: MouseEvent, workspaceId: string) {
@@ -41,7 +46,7 @@
   }
 
   function startRename(workspaceId: string) {
-    const workspace = project.workspaces.find(w => w.id === workspaceId);
+    const workspace = workspaces.find(w => w.id === workspaceId);
     if (workspace) {
       editingWorkspaceId = workspaceId;
       editingName = workspace.name;
@@ -51,7 +56,10 @@
 
   function finishRename() {
     if (editingWorkspaceId && editingName.trim()) {
-      projectStore.renameWorkspace(project.id, editingWorkspaceId, editingName.trim());
+      const workspace = workspaces.find(w => w.id === editingWorkspaceId);
+      if (workspace) {
+        projectStore.renameWorkspace(workspace.projectId, editingWorkspaceId, editingName.trim());
+      }
     }
     editingWorkspaceId = null;
     editingName = '';
@@ -66,41 +74,7 @@
     }
   }
 
-  function handleDragOver(e: DragEvent) {
-    e.preventDefault();
-    if (e.dataTransfer) {
-      e.dataTransfer.dropEffect = 'move';
-    }
-  }
-
-  function handleWorkspaceDragStart(e: DragEvent, workspaceId: string) {
-    draggedWorkspaceId = workspaceId;
-    if (e.dataTransfer) {
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', JSON.stringify({
-        type: 'WORKSPACE_REORDER',
-        workspaceId
-      }));
-    }
-  }
-
-  function handleWorkspaceDragEnd() {
-    draggedWorkspaceId = null;
-    dragOverWorkspaceId = null;
-  }
-
-  function handleWorkspaceDragOver(e: DragEvent, workspaceId: string) {
-    e.preventDefault();
-    if (draggedWorkspaceId && draggedWorkspaceId !== workspaceId) {
-      dragOverWorkspaceId = workspaceId;
-    }
-  }
-
-  function handleWorkspaceDragLeave() {
-    dragOverWorkspaceId = null;
-  }
-
-  function handleDrop(e: DragEvent, targetWorkspaceId: string) {
+  function handleDrop(e: DragEvent, targetWorkspace: Workspace) {
     e.preventDefault();
     dragOverWorkspaceId = null;
     if (!e.dataTransfer) return;
@@ -108,22 +82,23 @@
     try {
       const data = JSON.parse(e.dataTransfer.getData('text/plain'));
 
-      if (data.type === 'WORKSPACE_REORDER' && data.workspaceId !== targetWorkspaceId) {
-        const fromIndex = project.workspaces.findIndex(w => w.id === data.workspaceId);
-        const toIndex = project.workspaces.findIndex(w => w.id === targetWorkspaceId);
-        if (fromIndex !== -1 && toIndex !== -1) {
-          projectStore.reorderWorkspaces(project.id, fromIndex, toIndex);
-        }
-        draggedWorkspaceId = null;
-      } else if (data.type === 'TERMINAL_DRAG' && data.workspaceId !== targetWorkspaceId) {
-        projectStore.moveTerminal(data.projectId, data.workspaceId, targetWorkspaceId, data.terminalId);
+      if (data.type === 'TERMINAL_DRAG' && data.workspaceId !== targetWorkspace.id) {
+        projectStore.moveTerminal(data.projectId, data.workspaceId, targetWorkspace.id, data.terminalId);
       }
     } catch (err) {
       console.error('Failed to process drop:', err);
     }
   }
 
-  // Close context menu when clicking outside
+  function handleDragOver(e: DragEvent, workspaceId: string) {
+    e.preventDefault();
+    dragOverWorkspaceId = workspaceId;
+  }
+
+  function handleDragLeave() {
+    dragOverWorkspaceId = null;
+  }
+
   function handleWindowClick() {
     closeContextMenu();
   }
@@ -133,54 +108,55 @@
 
 <div class="workspace-tabs">
   <div class="tabs-container">
-    {#each project.workspaces as workspace (workspace.id)}
+    {#each workspaces as workspace (workspace.id)}
+      {@const isActive = activeWorkspaceId === workspace.id}
+      {@const belongsToActiveProject = activeProjectId === workspace.projectId}
       <div
         class="tab"
-        class:active={project.activeWorkspaceId === workspace.id}
+        class:active={isActive}
+        class:project-active={belongsToActiveProject}
         class:drag-over={dragOverWorkspaceId === workspace.id}
-        class:dragging={draggedWorkspaceId === workspace.id}
-        on:click={() => selectWorkspace(workspace.id)}
-        on:mousedown={(e) => handleMiddleClick(e, workspace.id)}
+        on:click={() => selectWorkspace(workspace)}
+        on:mousedown={(e) => e.button === 1 && handleMiddleClick(e, workspace)}
         on:contextmenu={(e) => handleContextMenu(e, workspace.id)}
-        on:keydown={(e) => e.key === 'Enter' && selectWorkspace(workspace.id)}
-        draggable="true"
-        on:dragstart={(e) => handleWorkspaceDragStart(e, workspace.id)}
-        on:dragend={handleWorkspaceDragEnd}
-        on:dragover={(e) => handleWorkspaceDragOver(e, workspace.id)}
-        on:dragleave={handleWorkspaceDragLeave}
-        on:drop={(e) => handleDrop(e, workspace.id)}
+        on:keydown={(e) => e.key === 'Enter' && selectWorkspace(workspace)}
+        on:dragover={(e) => handleDragOver(e, workspace.id)}
+        on:dragleave={handleDragLeave}
+        on:drop={(e) => handleDrop(e, workspace)}
         role="tab"
         tabindex="0"
-        aria-selected={project.activeWorkspaceId === workspace.id}
+        aria-selected={isActive}
       >
-        {#if editingWorkspaceId === workspace.id}
-          <input
-            type="text"
-            class="rename-input"
-            bind:value={editingName}
-            on:blur={finishRename}
-            on:keydown={handleKeydown}
-            autofocus
-          />
-        {:else}
-          <span class="tab-name">{workspace.name}</span>
-        {/if}
+        <div class="tab-content">
+          {#if editingWorkspaceId === workspace.id}
+            <input
+              type="text"
+              class="rename-input"
+              bind:value={editingName}
+              on:blur={finishRename}
+              on:keydown={handleKeydown}
+              autofocus
+            />
+          {:else}
+            <span class="tab-name">{workspace.name}</span>
+          {/if}
+          <span class="project-badge">{getProjectName(workspace.projectId)}</span>
+        </div>
 
-        {#if project.workspaces.length > 1}
-          <button
-            class="close-btn"
-            on:click|stopPropagation={() => closeWorkspace(workspace.id)}
-            aria-label="Close workspace"
-          >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-              <path d="M9.5 3.5L8.5 2.5L6 5L3.5 2.5L2.5 3.5L5 6L2.5 8.5L3.5 9.5L6 7L8.5 9.5L9.5 8.5L7 6L9.5 3.5Z"/>
-            </svg>
-          </button>
-        {/if}
+        <button
+          class="close-btn"
+          on:click|stopPropagation={() => closeWorkspace(workspace)}
+          aria-label="Close workspace"
+          title="Close workspace"
+        >
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+            <path d="M9.5 3.5L8.5 2.5L6 5L3.5 2.5L2.5 3.5L5 6L2.5 8.5L3.5 9.5L6 7L8.5 9.5L9.5 8.5L7 6L9.5 3.5Z"/>
+          </svg>
+        </button>
       </div>
     {/each}
 
-    <button class="add-btn" on:click={addWorkspace} aria-label="New workspace">
+    <button class="add-btn" on:click={addWorkspace} aria-label="New workspace" disabled={!activeProjectId}>
       <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
         <path d="M7 1V13M1 7H13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       </svg>
@@ -188,25 +164,24 @@
   </div>
 </div>
 
-<!-- Context Menu -->
 {#if contextMenuWorkspaceId}
-  {@const menuWorkspaceId = contextMenuWorkspaceId}
-  <div
-    class="context-menu"
-    style="left: {contextMenuPosition.x}px; top: {contextMenuPosition.y}px;"
-    on:click|stopPropagation
-    on:keydown|stopPropagation
-    role="menu"
-  >
-    <button on:click={() => startRename(menuWorkspaceId)}>
-      Rename
-    </button>
-    {#if project.workspaces.length > 1}
-      <button on:click={() => { closeWorkspace(menuWorkspaceId); closeContextMenu(); }}>
+  {@const menuWorkspace = workspaces.find(w => w.id === contextMenuWorkspaceId)}
+  {#if menuWorkspace}
+    <div
+      class="context-menu"
+      style="left: {contextMenuPosition.x}px; top: {contextMenuPosition.y}px;"
+      on:click|stopPropagation
+      on:keydown|stopPropagation
+      role="menu"
+    >
+      <button on:click={() => startRename(menuWorkspace.id)}>
+        Rename
+      </button>
+      <button on:click={() => { closeWorkspace(menuWorkspace); closeContextMenu(); }}>
         Close
       </button>
-    {/if}
-  </div>
+    </div>
+  {/if}
 {/if}
 
 <style>
@@ -232,16 +207,17 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 12px;
+    padding: 7px 10px;
     background-color: transparent;
     color: #71717a;
     border: none;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 12px;
     white-space: nowrap;
-    max-width: 150px;
+    max-width: 240px;
     transition: all 0.15s ease;
     border-radius: 6px 6px 0 0;
+    border-top: 2px solid transparent;
   }
 
   .tab:hover {
@@ -249,13 +225,14 @@
     background-color: #27272a;
   }
 
+  .tab.project-active {
+    border-top-color: #6366f1;
+  }
+
   .tab.active {
     color: #e4e4e7;
     background-color: #27272a;
-  }
-
-  .tab.dragging {
-    opacity: 0.5;
+    border-top-color: #a78bfa;
   }
 
   .tab.drag-over {
@@ -263,91 +240,117 @@
     box-shadow: inset 0 0 0 2px #60a5fa;
   }
 
+  .tab-content {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+
   .tab-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 110px;
+    font-weight: 500;
+  }
+
+  .project-badge {
+    font-size: 10px;
+    color: #a1a1aa;
+    background: #09090b;
+    border: 1px solid #3f3f46;
+    padding: 1px 6px;
+    border-radius: 999px;
+    max-width: 90px;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
   .close-btn {
-    display: flex;
+    opacity: 0;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: #a1a1aa;
+    cursor: pointer;
+    border-radius: 3px;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 18px;
-    height: 18px;
-    padding: 0;
-    background: transparent;
-    border: none;
-    color: #71717a;
-    cursor: pointer;
-    border-radius: 4px;
-    opacity: 0;
-    transition: all 0.15s ease;
   }
 
-  .tab:hover .close-btn {
+  .tab:hover .close-btn,
+  .tab.active .close-btn {
     opacity: 1;
   }
 
   .close-btn:hover {
-    background-color: #3f3f46;
-    color: #ef4444;
+    background: #3f3f46;
+    color: #f4f4f5;
   }
 
   .add-btn {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     width: 28px;
     height: 28px;
-    padding: 0;
-    background: transparent;
-    border: none;
     color: #71717a;
-    cursor: pointer;
+    border: none;
+    background: transparent;
     border-radius: 6px;
-    transition: all 0.15s ease;
+    cursor: pointer;
+    margin-left: 4px;
   }
 
-  .add-btn:hover {
-    background-color: #27272a;
-    color: #d4d4d8;
+  .add-btn:hover:enabled {
+    background: #27272a;
+    color: #e4e4e7;
+  }
+
+  .add-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
 
   .rename-input {
     background: #09090b;
-    border: 1px solid #3b82f6;
-    color: #e4e4e7;
-    font-size: 13px;
-    padding: 2px 6px;
+    border: 1px solid #52525b;
     border-radius: 4px;
+    color: #f4f4f5;
+    padding: 3px 6px;
+    font-size: 12px;
+    width: 120px;
     outline: none;
-    width: 100px;
   }
 
   .context-menu {
     position: fixed;
-    background-color: #27272a;
-    border: 1px solid #3f3f46;
-    border-radius: 6px;
-    padding: 4px;
     z-index: 1000;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    min-width: 140px;
+    background: #18181b;
+    border: 1px solid #3f3f46;
+    border-radius: 8px;
+    padding: 4px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
   }
 
   .context-menu button {
     display: block;
     width: 100%;
-    padding: 8px 12px;
+    text-align: left;
+    padding: 7px 10px;
     background: transparent;
     border: none;
     color: #d4d4d8;
     font-size: 13px;
-    text-align: left;
+    border-radius: 6px;
     cursor: pointer;
-    border-radius: 4px;
   }
 
   .context-menu button:hover {
-    background-color: #3f3f46;
+    background: #27272a;
   }
 </style>

@@ -4,22 +4,52 @@
   import Divider from './Divider.svelte';
   import Terminal from './Terminal.svelte';
   import PaneContextMenu from './PaneContextMenu.svelte';
+  import DropZoneOverlay from './DropZoneOverlay.svelte';
 
   export let node: PaneNode;
   export let projectId: string;
   export let workspaceId: string;
   export let projectPath: string;
+  export let visible: boolean = true;
 
   // Minimum pane size percentage
   const MIN_SIZE = 10;
 
   let containerEl: HTMLDivElement;
+  let terminalPaneEl: HTMLDivElement;
 
   // Context menu state
   let contextMenuVisible = false;
   let contextMenuX = 0;
   let contextMenuY = 0;
   let contextMenuTerminalId = '';
+
+  // Drag & Drop state
+  let isDragOver = false;
+  let activeDropZone: 'left' | 'right' | 'top' | 'bottom' | 'center' | null = null;
+
+  function getDropZoneFromPosition(x: number, y: number, rect: DOMRect): 'left' | 'right' | 'top' | 'bottom' | 'center' {
+    const relX = (x - rect.left) / rect.width;
+    const relY = (y - rect.top) / rect.height;
+
+    // Center zone: 30%-70% on both axes
+    if (relX > 0.3 && relX < 0.7 && relY > 0.3 && relY < 0.7) {
+      return 'center';
+    }
+
+    // Determine which edge is closest
+    const distLeft = relX;
+    const distRight = 1 - relX;
+    const distTop = relY;
+    const distBottom = 1 - relY;
+
+    const minDist = Math.min(distLeft, distRight, distTop, distBottom);
+
+    if (minDist === distLeft) return 'left';
+    if (minDist === distRight) return 'right';
+    if (minDist === distTop) return 'top';
+    return 'bottom';
+  }
 
   function handleResize(e: CustomEvent<{ containerId: string; index: number; delta: number }>) {
     if (node.type !== 'split') return;
@@ -89,8 +119,105 @@
     e.dataTransfer.effectAllowed = 'move';
   }
 
+  function handleDragOver(e: DragEvent) {
+    e.preventDefault();
+    if (!e.dataTransfer) return;
+
+    // Check if it's a terminal drag
+    const types = e.dataTransfer.types;
+    if (!types.includes('text/plain')) return;
+
+    e.dataTransfer.dropEffect = 'move';
+    isDragOver = true;
+
+    // Calculate which zone we're in
+    if (terminalPaneEl) {
+      const rect = terminalPaneEl.getBoundingClientRect();
+      activeDropZone = getDropZoneFromPosition(e.clientX, e.clientY, rect);
+    }
+  }
+
+  function handleDragLeave(e: DragEvent) {
+    // Only reset if we're actually leaving the element
+    const relatedTarget = e.relatedTarget as Node | null;
+    if (terminalPaneEl && relatedTarget && terminalPaneEl.contains(relatedTarget)) {
+      return;
+    }
+    isDragOver = false;
+    activeDropZone = null;
+  }
+
+  function handleDrop(e: DragEvent) {
+    e.preventDefault();
+    isDragOver = false;
+
+    if (!e.dataTransfer) return;
+
+    try {
+      const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+      if (data.type !== 'TERMINAL_DRAG') return;
+
+      const sourceTerminalId = data.terminalId;
+      const sourceWorkspaceId = data.workspaceId;
+      const sourceProjectId = data.projectId;
+
+      // Don't drop on self
+      if (sourceTerminalId === node.id && sourceWorkspaceId === workspaceId) {
+        activeDropZone = null;
+        return;
+      }
+
+      // Handle based on drop zone
+      if (activeDropZone === 'center') {
+        // Swap terminals
+        projectStore.swapTerminals(
+          projectId,
+          workspaceId,
+          node.id,
+          sourceProjectId,
+          sourceWorkspaceId,
+          sourceTerminalId
+        );
+      } else if (activeDropZone) {
+        // Insert at direction
+        const directionMap: Record<string, SplitDirection> = {
+          'left': 'horizontal',
+          'right': 'horizontal',
+          'top': 'vertical',
+          'bottom': 'vertical'
+        };
+        const insertBefore = activeDropZone === 'left' || activeDropZone === 'top';
+
+        projectStore.insertTerminalAtPosition(
+          projectId,
+          workspaceId,
+          node.id,
+          sourceProjectId,
+          sourceWorkspaceId,
+          sourceTerminalId,
+          directionMap[activeDropZone],
+          insertBefore
+        );
+      }
+    } catch (err) {
+      console.error('Failed to parse drag data:', err);
+    }
+
+    activeDropZone = null;
+  }
+
   function hideContextMenu() {
     contextMenuVisible = false;
+  }
+
+  function handleToolbarSplit(terminalId: string, direction: SplitDirection, e: MouseEvent) {
+    e.stopPropagation();
+    projectStore.splitPane(projectId, workspaceId, terminalId, direction);
+  }
+
+  function handleToolbarClose(terminalId: string, e: MouseEvent) {
+    e.stopPropagation();
+    projectStore.closePane(projectId, workspaceId, terminalId);
   }
 </script>
 
@@ -99,7 +226,7 @@
     class="split-container {node.direction}"
     bind:this={containerEl}
   >
-    {#each node.children as child, i}
+    {#each node.children as child, i (child.id)}
       <div
         class="pane"
         style="flex: {node.sizes[i]} 1 0%;"
@@ -109,6 +236,7 @@
           {projectId}
           {workspaceId}
           {projectPath}
+          {visible}
         />
       </div>
       {#if i < node.children.length - 1}
@@ -126,20 +254,35 @@
   <!-- Terminal leaf -->
   <div
     class="terminal-pane"
+    bind:this={terminalPaneEl}
     draggable="true"
     on:dragstart={(e) => handleDragStart(e, node.id)}
+    on:dragover={handleDragOver}
+    on:dragleave={handleDragLeave}
+    on:drop={handleDrop}
     on:mousedown={() => handleTerminalFocus(node.id)}
     on:focus={() => handleTerminalFocus(node.id)}
     on:contextmenu={(e) => handleContextMenu(e, node.id)}
     role="button"
     tabindex="-1"
   >
-    <Terminal
-      projectId={projectId}
-      termId={node.id}
-      cwd={projectPath}
-      visible={true}
-    />
+    <div class="pane-toolbar" on:mousedown|stopPropagation={() => handleTerminalFocus(node.id)}>
+      <span class="pane-title">{node.title || 'Terminal'}</span>
+      <div class="pane-actions">
+        <button class="toolbar-btn" on:click={(e) => handleToolbarSplit(node.id, 'horizontal', e)} title="Split horizontally">H</button>
+        <button class="toolbar-btn" on:click={(e) => handleToolbarSplit(node.id, 'vertical', e)} title="Split vertically">V</button>
+        <button class="toolbar-btn danger" on:click={(e) => handleToolbarClose(node.id, e)} title="Close terminal">×</button>
+      </div>
+    </div>
+    <div class="terminal-body">
+      <Terminal
+        workspaceId={workspaceId}
+        termId={node.id}
+        cwd={projectPath}
+        {visible}
+      />
+    </div>
+    <DropZoneOverlay visible={isDragOver} activeZone={activeDropZone} />
   </div>
 
   <PaneContextMenu
@@ -176,8 +319,66 @@
   }
 
   .terminal-pane {
+    position: relative;
     width: 100%;
     height: 100%;
     overflow: hidden;
+    background: #09090b;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .pane-toolbar {
+    height: 30px;
+    flex: 0 0 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 8px;
+    border-bottom: 1px solid #27272a;
+    background: #111115;
+    color: #a1a1aa;
+    font-size: 12px;
+  }
+
+  .pane-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px;
+  }
+
+  .pane-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .toolbar-btn {
+    width: 20px;
+    height: 20px;
+    border: 1px solid #3f3f46;
+    border-radius: 4px;
+    background: #18181b;
+    color: #d4d4d8;
+    font-size: 10px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .toolbar-btn:hover {
+    border-color: #71717a;
+  }
+
+  .toolbar-btn.danger:hover {
+    border-color: #f87171;
+    color: #fca5a5;
+  }
+
+  .terminal-body {
+    flex: 1 1 auto;
+    min-height: 0;
   }
 </style>

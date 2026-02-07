@@ -15,11 +15,11 @@
   export let terminalId: string;
   export let visible: boolean = false;
 
-  const { activeProjectId } = projectStore;
+  const { activeProjectId, activeWorkspaceId, workspaces } = projectStore;
 
   // Get active terminal ID (from prop or from active workspace)
   $: activeProject = $projectStore.find(p => p.id === $activeProjectId);
-  $: activeWorkspace = activeProject?.workspaces.find(w => w.id === activeProject?.activeWorkspaceId);
+  $: activeWorkspace = $workspaces.find(w => w.id === $activeWorkspaceId);
   $: activeTerminalId = terminalId || activeWorkspace?.activeTerminalId || '';
 
   let searchQuery = '';

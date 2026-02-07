@@ -17,17 +17,18 @@ export interface TerminalLeaf {
 
 export interface Workspace {
   id: string;
+  projectId: string;
   name: string;
-  root: PaneNode;
+  root: PaneNode | null;
   activeTerminalId: string | null;
+  createdAt: number;
+  updatedAt: number;
 }
 
 export interface Project {
   id: string;
   name: string;
   path: string;
-  workspaces: Workspace[];
-  activeWorkspaceId: string | null;
 }
 
 // Legacy types for migration
@@ -42,4 +43,17 @@ export interface LegacyProject {
   path: string;
   tabs: LegacyTerminalTab[];
   activeTabId: string | null;
+}
+
+export interface ProjectV1 {
+  id: string;
+  name: string;
+  path: string;
+  workspaces: Array<{
+    id: string;
+    name: string;
+    root: PaneNode;
+    activeTerminalId: string | null;
+  }>;
+  activeWorkspaceId: string | null;
 }

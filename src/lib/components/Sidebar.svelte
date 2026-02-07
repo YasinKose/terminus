@@ -6,7 +6,7 @@
   import { open } from '@tauri-apps/plugin-dialog';
   import SnippetList from './SnippetList.svelte';
 
-  const { activeProjectId } = projectStore;
+  const { activeProjectId, workspaces } = projectStore;
 
   type TabType = 'projects' | 'snippets';
   let activeTab: TabType = 'projects';
@@ -56,13 +56,17 @@
     showProjectMenu = null;
   }
 
-  function handleRunSnippet(workspaceId: string, command: string) {
+  function handleRunSnippet(command: string, workspaceId: string | 'new') {
     if (!$activeProjectId) return;
     pendingSnippet.set({ workspaceId, command });
   }
 
   $: activeProject = $projectStore.find(p => p.id === $activeProjectId);
-  $: workspaces = activeProject?.workspaces || [];
+  $: projectWorkspaces = activeProject
+    ? $workspaces
+      .filter(w => w.projectId === activeProject.id)
+      .map(w => ({ id: w.id, name: w.name }))
+    : [];
 
   function getShortPath(path: string): string {
     const parts = path.split(/[\\/]/);
@@ -174,8 +178,8 @@
       </div>
     {:else if activeTab === 'snippets'}
       <SnippetList
-        projectId={$activeProjectId}
-        {workspaces}
+        projectId={$activeProjectId || ''}
+        workspaces={projectWorkspaces}
         onRunSnippet={handleRunSnippet}
         {searchQuery}
       />

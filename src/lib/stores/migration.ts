@@ -1,5 +1,11 @@
 import { v4 as uuid } from 'uuid';
-import type { Project, Workspace, TerminalLeaf, LegacyProject } from '../types/workspace';
+import type { LegacyProject, PaneNode, Project, ProjectV1, TerminalLeaf, Workspace } from '../types/workspace';
+
+export interface MigratedState {
+  projects: Project[];
+  workspaces: Workspace[];
+  activeWorkspaceId: string | null;
+}
 
 /**
  * Checks if a project is in the legacy format (has tabs instead of workspaces)
@@ -15,17 +21,23 @@ export function isLegacyProject(project: unknown): project is LegacyProject {
 }
 
 /**
- * Migrates a legacy project (with tabs) to the new workspace format
- * Preserves terminal IDs so PTY sessions are not broken
+ * Checks if a project is in v1 format (embedded workspaces inside project)
  */
-export function migrateLegacyProject(legacy: LegacyProject): Project {
-  // Create a workspace for each tab, or a single workspace with all terminals
-  // For simplicity, we'll create one workspace with all tabs as split panes
-  // But start with just converting each tab to a terminal in a single workspace
+export function isProjectV1(project: unknown): project is ProjectV1 {
+  return (
+    typeof project === 'object' &&
+    project !== null &&
+    'workspaces' in project &&
+    Array.isArray((project as ProjectV1).workspaces)
+  );
+}
 
+/**
+ * Migrates a tabs-based legacy project to the v1 embedded-workspaces shape.
+ */
+export function migrateLegacyProject(legacy: LegacyProject): ProjectV1 {
   const workspaceId = uuid();
 
-  // If there are no tabs, create a default terminal
   if (legacy.tabs.length === 0) {
     const terminalId = uuid();
     const defaultTerminal: TerminalLeaf = {
@@ -34,89 +46,136 @@ export function migrateLegacyProject(legacy: LegacyProject): Project {
       title: 'Terminal 1'
     };
 
-    const defaultWorkspace: Workspace = {
-      id: workspaceId,
-      name: 'Workspace 1',
-      root: defaultTerminal,
-      activeTerminalId: terminalId
-    };
-
     return {
       id: legacy.id,
       name: legacy.name,
       path: legacy.path,
-      workspaces: [defaultWorkspace],
+      workspaces: [{
+        id: workspaceId,
+        name: 'Workspace 1',
+        root: defaultTerminal,
+        activeTerminalId: terminalId
+      }],
       activeWorkspaceId: workspaceId
     };
   }
 
-  // If there's only one tab, make it the root terminal
   if (legacy.tabs.length === 1) {
     const tab = legacy.tabs[0];
     const terminal: TerminalLeaf = {
       type: 'terminal',
-      id: tab.id, // Preserve the ID!
+      id: tab.id,
       title: tab.title
-    };
-
-    const workspace: Workspace = {
-      id: workspaceId,
-      name: 'Workspace 1',
-      root: terminal,
-      activeTerminalId: tab.id
     };
 
     return {
       id: legacy.id,
       name: legacy.name,
       path: legacy.path,
-      workspaces: [workspace],
+      workspaces: [{
+        id: workspaceId,
+        name: 'Workspace 1',
+        root: terminal,
+        activeTerminalId: tab.id
+      }],
       activeWorkspaceId: workspaceId
     };
   }
 
-  // Multiple tabs: Create a horizontal split container with all terminals
   const terminals: TerminalLeaf[] = legacy.tabs.map(tab => ({
-    type: 'terminal' as const,
-    id: tab.id, // Preserve the ID!
+    type: 'terminal',
+    id: tab.id,
     title: tab.title
   }));
 
-  // Equal sizes for all terminals
   const sizes = terminals.map(() => 100 / terminals.length);
-
-  const workspace: Workspace = {
-    id: workspaceId,
-    name: 'Workspace 1',
-    root: {
-      type: 'split',
-      id: uuid(),
-      direction: 'horizontal',
-      children: terminals,
-      sizes: sizes
-    },
-    activeTerminalId: legacy.activeTabId || terminals[0]?.id || null
-  };
 
   return {
     id: legacy.id,
     name: legacy.name,
     path: legacy.path,
-    workspaces: [workspace],
+    workspaces: [{
+      id: workspaceId,
+      name: 'Workspace 1',
+      root: {
+        type: 'split',
+        id: uuid(),
+        direction: 'horizontal',
+        children: terminals,
+        sizes
+      },
+      activeTerminalId: legacy.activeTabId || terminals[0]?.id || null
+    }],
     activeWorkspaceId: workspaceId
   };
 }
 
+function toWorkspaceV2(projectId: string, workspace: ProjectV1['workspaces'][number]): Workspace {
+  const now = Date.now();
+  return {
+    id: workspace.id,
+    projectId,
+    name: workspace.name,
+    root: workspace.root,
+    activeTerminalId: workspace.activeTerminalId,
+    createdAt: now,
+    updatedAt: now
+  };
+}
+
 /**
- * Migrates an array of projects, converting any legacy projects to the new format
+ * Migrates unknown project arrays into v2 normalized state.
  */
-export function migrateProjects(projects: unknown[]): Project[] {
-  return projects.map(project => {
+export function migrateProjects(projects: unknown[]): MigratedState {
+  const normalized: ProjectV1[] = projects.map(project => {
     if (isLegacyProject(project)) {
-      console.log(`Migrating legacy project: ${project.name}`);
+      console.log(`Migrating tabs-legacy project: ${project.name}`);
       return migrateLegacyProject(project);
     }
-    // Already in new format
-    return project as Project;
+
+    if (isProjectV1(project)) {
+      return project;
+    }
+
+    const fallbackId = uuid();
+    const terminalId = uuid();
+    return {
+      id: fallbackId,
+      name: 'Untitled Project',
+      path: '.',
+      workspaces: [{
+        id: uuid(),
+        name: 'Workspace 1',
+        root: { type: 'terminal', id: terminalId, title: 'Terminal 1' },
+        activeTerminalId: terminalId
+      }],
+      activeWorkspaceId: null
+    };
   });
+
+  const migratedProjects: Project[] = normalized.map(p => ({
+    id: p.id,
+    name: p.name,
+    path: p.path
+  }));
+
+  const migratedWorkspaces: Workspace[] = normalized.flatMap(p =>
+    p.workspaces.map(w => toWorkspaceV2(p.id, w))
+  );
+
+  const activeWorkspaceId = normalized.find(p => p.activeWorkspaceId)?.activeWorkspaceId || migratedWorkspaces[0]?.id || null;
+
+  return {
+    projects: migratedProjects,
+    workspaces: migratedWorkspaces,
+    activeWorkspaceId
+  };
+}
+
+export function collectTerminalIds(node: PaneNode | null): string[] {
+  if (!node) return [];
+  if (node.type === 'terminal') {
+    return [node.id];
+  }
+  return node.children.flatMap(child => collectTerminalIds(child));
 }

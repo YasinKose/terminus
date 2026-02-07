@@ -8,11 +8,11 @@
   import { fade, fly } from 'svelte/transition';
   import { isSidebarOpen, isTaskBoardOpen, isCommandPaletteOpen, isZenMode, isSnippetModalOpen, pendingSnippet } from './lib/stores/uiStore';
   import { projectStore } from './lib/stores/projectStore';
-  import { FolderPlus } from 'lucide-svelte';
+  import { FolderPlus, Terminal } from 'lucide-svelte';
   import { calculatePaneRects, findAdjacentPane } from './lib/utils/layoutUtils';
   import { invoke } from '@tauri-apps/api/core';
 
-  const { activeProjectId } = projectStore;
+  const { activeProjectId, activeWorkspaceId, workspaces } = projectStore;
 
   // Handle pending snippet execution
   $: if ($pendingSnippet && activeProject) {
@@ -29,29 +29,35 @@
     if (workspaceId === 'new') {
       targetWorkspaceId = projectStore.createWorkspace(activeProject.id);
     } else {
-      // Switch to target workspace
-      projectStore.setActiveWorkspace(activeProject.id, targetWorkspaceId);
+      const targetWorkspace = $workspaces.find(w => w.id === workspaceId);
+      if (!targetWorkspace) return;
+      projectStore.setActiveWorkspace(targetWorkspace.projectId, workspaceId);
     }
 
     // Wait a bit for workspace to be ready
-    await new Promise(resolve => setTimeout(resolve, 200));
+    await new Promise(resolve => setTimeout(resolve, 100));
 
-    // Get the active terminal ID of the target workspace
-    const project = $projectStore.find(p => p.id === activeProject.id);
-    const workspace = project?.workspaces.find(w => w.id === targetWorkspaceId);
-    const terminalId = workspace?.activeTerminalId;
+    const terminalId = projectStore.ensureWorkspaceTerminal(targetWorkspaceId);
 
     if (terminalId) {
-      // Send command to terminal (with newline to execute)
       await invoke('write_to_pty', { id: terminalId, data: command + '\n' });
     }
+  }
+
+  function createTerminalInActiveWorkspace() {
+    if (!activeWorkspace) return;
+    createTerminalInWorkspace(activeWorkspace.id);
+  }
+
+  function createTerminalInWorkspace(workspaceId: string) {
+    projectStore.ensureWorkspaceTerminal(workspaceId);
   }
 
   // Workspace container element reference for rect calculations
   let workspaceContainerEl: HTMLDivElement;
 
   function navigateToPane(direction: 'left' | 'right' | 'up' | 'down') {
-    if (!activeProject || !activeWorkspace || !activeWorkspace.activeTerminalId) return;
+    if (!activeProject || !activeWorkspace || !activeWorkspace.activeTerminalId || !activeWorkspace.root) return;
     if (!workspaceContainerEl) return;
 
     const containerRect = workspaceContainerEl.getBoundingClientRect();
@@ -146,8 +152,12 @@
     }
   }
 
-  $: activeProject = $projectStore.find(p => p.id === $activeProjectId);
-  $: activeWorkspace = activeProject?.workspaces.find(w => w.id === activeProject?.activeWorkspaceId);
+  $: activeWorkspace = $workspaces.find(w => w.id === $activeWorkspaceId) || null;
+  $: activeProject = (() => {
+    const byActiveProject = $projectStore.find(p => p.id === $activeProjectId) || null;
+    if (!activeWorkspace) return byActiveProject;
+    return $projectStore.find(p => p.id === activeWorkspace.projectId) || byActiveProject;
+  })();
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
@@ -158,13 +168,22 @@
     class="fixed inset-0 z-50 bg-zinc-950"
     transition:fade={{ duration: 150 }}
   >
-    <SplitPaneContainer
-      node={activeWorkspace.root}
-      projectId={activeProject.id}
-      workspaceId={activeWorkspace.id}
-      projectPath={activeProject.path}
-    />
-    <!-- Zen mode indicator -->
+    {#if activeWorkspace.root}
+      <SplitPaneContainer
+        node={activeWorkspace.root}
+        projectId={activeProject.id}
+        workspaceId={activeWorkspace.id}
+        projectPath={activeProject.path}
+        visible={true}
+      />
+    {:else}
+      <div class="h-full flex items-center justify-center text-zinc-400">
+        <button class="empty-action" onclick={createTerminalInActiveWorkspace}>
+          <Terminal class="w-4 h-4" />
+          <span>Create Terminal</span>
+        </button>
+      </div>
+    {/if}
     <div class="absolute top-2 right-2 px-2 py-1 text-xs text-zinc-500 bg-zinc-900/50 rounded opacity-0 hover:opacity-100 transition-opacity">
       Zen Mode (Esc to exit)
     </div>
@@ -183,22 +202,45 @@
 
     <main class="flex-1 relative bg-zinc-950/50 flex flex-col overflow-hidden min-w-0">
       {#if activeProject}
-        <WorkspaceTabs project={activeProject} />
+        <WorkspaceTabs
+          projects={$projectStore}
+          workspaces={$workspaces}
+          activeProjectId={$activeProjectId}
+          activeWorkspaceId={$activeWorkspaceId}
+        />
 
         <div class="flex-1 relative overflow-hidden" bind:this={workspaceContainerEl}>
-          {#each activeProject.workspaces as workspace (workspace.id)}
-            <div
-              class="absolute inset-0 h-full w-full"
-              class:hidden={workspace.id !== activeProject.activeWorkspaceId}
-              style:display={workspace.id === activeProject.activeWorkspaceId ? 'block' : 'none'}
-            >
-              <SplitPaneContainer
-                node={workspace.root}
-                projectId={activeProject.id}
-                workspaceId={workspace.id}
-                projectPath={activeProject.path}
-              />
-            </div>
+          {#each $workspaces as workspace (workspace.id)}
+            {@const workspaceProject = $projectStore.find(p => p.id === workspace.projectId)}
+            {#if workspaceProject}
+              {@const isWorkspaceActive = workspace.id === $activeWorkspaceId}
+              <div
+                class="absolute inset-0 h-full w-full"
+                class:hidden={!isWorkspaceActive}
+                style:display={isWorkspaceActive ? 'block' : 'none'}
+              >
+                {#if workspace.root}
+                  <SplitPaneContainer
+                    node={workspace.root}
+                    projectId={workspace.projectId}
+                    workspaceId={workspace.id}
+                    projectPath={workspaceProject.path}
+                    visible={isWorkspaceActive}
+                  />
+                {:else}
+                  <div class="absolute inset-0 h-full w-full flex items-center justify-center">
+                    <div class="empty-workspace-card">
+                      <Terminal class="w-8 h-8 text-zinc-500" />
+                      <p class="text-sm text-zinc-300">No terminal in this workspace</p>
+                      <button class="empty-action" onclick={() => createTerminalInWorkspace(workspace.id)}>
+                        <Terminal class="w-4 h-4" />
+                        <span>Create Terminal</span>
+                      </button>
+                    </div>
+                  </div>
+                {/if}
+              </div>
+            {/if}
           {/each}
         </div>
       {:else}
@@ -232,3 +274,34 @@
     </main>
   </div>
 </div>
+
+<style>
+  .empty-workspace-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.5rem;
+    border: 1px solid #27272a;
+    border-radius: 0.75rem;
+    background: rgba(24, 24, 27, 0.6);
+  }
+
+  .empty-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid #3f3f46;
+    background: #18181b;
+    color: #e4e4e7;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+  }
+
+  .empty-action:hover {
+    border-color: #71717a;
+  }
+</style>

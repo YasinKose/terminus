@@ -9,6 +9,17 @@
     resetAppearanceSettings,
     resolveAppearance
   } from '../stores/appearanceStore';
+  import {
+    shortcutDefinitions,
+    shortcutSettings,
+    formatShortcut,
+    updateShortcut,
+    resetShortcuts,
+    shortcutFromKeyboardEvent,
+    type ShortcutId
+  } from '../stores/shortcutStore';
+
+  let recordingShortcutId: ShortcutId | null = null;
 
   function closeModal() {
     isAppearanceSettingsOpen.set(false);
@@ -22,7 +33,34 @@
     updateAppearanceSettings({ paneBorderRadius: Number(value) });
   }
 
+  function startShortcutRecording(shortcutId: ShortcutId) {
+    recordingShortcutId = shortcutId;
+  }
+
+  function getShortcutLabel(shortcutId: ShortcutId): string {
+    return formatShortcut($shortcutSettings[shortcutId]);
+  }
+
   function handleKeydown(event: KeyboardEvent) {
+    if (recordingShortcutId) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (event.key === 'Escape') {
+        recordingShortcutId = null;
+        return;
+      }
+
+      const binding = shortcutFromKeyboardEvent(event);
+      if (!binding) {
+        return;
+      }
+
+      updateShortcut(recordingShortcutId, binding);
+      recordingShortcutId = null;
+      return;
+    }
+
     if (event.key === 'Escape') {
       closeModal();
     }
@@ -32,6 +70,12 @@
     if (event.target === event.currentTarget) {
       closeModal();
     }
+  }
+
+  function resetAllSettings() {
+    resetAppearanceSettings();
+    resetShortcuts();
+    recordingShortcutId = null;
   }
 </script>
 
@@ -137,8 +181,43 @@
         </label>
       </section>
 
+      <section class="section">
+        <div class="shortcut-header">
+          <div>
+            <h3>Keyboard Shortcuts</h3>
+            <p class="section-description">Set all workspace and terminal shortcuts from one place.</p>
+          </div>
+          <button class="secondary shortcut-reset-btn" on:click={resetShortcuts} type="button">
+            Reset Shortcuts
+          </button>
+        </div>
+        <p class="section-note">Click a shortcut and press the new key combination. Press <kbd>Esc</kbd> to cancel recording.</p>
+        <div class="shortcut-list">
+          {#each shortcutDefinitions as shortcut}
+            <div class="shortcut-row">
+              <div class="shortcut-copy">
+                <p class="shortcut-label">{shortcut.label}</p>
+                <p class="shortcut-description">{shortcut.description}</p>
+              </div>
+              <button
+                type="button"
+                class="shortcut-pill"
+                class:recording={recordingShortcutId === shortcut.id}
+                on:click={() => startShortcutRecording(shortcut.id)}
+              >
+                {#if recordingShortcutId === shortcut.id}
+                  Press keys...
+                {:else}
+                  {getShortcutLabel(shortcut.id)}
+                {/if}
+              </button>
+            </div>
+          {/each}
+        </div>
+      </section>
+
       <div class="modal-actions">
-        <button class="secondary" on:click={resetAppearanceSettings} type="button">Reset to defaults</button>
+        <button class="secondary" on:click={resetAllSettings} type="button">Reset All</button>
         <button class="primary" on:click={closeModal} type="button">Done</button>
       </div>
     </div>
@@ -159,7 +238,7 @@
   }
 
   .modal {
-    width: min(760px, 100%);
+    width: min(860px, 100%);
     max-height: min(720px, 100%);
     overflow: auto;
     border: 1px solid var(--panel-border, #3f3f46);
@@ -382,5 +461,97 @@
   .modal-actions .primary:hover {
     background: var(--ui-accent-strong, #1d4ed8);
     border-color: var(--ui-accent-strong, #1d4ed8);
+  }
+
+  .shortcut-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 2px;
+  }
+
+  .shortcut-reset-btn {
+    white-space: nowrap;
+    padding: 6px 10px;
+    font-size: 11px;
+    border: 1px solid var(--panel-border, #3f3f46);
+    border-radius: 8px;
+    background: var(--panel-bg-elevated, #18181b);
+    color: var(--text-primary, #d4d4d8);
+    cursor: pointer;
+  }
+
+  .shortcut-reset-btn:hover {
+    border-color: var(--panel-border-strong, #71717a);
+  }
+
+  .shortcut-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .shortcut-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 10px;
+    border: 1px solid var(--panel-border, #3f3f46);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--panel-bg-elevated, #18181b) 94%, #000 6%);
+  }
+
+  .shortcut-copy {
+    min-width: 0;
+  }
+
+  .shortcut-label {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary, #f4f4f5);
+  }
+
+  .shortcut-description {
+    margin: 2px 0 0;
+    font-size: 11px;
+    color: var(--text-muted, #71717a);
+  }
+
+  .shortcut-pill {
+    border: 1px solid var(--panel-border-strong, #52525b);
+    background: var(--panel-bg, #111115);
+    color: var(--text-primary, #f4f4f5);
+    min-width: 132px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 11px;
+    cursor: pointer;
+    text-align: center;
+  }
+
+  .shortcut-pill:hover {
+    border-color: var(--ui-accent, #6366f1);
+  }
+
+  .shortcut-pill.recording {
+    border-color: var(--ui-accent, #6366f1);
+    color: var(--ui-accent, #6366f1);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--ui-accent, #6366f1) 36%, transparent);
+  }
+
+  kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--panel-border, #3f3f46);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-size: 10px;
+    background: var(--panel-bg-elevated, #18181b);
+    color: var(--text-secondary, #a1a1aa);
   }
 </style>

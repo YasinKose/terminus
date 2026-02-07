@@ -547,6 +547,26 @@ function createProjectStore() {
       });
     },
 
+    reorderWorkspace: (workspaceId: string, targetWorkspaceId: string) => {
+      if (workspaceId === targetWorkspaceId) return;
+
+      const projects = get(projectsStore);
+      const workspaces = get(workspacesStore);
+      const next = [...workspaces];
+      const fromIndex = next.findIndex(workspace => workspace.id === workspaceId);
+      const toIndex = next.findIndex(workspace => workspace.id === targetWorkspaceId);
+
+      if (fromIndex < 0 || toIndex < 0) {
+        return;
+      }
+
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+
+      workspacesStore.set(next);
+      saveState(projects, next);
+    },
+
     reorderWorkspaces: (projectId: string, fromIndex: number, toIndex: number) => {
       const projects = get(projectsStore);
       const workspaces = get(workspacesStore);
@@ -556,11 +576,23 @@ function createProjectStore() {
         return;
       }
 
-      const [moved] = scoped.splice(fromIndex, 1);
-      scoped.splice(toIndex, 0, moved);
+      const fromWorkspaceId = scoped[fromIndex]?.id;
+      const toWorkspaceId = scoped[toIndex]?.id;
 
-      const remainder = workspaces.filter(workspace => workspace.projectId !== projectId);
-      const next = [...remainder, ...scoped];
+      if (!fromWorkspaceId || !toWorkspaceId) {
+        return;
+      }
+
+      const next = [...workspaces];
+      const sourceGlobalIndex = next.findIndex(workspace => workspace.id === fromWorkspaceId);
+      const targetGlobalIndex = next.findIndex(workspace => workspace.id === toWorkspaceId);
+
+      if (sourceGlobalIndex < 0 || targetGlobalIndex < 0) {
+        return;
+      }
+
+      const [moved] = next.splice(sourceGlobalIndex, 1);
+      next.splice(targetGlobalIndex, 0, moved);
 
       workspacesStore.set(next);
       saveState(projects, next);

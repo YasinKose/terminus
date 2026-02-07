@@ -15,7 +15,7 @@
   let scopeFilter: 'all' | 'global' | 'project' = 'all';
   let showFavoritesOnly: boolean = false;
   let showForm: boolean = false;
-  let editingSnippet: Snippet | null = null;
+  let editingSnippet: Snippet | undefined = undefined;
   let expandedCategories: Set<string> = new Set();
   let hoveredSnippet: string | null = null;
 
@@ -86,7 +86,7 @@
   }
 
   function handleAddSnippet() {
-    editingSnippet = null;
+    editingSnippet = undefined;
     showForm = true;
   }
 
@@ -98,7 +98,7 @@
 
   function handleCloseForm() {
     showForm = false;
-    editingSnippet = null;
+    editingSnippet = undefined;
   }
 
   function handleDeleteSnippet(snippetId: string, e: MouseEvent) {
@@ -305,7 +305,7 @@
       if (editingSnippet) {
         snippetStore.updateSnippet(editingSnippet.id, snippetData);
       } else {
-        snippetStore.addSnippet(snippetData);
+        snippetStore.addSnippet(snippetData as Omit<Snippet, 'id' | 'createdAt' | 'updatedAt'>);
       }
       handleCloseForm();
     }}
@@ -322,7 +322,8 @@
 
   .filters {
     padding: 8px 12px;
-    border-bottom: 1px solid #27272a;
+    border-bottom: 1px solid var(--panel-border, #27272a);
+    background-color: color-mix(in srgb, var(--panel-bg, #18181b) 94%, #000 6%);
   }
 
   .filter-row {
@@ -334,22 +335,22 @@
     padding: 6px 10px;
     font-size: 11px;
     font-weight: 500;
-    background-color: #18181b;
-    border: 1px solid #27272a;
+    background-color: var(--panel-bg, #18181b);
+    border: 1px solid var(--panel-border, #27272a);
     border-radius: 6px;
-    color: #71717a;
+    color: var(--text-secondary, #71717a);
     cursor: pointer;
     transition: all 0.15s ease;
   }
 
   .filter-btn:hover {
-    background-color: #27272a;
-    color: #a1a1aa;
+    background-color: var(--interactive-hover-bg, #27272a);
+    color: var(--text-primary, #a1a1aa);
   }
 
   .filter-btn.active {
-    background-color: #4f46e5;
-    border-color: #4f46e5;
+    background-color: var(--ui-accent, #4f46e5);
+    border-color: var(--ui-accent, #4f46e5);
     color: white;
   }
 
@@ -359,8 +360,8 @@
   }
 
   .favorite-btn.active {
-    background-color: #ca8a04;
-    border-color: #ca8a04;
+    background-color: color-mix(in srgb, #f59e0b 78%, var(--panel-bg, #18181b) 22%);
+    border-color: color-mix(in srgb, #f59e0b 72%, var(--panel-border, #27272a) 28%);
   }
 
   .favorite-btn :global(svg.filled) {
@@ -385,7 +386,7 @@
     align-items: center;
     justify-content: center;
     padding: 32px 16px;
-    color: #52525b;
+    color: var(--text-muted, #52525b);
     text-align: center;
   }
 
@@ -397,7 +398,7 @@
   .empty-state p {
     font-size: 13px;
     font-weight: 500;
-    color: #71717a;
+    color: var(--text-secondary, #71717a);
     margin: 0 0 4px;
   }
 
@@ -413,7 +414,7 @@
     padding: 8px 16px;
     font-size: 12px;
     font-weight: 500;
-    background-color: #4f46e5;
+    background-color: var(--ui-accent, #4f46e5);
     border: none;
     border-radius: 8px;
     color: white;
@@ -422,7 +423,7 @@
   }
 
   .add-first-btn:hover {
-    background-color: #4338ca;
+    background-color: var(--ui-accent-strong, #4338ca);
   }
 
   .category-section {
@@ -438,7 +439,7 @@
     background-color: transparent;
     border: none;
     border-radius: 8px;
-    color: #a1a1aa;
+    color: var(--text-primary, #a1a1aa);
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
@@ -446,7 +447,7 @@
   }
 
   .category-header:hover {
-    background-color: #27272a;
+    background-color: var(--interactive-hover-bg, #27272a);
   }
 
   .category-header.empty {
@@ -465,9 +466,9 @@
   .category-empty-label {
     font-size: 10px;
     padding: 2px 6px;
-    background-color: #27272a;
+    background-color: var(--interactive-hover-bg, #27272a);
     border-radius: 8px;
-    color: #52525b;
+    color: var(--text-muted, #52525b);
     font-style: italic;
   }
 
@@ -490,9 +491,9 @@
   .category-count {
     font-size: 10px;
     padding: 2px 6px;
-    background-color: #27272a;
+    background-color: var(--interactive-hover-bg, #27272a);
     border-radius: 8px;
-    color: #71717a;
+    color: var(--text-secondary, #71717a);
   }
 
   .chevron {
@@ -507,7 +508,7 @@
   .category-items {
     margin-left: 16px;
     padding-left: 10px;
-    border-left: 1px solid #27272a;
+    border-left: 1px solid var(--panel-border, #27272a);
     margin-top: 4px;
   }
 
@@ -522,7 +523,7 @@
   }
 
   .snippet-item:hover {
-    background-color: #27272a;
+    background-color: var(--interactive-hover-bg, #27272a);
   }
 
   .snippet-content {
@@ -538,7 +539,7 @@
   }
 
   .snippet-header .star-icon {
-    color: #71717a;
+    color: var(--text-secondary, #71717a);
     flex-shrink: 0;
   }
 
@@ -550,7 +551,7 @@
   .snippet-name {
     font-size: 12px;
     font-weight: 500;
-    color: #e4e4e7;
+    color: var(--text-primary, #e4e4e7);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -559,7 +560,7 @@
   .snippet-command {
     font-size: 10px;
     font-family: 'JetBrains Mono', 'SF Mono', Monaco, monospace;
-    color: #52525b;
+    color: var(--text-muted, #52525b);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -576,15 +577,15 @@
     padding: 4px;
     background: transparent;
     border: none;
-    color: #71717a;
+    color: var(--text-secondary, #71717a);
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.15s ease;
   }
 
   .action-btn:hover {
-    background-color: #3f3f46;
-    color: #a1a1aa;
+    background-color: var(--interactive-hover-bg, #3f3f46);
+    color: var(--text-primary, #a1a1aa);
   }
 
   .action-btn.play {
@@ -607,7 +608,8 @@
 
   .add-section {
     padding: 8px 12px;
-    border-top: 1px solid #27272a;
+    border-top: 1px solid var(--panel-border, #27272a);
+    background-color: color-mix(in srgb, var(--panel-bg, #18181b) 94%, #000 6%);
   }
 
   .add-snippet-btn {
@@ -619,17 +621,17 @@
     padding: 10px;
     font-size: 12px;
     font-weight: 500;
-    background-color: #18181b;
-    border: 1px dashed #3f3f46;
+    background-color: var(--panel-bg, #18181b);
+    border: 1px dashed var(--panel-border-strong, #3f3f46);
     border-radius: 8px;
-    color: #71717a;
+    color: var(--text-secondary, #71717a);
     cursor: pointer;
     transition: all 0.15s ease;
   }
 
   .add-snippet-btn:hover {
-    background-color: #27272a;
-    border-color: #52525b;
-    color: #a1a1aa;
+    background-color: var(--interactive-hover-bg, #27272a);
+    border-color: var(--text-muted, #52525b);
+    color: var(--text-primary, #a1a1aa);
   }
 </style>

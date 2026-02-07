@@ -240,21 +240,21 @@
     justify-content: center;
     gap: 8px;
     padding: 10px 16px;
-    background: linear-gradient(135deg, var(--ui-accent-strong, #4f46e5), var(--ui-accent, #6366f1));
+    background: var(--ui-accent, #6366f1);
     color: white;
-    border: none;
+    border: 1px solid color-mix(in srgb, var(--ui-accent, #6366f1) 72%, #111827 28%);
     border-radius: 8px;
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0 2px 8px color-mix(in srgb, var(--ui-accent, #6366f1) 38%, transparent);
+    box-shadow: 0 1px 6px color-mix(in srgb, var(--ui-accent, #6366f1) 28%, transparent);
   }
 
   .add-project-btn:hover {
-    background: linear-gradient(135deg, var(--ui-accent-strong, #4338ca), var(--ui-accent, #4f46e5));
-    box-shadow: 0 4px 12px color-mix(in srgb, var(--ui-accent, #6366f1) 42%, transparent);
-    transform: translateY(-1px);
+    background: var(--ui-accent-strong, #4f46e5);
+    border-color: color-mix(in srgb, var(--ui-accent-strong, #4f46e5) 78%, #0f172a 22%);
+    box-shadow: 0 2px 10px color-mix(in srgb, var(--ui-accent, #6366f1) 34%, transparent);
   }
 
   .search-container {
@@ -337,13 +337,10 @@
   }
 
   .tab-pill.active {
-    background: linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--ui-accent, #6366f1) 16%, var(--panel-bg, #27272a)),
-      color-mix(in srgb, var(--ui-accent, #6366f1) 28%, var(--panel-bg-elevated, #3f3f46))
-    );
+    background: color-mix(in srgb, var(--ui-accent, #6366f1) 20%, var(--panel-bg-elevated, #3f3f46));
+    border: 1px solid color-mix(in srgb, var(--ui-accent, #6366f1) 48%, var(--panel-border, #52525b));
     color: var(--text-primary, #fafafa);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.24);
   }
 
   .tab-pill :global(svg) {

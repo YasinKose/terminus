@@ -18,6 +18,7 @@
   } from './lib/stores/uiStore';
   import { projectStore } from './lib/stores/projectStore';
   import { appearanceSettings, resolveAppearance } from './lib/stores/appearanceStore';
+  import { shortcutSettings, matchesShortcut, formatShortcut } from './lib/stores/shortcutStore';
   import { FolderPlus, Terminal } from 'lucide-svelte';
   import { calculatePaneRects, findAdjacentPane } from './lib/utils/layoutUtils';
   import { invoke } from '@tauri-apps/api/core';
@@ -84,84 +85,115 @@
     }
   }
 
+  function isEditableTarget(target: EventTarget | null): boolean {
+    if (!(target instanceof HTMLElement)) return false;
+    if (target.isContentEditable) return true;
+    return ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
+  }
+
+  function isTerminalInputTarget(target: EventTarget | null): boolean {
+    if (!(target instanceof HTMLElement)) return false;
+    return target.classList.contains('xterm-helper-textarea') || Boolean(target.closest('.xterm'));
+  }
+
   function handleKeydown(e: KeyboardEvent) {
-    // Escape to exit zen mode
-    if (e.key === 'Escape' && $isZenMode) {
+    if ($isZenMode && matchesShortcut(e, $shortcutSettings.exitZen)) {
       e.preventDefault();
       isZenMode.set(false);
       return;
     }
 
-    // Cmd+Shift+Z for Zen Mode toggle
-    if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'z') {
+    if (isEditableTarget(e.target) && !isTerminalInputTarget(e.target)) {
+      return;
+    }
+
+    if (matchesShortcut(e, $shortcutSettings.toggleZen)) {
       e.preventDefault();
       isZenMode.update(v => !v);
       return;
     }
 
-    // Cmd+Option+Arrow for panel navigation (macOS: metaKey + altKey)
-    if (e.metaKey && e.altKey && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+    if (matchesShortcut(e, $shortcutSettings.navigateLeft)) {
       e.preventDefault();
-      const directionMap: Record<string, 'left' | 'right' | 'up' | 'down'> = {
-        'ArrowLeft': 'left',
-        'ArrowRight': 'right',
-        'ArrowUp': 'up',
-        'ArrowDown': 'down'
-      };
-      navigateToPane(directionMap[e.key]);
+      navigateToPane('left');
       return;
     }
 
-    // Cmd+K or Ctrl+K for Command Palette
-    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+    if (matchesShortcut(e, $shortcutSettings.navigateRight)) {
+      e.preventDefault();
+      navigateToPane('right');
+      return;
+    }
+
+    if (matchesShortcut(e, $shortcutSettings.navigateUp)) {
+      e.preventDefault();
+      navigateToPane('up');
+      return;
+    }
+
+    if (matchesShortcut(e, $shortcutSettings.navigateDown)) {
+      e.preventDefault();
+      navigateToPane('down');
+      return;
+    }
+
+    if (matchesShortcut(e, $shortcutSettings.toggleCommandPalette)) {
       e.preventDefault();
       isCommandPaletteOpen.update(v => !v);
+      return;
     }
-    // Cmd+, or Ctrl+, for appearance settings
-    if ((e.metaKey || e.ctrlKey) && e.key === ',') {
+
+    if (matchesShortcut(e, $shortcutSettings.openAppearanceSettings)) {
       e.preventDefault();
       isAppearanceSettingsOpen.set(true);
+      return;
     }
-    // Cmd+B for Sidebar
-    if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
+
+    if (matchesShortcut(e, $shortcutSettings.toggleSidebar)) {
       e.preventDefault();
       isSidebarOpen.update(v => !v);
+      return;
     }
-    // Cmd+J for Tasks
-    if ((e.metaKey || e.ctrlKey) && e.key === 'j') {
+
+    if (matchesShortcut(e, $shortcutSettings.toggleTaskBoard)) {
       e.preventDefault();
       isTaskBoardOpen.update(v => !v);
+      return;
     }
-    // Cmd+T for new workspace
-    if ((e.metaKey || e.ctrlKey) && e.key === 't') {
+
+    if (matchesShortcut(e, $shortcutSettings.newWorkspace)) {
       e.preventDefault();
       if (activeProject) {
         projectStore.createWorkspace(activeProject.id);
       }
+      return;
     }
-    // Cmd+D for horizontal split
-    if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key === 'd') {
+
+    if (matchesShortcut(e, $shortcutSettings.splitHorizontal)) {
       e.preventDefault();
       if (activeProject && activeWorkspace && activeWorkspace.activeTerminalId) {
         projectStore.splitPane(activeProject.id, activeWorkspace.id, activeWorkspace.activeTerminalId, 'horizontal');
       }
+      return;
     }
-    // Cmd+Shift+D for vertical split
-    if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'd') {
+
+    if (matchesShortcut(e, $shortcutSettings.splitVertical)) {
       e.preventDefault();
       if (activeProject && activeWorkspace && activeWorkspace.activeTerminalId) {
         projectStore.splitPane(activeProject.id, activeWorkspace.id, activeWorkspace.activeTerminalId, 'vertical');
       }
+      return;
     }
-    // Cmd+W for close pane
-    if ((e.metaKey || e.ctrlKey) && e.key === 'w') {
+
+    if (matchesShortcut(e, $shortcutSettings.closePane)) {
       e.preventDefault();
       if (activeProject && activeWorkspace && activeWorkspace.activeTerminalId) {
         projectStore.closePane(activeProject.id, activeWorkspace.id, activeWorkspace.activeTerminalId);
       }
+      return;
     }
-    // Cmd+Shift+S for Run Snippet modal
-    if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 's') {
+
+    if (matchesShortcut(e, $shortcutSettings.runSnippetModal)) {
       e.preventDefault();
       isSnippetModalOpen.update(v => !v);
     }
@@ -178,6 +210,7 @@
   $: activePaneBorderColor = $appearanceSettings.highlightActivePane
     ? resolvedAppearance.effectiveActiveBorderColor
     : resolvedAppearance.paneBorderColor;
+  $: exitZenShortcutLabel = formatShortcut($shortcutSettings.exitZen);
   $: appearanceCssVars = `
     --app-shell-bg: ${resolvedAppearance.appShellBackground};
     --app-shell-border: ${resolvedAppearance.appShellBorder};
@@ -206,6 +239,7 @@
     --terminal-toolbar-btn-border: color-mix(in srgb, ${resolvedAppearance.toolbarBorderColor} 70%, #52525b 30%);
     --terminal-toolbar-btn-hover-border: color-mix(in srgb, ${resolvedAppearance.uiAccent} 35%, ${resolvedAppearance.toolbarBorderColor});
     --terminal-toolbar-btn-size: 24px;
+    --workspace-canvas-gap: 6px;
     --workspace-tone-bg: color-mix(in srgb, ${activeProjectColor} 10%, ${resolvedAppearance.surfaceBackground});
     --workspace-tone-bg-elevated: color-mix(in srgb, ${activeProjectColor} 16%, ${resolvedAppearance.surfaceBackground});
     --workspace-tone-border: color-mix(in srgb, ${activeProjectColor} 50%, ${resolvedAppearance.surfaceBorder});
@@ -220,7 +254,7 @@
   `;
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window on:keydown|capture={handleKeydown} />
 
 <!-- Zen Mode: Full screen overlay for active terminal -->
 {#if $isZenMode && activeProject && activeWorkspace}
@@ -230,14 +264,16 @@
     transition:fade={{ duration: 150 }}
   >
     {#if activeWorkspace.root}
-      <SplitPaneContainer
-        node={activeWorkspace.root}
-        projectId={activeProject.id}
-        workspaceId={activeWorkspace.id}
-        projectPath={activeProject.path}
-        activeTerminalId={activeWorkspace.activeTerminalId}
-        visible={true}
-      />
+      <div class="workspace-canvas">
+        <SplitPaneContainer
+          node={activeWorkspace.root}
+          projectId={activeProject.id}
+          workspaceId={activeWorkspace.id}
+          projectPath={activeProject.path}
+          activeTerminalId={activeWorkspace.activeTerminalId}
+          visible={true}
+        />
+      </div>
     {:else}
       <div class="h-full flex items-center justify-center text-zinc-400">
         <button class="empty-action" onclick={createTerminalInActiveWorkspace}>
@@ -247,7 +283,7 @@
       </div>
     {/if}
     <div class="absolute top-2 right-2 px-2 py-1 text-xs text-zinc-500 bg-zinc-900/50 rounded opacity-0 hover:opacity-100 transition-opacity">
-      Zen Mode (Esc to exit)
+      Zen Mode ({exitZenShortcutLabel} to exit)
     </div>
   </div>
 {/if}
@@ -281,7 +317,7 @@
             {#if workspaceProject}
               {@const isWorkspaceActive = workspace.id === $activeWorkspaceId}
               <div
-                class="absolute inset-0 h-full w-full"
+                class="absolute inset-0 h-full w-full workspace-layer"
                 class:hidden={!isWorkspaceActive}
                 style="
                   --project-accent: {workspaceProject.color};
@@ -293,14 +329,16 @@
                 style:display={isWorkspaceActive ? 'block' : 'none'}
               >
                 {#if workspace.root}
-                  <SplitPaneContainer
-                    node={workspace.root}
-                    projectId={workspace.projectId}
-                    workspaceId={workspace.id}
-                    projectPath={workspaceProject.path}
-                    activeTerminalId={workspace.activeTerminalId}
-                    visible={isWorkspaceActive}
-                  />
+                  <div class="workspace-canvas">
+                    <SplitPaneContainer
+                      node={workspace.root}
+                      projectId={workspace.projectId}
+                      workspaceId={workspace.id}
+                      projectPath={workspaceProject.path}
+                      activeTerminalId={workspace.activeTerminalId}
+                      visible={isWorkspaceActive}
+                    />
+                  </div>
                 {:else}
                   <div class="absolute inset-0 h-full w-full flex items-center justify-center">
                     <div class="empty-workspace-card">
@@ -352,6 +390,17 @@
 </div>
 
 <style>
+  .workspace-layer {
+    box-sizing: border-box;
+  }
+
+  .workspace-canvas {
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    padding: var(--workspace-canvas-gap, 6px);
+  }
+
   .empty-workspace-card {
     display: flex;
     flex-direction: column;

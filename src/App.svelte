@@ -5,9 +5,19 @@
   import SplitPaneContainer from './lib/components/SplitPaneContainer.svelte';
   import KanbanBoard from './lib/components/KanbanBoard.svelte';
   import CommandPalette from './lib/components/CommandPalette.svelte';
+  import AppearanceSettingsModal from './lib/components/AppearanceSettingsModal.svelte';
   import { fade, fly } from 'svelte/transition';
-  import { isSidebarOpen, isTaskBoardOpen, isCommandPaletteOpen, isZenMode, isSnippetModalOpen, pendingSnippet } from './lib/stores/uiStore';
+  import {
+    isSidebarOpen,
+    isTaskBoardOpen,
+    isCommandPaletteOpen,
+    isZenMode,
+    isSnippetModalOpen,
+    pendingSnippet,
+    isAppearanceSettingsOpen
+  } from './lib/stores/uiStore';
   import { projectStore } from './lib/stores/projectStore';
+  import { appearanceSettings, resolveAppearance } from './lib/stores/appearanceStore';
   import { FolderPlus, Terminal } from 'lucide-svelte';
   import { calculatePaneRects, findAdjacentPane } from './lib/utils/layoutUtils';
   import { invoke } from '@tauri-apps/api/core';
@@ -107,6 +117,11 @@
       e.preventDefault();
       isCommandPaletteOpen.update(v => !v);
     }
+    // Cmd+, or Ctrl+, for appearance settings
+    if ((e.metaKey || e.ctrlKey) && e.key === ',') {
+      e.preventDefault();
+      isAppearanceSettingsOpen.set(true);
+    }
     // Cmd+B for Sidebar
     if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
       e.preventDefault();
@@ -158,6 +173,34 @@
     if (!activeWorkspace) return byActiveProject;
     return $projectStore.find(p => p.id === activeWorkspace.projectId) || byActiveProject;
   })();
+  $: resolvedAppearance = resolveAppearance($appearanceSettings);
+  $: activeProjectColor = activeProject?.color || resolvedAppearance.uiAccent;
+  $: activePaneBorderColor = $appearanceSettings.highlightActivePane
+    ? 'var(--project-accent)'
+    : resolvedAppearance.paneBorderColor;
+  $: appearanceCssVars = `
+    --app-shell-bg: ${resolvedAppearance.appShellBackground};
+    --app-shell-border: ${resolvedAppearance.appShellBorder};
+    --titlebar-bg: ${resolvedAppearance.titleBarBackground};
+    --titlebar-border: ${resolvedAppearance.titleBarBorder};
+    --titlebar-text: ${resolvedAppearance.titleBarText};
+    --sidebar-bg: ${resolvedAppearance.sidebarBackground};
+    --sidebar-border: ${resolvedAppearance.sidebarBorder};
+    --workspace-tabs-bg: ${resolvedAppearance.workspaceTabsBackground};
+    --workspace-tabs-border: ${resolvedAppearance.workspaceTabsBorder};
+    --surface-bg: ${resolvedAppearance.surfaceBackground};
+    --surface-border: ${resolvedAppearance.surfaceBorder};
+    --ui-accent: ${resolvedAppearance.uiAccent};
+    --ui-accent-strong: ${resolvedAppearance.uiAccentStrong};
+    --project-accent: ${activeProjectColor};
+    --terminal-pane-bg: ${resolvedAppearance.paneBackground};
+    --terminal-pane-border-color: ${resolvedAppearance.paneBorderColor};
+    --terminal-pane-active-border-color: ${activePaneBorderColor};
+    --terminal-pane-border-width: ${resolvedAppearance.paneBorderWidth}px;
+    --terminal-pane-border-radius: ${resolvedAppearance.paneBorderRadius}px;
+    --terminal-toolbar-bg: ${resolvedAppearance.toolbarBackground};
+    --terminal-toolbar-border-color: ${resolvedAppearance.toolbarBorderColor};
+  `;
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
@@ -165,7 +208,8 @@
 <!-- Zen Mode: Full screen overlay for active terminal -->
 {#if $isZenMode && activeProject && activeWorkspace}
   <div
-    class="fixed inset-0 z-50 bg-zinc-950"
+    class="fixed inset-0 z-50"
+    style="background-color: var(--app-shell-bg, #09090b);"
     transition:fade={{ duration: 150 }}
   >
     {#if activeWorkspace.root}
@@ -174,6 +218,7 @@
         projectId={activeProject.id}
         workspaceId={activeWorkspace.id}
         projectPath={activeProject.path}
+        activeTerminalId={activeWorkspace.activeTerminalId}
         visible={true}
       />
     {:else}
@@ -190,7 +235,11 @@
   </div>
 {/if}
 
-<div class="flex flex-col h-screen w-screen overflow-hidden bg-zinc-950/90 rounded-lg border border-zinc-800/50 shadow-xl" class:hidden={$isZenMode}>
+<div
+  class="flex flex-col h-screen w-screen overflow-hidden rounded-lg border shadow-xl"
+  class:hidden={$isZenMode}
+  style={appearanceCssVars + 'background-color: var(--app-shell-bg, #09090b); border-color: var(--app-shell-border, #27272a);'}
+>
   <TitleBar />
 
   <div class="flex flex-1 overflow-hidden relative">
@@ -200,7 +249,7 @@
       </div>
     {/if}
 
-    <main class="flex-1 relative bg-zinc-950/50 flex flex-col overflow-hidden min-w-0">
+    <main class="flex-1 relative flex flex-col overflow-hidden min-w-0" style="background-color: var(--surface-bg, #111115);">
       {#if activeProject}
         <WorkspaceTabs
           projects={$projectStore}
@@ -209,7 +258,7 @@
           activeWorkspaceId={$activeWorkspaceId}
         />
 
-        <div class="flex-1 relative overflow-hidden" bind:this={workspaceContainerEl}>
+        <div class="flex-1 relative overflow-hidden" bind:this={workspaceContainerEl} style="background-color: var(--surface-bg, #111115);">
           {#each $workspaces as workspace (workspace.id)}
             {@const workspaceProject = $projectStore.find(p => p.id === workspace.projectId)}
             {#if workspaceProject}
@@ -217,6 +266,7 @@
               <div
                 class="absolute inset-0 h-full w-full"
                 class:hidden={!isWorkspaceActive}
+                style="--project-accent: {workspaceProject.color};"
                 style:display={isWorkspaceActive ? 'block' : 'none'}
               >
                 {#if workspace.root}
@@ -225,6 +275,7 @@
                     projectId={workspace.projectId}
                     workspaceId={workspace.id}
                     projectPath={workspaceProject.path}
+                    activeTerminalId={workspace.activeTerminalId}
                     visible={isWorkspaceActive}
                   />
                 {:else}
@@ -245,7 +296,7 @@
         </div>
       {:else}
         <div class="flex-1 flex flex-col items-center justify-center text-zinc-500 gap-4">
-          <div class="p-4 rounded-full bg-zinc-900/50">
+          <div class="p-4 rounded-full" style="background-color: color-mix(in srgb, var(--surface-bg, #111115) 85%, #000 15%);">
             <FolderPlus class="w-12 h-12 opacity-50" />
           </div>
           <p class="text-sm">Select or open a project to begin</p>
@@ -254,7 +305,8 @@
 
       {#if $isTaskBoardOpen}
         <div
-          class="absolute inset-0 z-10 bg-zinc-950/80 backdrop-blur-sm"
+          class="absolute inset-0 z-10 backdrop-blur-sm"
+          style="background-color: color-mix(in srgb, var(--app-shell-bg, #09090b) 82%, #000 18%);"
           transition:fade={{duration: 200}}
           onclick={() => isTaskBoardOpen.set(false)}
           role="presentation"
@@ -271,6 +323,7 @@
       {/if}
 
       <CommandPalette />
+      <AppearanceSettingsModal />
     </main>
   </div>
 </div>
@@ -282,17 +335,17 @@
     align-items: center;
     gap: 0.75rem;
     padding: 1.5rem;
-    border: 1px solid #27272a;
+    border: 1px solid var(--surface-border, #27272a);
     border-radius: 0.75rem;
-    background: rgba(24, 24, 27, 0.6);
+    background: color-mix(in srgb, var(--surface-bg, #111115) 88%, #000 12%);
   }
 
   .empty-action {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    border: 1px solid #3f3f46;
-    background: #18181b;
+    border: 1px solid var(--surface-border, #3f3f46);
+    background: var(--surface-bg, #18181b);
     color: #e4e4e7;
     padding: 0.5rem 0.75rem;
     border-radius: 0.5rem;
@@ -302,6 +355,6 @@
   }
 
   .empty-action:hover {
-    border-color: #71717a;
+    border-color: var(--project-accent, #71717a);
   }
 </style>

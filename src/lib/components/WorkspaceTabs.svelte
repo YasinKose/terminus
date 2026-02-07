@@ -1,6 +1,8 @@
 <script lang="ts">
+  import { Plus, Settings2, X } from 'lucide-svelte';
   import type { Project, Workspace } from '../stores/projectStore';
   import { projectStore } from '../stores/projectStore';
+  import { isAppearanceSettingsOpen } from '../stores/uiStore';
 
   export let projects: Project[] = [];
   export let workspaces: Workspace[] = [];
@@ -17,6 +19,10 @@
     return projects.find(project => project.id === projectId)?.name || 'Unknown';
   }
 
+  function getProjectColor(projectId: string): string {
+    return projects.find(project => project.id === projectId)?.color || '#6366f1';
+  }
+
   function selectWorkspace(workspace: Workspace) {
     projectStore.setActiveWorkspace(workspace.projectId, workspace.id);
   }
@@ -24,6 +30,10 @@
   function addWorkspace() {
     if (!activeProjectId) return;
     projectStore.createWorkspace(activeProjectId);
+  }
+
+  function openAppearanceSettings() {
+    isAppearanceSettingsOpen.set(true);
   }
 
   function closeWorkspace(workspace: Workspace) {
@@ -116,6 +126,7 @@
         class:active={isActive}
         class:project-active={belongsToActiveProject}
         class:drag-over={dragOverWorkspaceId === workspace.id}
+        style="--workspace-project-color: {getProjectColor(workspace.projectId)};"
         on:click={() => selectWorkspace(workspace)}
         on:mousedown={(e) => e.button === 1 && handleMiddleClick(e, workspace)}
         on:contextmenu={(e) => handleContextMenu(e, workspace.id)}
@@ -149,17 +160,17 @@
           aria-label="Close workspace"
           title="Close workspace"
         >
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-            <path d="M9.5 3.5L8.5 2.5L6 5L3.5 2.5L2.5 3.5L5 6L2.5 8.5L3.5 9.5L6 7L8.5 9.5L9.5 8.5L7 6L9.5 3.5Z"/>
-          </svg>
+          <X size={12} />
         </button>
       </div>
     {/each}
 
     <button class="add-btn" on:click={addWorkspace} aria-label="New workspace" disabled={!activeProjectId}>
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-        <path d="M7 1V13M1 7H13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-      </svg>
+      <Plus size={14} />
+    </button>
+
+    <button class="settings-btn" on:click={openAppearanceSettings} aria-label="Open appearance settings" title="Appearance settings">
+      <Settings2 size={14} />
     </button>
   </div>
 </div>
@@ -186,8 +197,8 @@
 
 <style>
   .workspace-tabs {
-    background-color: #18181b;
-    border-bottom: 1px solid #27272a;
+    background-color: var(--workspace-tabs-bg, #18181b);
+    border-bottom: 1px solid var(--workspace-tabs-border, #27272a);
     padding: 0 8px;
   }
 
@@ -217,22 +228,22 @@
     max-width: 240px;
     transition: all 0.15s ease;
     border-radius: 6px 6px 0 0;
-    border-top: 2px solid transparent;
+    border-bottom: 2px solid transparent;
   }
 
   .tab:hover {
     color: #d4d4d8;
-    background-color: #27272a;
+    background-color: var(--surface-bg, #27272a);
   }
 
   .tab.project-active {
-    border-top-color: #6366f1;
+    border-bottom-color: var(--workspace-project-color, var(--project-accent, #6366f1));
   }
 
   .tab.active {
     color: #e4e4e7;
-    background-color: #27272a;
-    border-top-color: #a78bfa;
+    background-color: var(--surface-bg, #27272a);
+    border-bottom-color: var(--workspace-project-color, var(--project-accent, #a78bfa));
   }
 
   .tab.drag-over {
@@ -257,8 +268,8 @@
   .project-badge {
     font-size: 10px;
     color: #a1a1aa;
-    background: #09090b;
-    border: 1px solid #3f3f46;
+    background: color-mix(in srgb, var(--surface-bg, #09090b) 82%, #000 18%);
+    border: 1px solid color-mix(in srgb, var(--workspace-project-color, var(--project-accent, #6366f1)) 55%, #3f3f46);
     padding: 1px 6px;
     border-radius: 999px;
     max-width: 90px;
@@ -306,13 +317,31 @@
   }
 
   .add-btn:hover:enabled {
-    background: #27272a;
+    background: var(--surface-bg, #27272a);
     color: #e4e4e7;
   }
 
   .add-btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
+  }
+
+  .settings-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    color: #71717a;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  .settings-btn:hover {
+    background: var(--surface-bg, #27272a);
+    color: #e4e4e7;
   }
 
   .rename-input {

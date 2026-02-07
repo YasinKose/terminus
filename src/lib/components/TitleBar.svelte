@@ -16,8 +16,14 @@
     appWindow.minimize();
   }
 
-  function toggleMaximize() {
-    appWindow.toggleMaximize();
+  async function toggleMaximize() {
+    // On macOS, use native fullscreen when clicking green button
+    if (isMac) {
+      const isFullscreen = await appWindow.isFullscreen();
+      await appWindow.setFullscreen(!isFullscreen);
+    } else {
+      appWindow.toggleMaximize();
+    }
   }
 
   function close() {
@@ -25,7 +31,10 @@
   }
 </script>
 
-<div class="h-10 bg-zinc-900 relative w-full select-none z-50 border-b border-zinc-800 shrink-0">
+<div
+  class="h-10 relative w-full select-none z-50 border-b shrink-0"
+  style="background-color: var(--titlebar-bg, #18181b); border-color: var(--titlebar-border, #27272a);"
+>
   <!-- Drag Region (Covers entire bar) -->
   <div
     class="absolute inset-0 w-full h-full"
@@ -63,12 +72,12 @@
 
       <!-- Title (Centered) -->
       <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <span class="text-xs font-medium text-zinc-400">Terminus</span>
+        <span class="text-xs font-medium" style="color: var(--titlebar-text, #a1a1aa);">Terminus</span>
       </div>
     {:else}
       <!-- Windows Title (Left) -->
       <div class="flex items-center px-4 h-full pointer-events-none">
-        <span class="text-xs font-medium text-zinc-400">Terminus</span>
+        <span class="text-xs font-medium" style="color: var(--titlebar-text, #a1a1aa);">Terminus</span>
       </div>
 
       <!-- Windows Controls (Right) -->

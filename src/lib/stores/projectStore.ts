@@ -16,6 +16,19 @@ const ACTIVE_WORKSPACE_KEY_V2 = 'terminus_active_workspace_v2';
 const LEGACY_PROJECTS_KEY = 'terminus_projects';
 const LEGACY_ACTIVE_PROJECT_KEY = 'terminus_active_project';
 
+export const PROJECT_COLOR_PRESETS = [
+  '#6366f1',
+  '#22c55e',
+  '#0ea5e9',
+  '#f59e0b',
+  '#ef4444',
+  '#14b8a6',
+  '#8b5cf6',
+  '#ec4899',
+  '#84cc16',
+  '#f97316'
+];
+
 interface InitialState {
   projects: Project[];
   workspaces: Workspace[];
@@ -25,6 +38,21 @@ interface InitialState {
 
 function nowTs(): number {
   return Date.now();
+}
+
+function isHexColor(value: unknown): value is string {
+  return typeof value === 'string' && /^#([0-9a-fA-F]{6})$/.test(value);
+}
+
+function projectColorAt(index: number): string {
+  return PROJECT_COLOR_PRESETS[index % PROJECT_COLOR_PRESETS.length];
+}
+
+function normalizeProject(raw: Project, index: number): Project {
+  return {
+    ...raw,
+    color: isHexColor(raw.color) ? raw.color : projectColorAt(index)
+  };
 }
 
 function createTerminalLeaf(id?: string, title = 'Terminal 1'): TerminalLeaf {
@@ -68,7 +96,7 @@ function loadInitialState(): InitialState {
 
   if (savedProjectsV2 && savedWorkspacesV2) {
     try {
-      const projects = JSON.parse(savedProjectsV2) as Project[];
+      const projects = (JSON.parse(savedProjectsV2) as Project[]).map((project, index) => normalizeProject(project, index));
       const workspaces = (JSON.parse(savedWorkspacesV2) as Workspace[]).map(normalizeWorkspace);
       return {
         projects,
@@ -357,7 +385,8 @@ function createProjectStore() {
       const newProject: Project = {
         id: uuidv4(),
         name,
-        path
+        path,
+        color: projectColorAt(projects.length)
       };
 
       const newWorkspace = createWorkspace(newProject.id, 'Workspace 1');
@@ -417,6 +446,28 @@ function createProjectStore() {
       activeProjectId.set(id);
       const workspaceId = ensureWorkspaceForProject(id);
       activeWorkspaceId.set(workspaceId);
+    },
+
+    setProjectColor: (projectId: string, color: string) => {
+      if (!isHexColor(color)) return;
+
+      const projects = get(projectsStore);
+      const workspaces = get(workspacesStore);
+      let changed = false;
+
+      const nextProjects = projects.map(project => {
+        if (project.id !== projectId) return project;
+        changed = true;
+        return {
+          ...project,
+          color
+        };
+      });
+
+      if (!changed) return;
+
+      projectsStore.set(nextProjects);
+      saveState(nextProjects, workspaces);
     },
 
     // Workspace methods

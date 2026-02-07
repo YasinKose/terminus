@@ -29,6 +29,7 @@ export interface Project {
   id: string;
   name: string;
   path: string;
+  color: string;
 }
 
 // Legacy types for migration
@@ -43,12 +44,14 @@ export interface LegacyProject {
   path: string;
   tabs: LegacyTerminalTab[];
   activeTabId: string | null;
+  color?: string;
 }
 
 export interface ProjectV1 {
   id: string;
   name: string;
   path: string;
+  color?: string;
   workspaces: Array<{
     id: string;
     name: string;

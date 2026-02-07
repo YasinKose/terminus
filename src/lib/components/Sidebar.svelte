@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Kanban, Terminal as TerminalIcon, FolderPlus, MoreHorizontal, Trash2, Code2, FolderOpen, Search, Command, ChevronRight } from 'lucide-svelte';
   import { isTaskBoardOpen, pendingSnippet } from '../stores/uiStore';
-  import { projectStore } from '../stores/projectStore';
+  import { PROJECT_COLOR_PRESETS, projectStore } from '../stores/projectStore';
   import { snippetStore } from '../stores/snippetStore';
   import { open } from '@tauri-apps/plugin-dialog';
   import SnippetList from './SnippetList.svelte';
@@ -47,6 +47,11 @@
     showProjectMenu = null;
   }
 
+  function handleSetProjectColor(projectId: string, color: string, e: MouseEvent) {
+    e.stopPropagation();
+    projectStore.setProjectColor(projectId, color);
+  }
+
   function toggleProjectMenu(id: string, e: MouseEvent) {
     e.stopPropagation();
     showProjectMenu = showProjectMenu === id ? null : id;
@@ -77,7 +82,7 @@
 
 <svelte:window on:click={handleClickOutside} />
 
-<aside class="sidebar">
+<aside class="sidebar" style="--project-color: {activeProject?.color || '#6366f1'};">
   <!-- Header -->
   <div class="sidebar-header">
     <button onclick={handleAddProject} class="add-project-btn">
@@ -138,6 +143,7 @@
             {@const isActive = $activeProjectId === project.id}
             <div
               class="project-item {isActive ? 'active' : ''}"
+              style="--project-color: {project.color};"
               role="button"
               tabindex="0"
               onclick={() => projectStore.setActiveProject(project.id)}
@@ -160,6 +166,19 @@
 
               {#if showProjectMenu === project.id}
                 <div class="project-dropdown" onclick={(e) => e.stopPropagation()} role="menu" tabindex="-1">
+                  <div class="color-picker-row">
+                    <span>Project Color</span>
+                    <div class="color-swatches">
+                      {#each PROJECT_COLOR_PRESETS as color}
+                        <button
+                          class="color-swatch {project.color === color ? 'selected' : ''}"
+                          style="--swatch-color: {color};"
+                          onclick={(e) => handleSetProjectColor(project.id, color, e)}
+                          aria-label="Set project color {color}"
+                        ></button>
+                      {/each}
+                    </div>
+                  </div>
                   <button class="dropdown-item danger" onclick={() => handleDeleteProject(project.id)}>
                     <Trash2 size={14} />
                     <span>Remove Project</span>
@@ -202,16 +221,16 @@
 <style>
   .sidebar {
     width: 16rem;
-    background-color: rgba(24, 24, 27, 0.98);
+    background-color: var(--sidebar-bg, rgba(24, 24, 27, 0.98));
     height: 100%;
-    border-right: 1px solid #27272a;
+    border-right: 1px solid var(--sidebar-border, #27272a);
     display: flex;
     flex-direction: column;
   }
 
   .sidebar-header {
     padding: 12px;
-    border-bottom: 1px solid #27272a;
+    border-bottom: 1px solid var(--sidebar-border, #27272a);
   }
 
   .add-project-btn {
@@ -221,7 +240,7 @@
     justify-content: center;
     gap: 8px;
     padding: 10px 16px;
-    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    background: linear-gradient(135deg, var(--ui-accent-strong, #4f46e5), var(--ui-accent, #6366f1));
     color: white;
     border: none;
     border-radius: 8px;
@@ -229,12 +248,12 @@
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--ui-accent, #6366f1) 38%, transparent);
   }
 
   .add-project-btn:hover {
-    background: linear-gradient(135deg, #4338ca, #4f46e5);
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    background: linear-gradient(135deg, var(--ui-accent-strong, #4338ca), var(--ui-accent, #4f46e5));
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--ui-accent, #6366f1) 42%, transparent);
     transform: translateY(-1px);
   }
 
@@ -244,14 +263,14 @@
     gap: 8px;
     margin: 12px;
     padding: 8px 12px;
-    background-color: #0a0a0a;
-    border: 1px solid #27272a;
+    background-color: color-mix(in srgb, var(--sidebar-bg, #18181b) 72%, #000 28%);
+    border: 1px solid var(--sidebar-border, #27272a);
     border-radius: 8px;
     transition: border-color 0.15s ease;
   }
 
   .search-container:focus-within {
-    border-color: #4f46e5;
+    border-color: var(--ui-accent, #4f46e5);
   }
 
   .search-icon {
@@ -292,7 +311,7 @@
     display: flex;
     gap: 4px;
     padding: 4px;
-    background-color: #18181b;
+    background-color: color-mix(in srgb, var(--surface-bg, #18181b) 88%, #000 12%);
     border-radius: 10px;
   }
 
@@ -318,7 +337,11 @@
   }
 
   .tab-pill.active {
-    background: linear-gradient(135deg, #27272a, #3f3f46);
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--project-color, var(--project-accent, #6366f1)) 16%, #27272a),
+      color-mix(in srgb, var(--project-color, var(--project-accent, #6366f1)) 28%, #3f3f46)
+    );
     color: #fafafa;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   }
@@ -340,7 +363,7 @@
   }
 
   .tab-pill.active .tab-count {
-    background-color: #4f46e5;
+    background-color: var(--project-accent, #4f46e5);
     color: white;
   }
 
@@ -406,8 +429,8 @@
   }
 
   .project-item.active {
-    background-color: #1e1b4b;
-    border-color: #4f46e5;
+    background-color: color-mix(in srgb, var(--project-color, #6366f1) 20%, #16161b);
+    border-color: color-mix(in srgb, var(--project-color, #6366f1) 60%, #27272a);
   }
 
   .project-indicator {
@@ -420,8 +443,8 @@
   }
 
   .project-indicator.active {
-    background-color: #22c55e;
-    box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+    background-color: var(--project-color, #22c55e);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--project-color, #22c55e) 55%, transparent);
   }
 
   .project-info {
@@ -450,7 +473,7 @@
   }
 
   .project-icon.active {
-    color: #6366f1;
+    color: var(--project-color, var(--project-accent, #6366f1));
   }
 
   .project-path {
@@ -488,7 +511,7 @@
     right: 8px;
     margin-top: 4px;
     background-color: #1c1c1e;
-    border: 1px solid #38383a;
+    border: 1px solid var(--sidebar-border, #38383a);
     border-radius: 8px;
     padding: 4px;
     min-width: 150px;
@@ -520,6 +543,44 @@
     color: #f87171;
   }
 
+  .color-picker-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 10px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--sidebar-border, #38383a);
+  }
+
+  .color-picker-row span {
+    color: #a1a1aa;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .color-swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .color-swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--swatch-color) 45%, #1c1c1e);
+    background: var(--swatch-color);
+    padding: 0;
+    cursor: pointer;
+  }
+
+  .color-swatch.selected {
+    box-shadow:
+      0 0 0 1px #09090b,
+      0 0 0 2px var(--swatch-color);
+  }
+
   .empty-state {
     display: flex;
     flex-direction: column;
@@ -548,7 +609,7 @@
 
   .bottom-actions {
     padding: 8px 12px;
-    border-top: 1px solid #27272a;
+    border-top: 1px solid var(--sidebar-border, #27272a);
   }
 
   .bottom-action-btn {

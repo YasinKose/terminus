@@ -7,6 +7,27 @@ export interface MigratedState {
   activeWorkspaceId: string | null;
 }
 
+const PROJECT_COLOR_PRESETS = [
+  '#6366f1',
+  '#22c55e',
+  '#0ea5e9',
+  '#f59e0b',
+  '#ef4444',
+  '#14b8a6',
+  '#8b5cf6',
+  '#ec4899',
+  '#84cc16',
+  '#f97316'
+];
+
+function isHexColor(value: unknown): value is string {
+  return typeof value === 'string' && /^#([0-9a-fA-F]{6})$/.test(value);
+}
+
+function projectColorAt(index: number): string {
+  return PROJECT_COLOR_PRESETS[index % PROJECT_COLOR_PRESETS.length];
+}
+
 /**
  * Checks if a project is in the legacy format (has tabs instead of workspaces)
  */
@@ -153,10 +174,11 @@ export function migrateProjects(projects: unknown[]): MigratedState {
     };
   });
 
-  const migratedProjects: Project[] = normalized.map(p => ({
+  const migratedProjects: Project[] = normalized.map((p, index) => ({
     id: p.id,
     name: p.name,
-    path: p.path
+    path: p.path,
+    color: isHexColor(p.color) ? p.color : projectColorAt(index)
   }));
 
   const migratedWorkspaces: Workspace[] = normalized.flatMap(p =>

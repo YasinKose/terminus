@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { PaneNode, SplitDirection } from '../types/workspace';
   import { projectStore } from '../stores/projectStore';
+  import { Columns2, Rows2, X } from 'lucide-svelte';
   import Divider from './Divider.svelte';
   import Terminal from './Terminal.svelte';
   import PaneContextMenu from './PaneContextMenu.svelte';
@@ -10,6 +11,7 @@
   export let projectId: string;
   export let workspaceId: string;
   export let projectPath: string;
+  export let activeTerminalId: string | null = null;
   export let visible: boolean = true;
 
   // Minimum pane size percentage
@@ -236,6 +238,7 @@
           {projectId}
           {workspaceId}
           {projectPath}
+          {activeTerminalId}
           {visible}
         />
       </div>
@@ -254,6 +257,7 @@
   <!-- Terminal leaf -->
   <div
     class="terminal-pane"
+    class:active={activeTerminalId === node.id}
     bind:this={terminalPaneEl}
     draggable="true"
     on:dragstart={(e) => handleDragStart(e, node.id)}
@@ -269,9 +273,15 @@
     <div class="pane-toolbar" on:mousedown|stopPropagation={() => handleTerminalFocus(node.id)}>
       <span class="pane-title">{node.title || 'Terminal'}</span>
       <div class="pane-actions">
-        <button class="toolbar-btn" on:click={(e) => handleToolbarSplit(node.id, 'horizontal', e)} title="Split horizontally">H</button>
-        <button class="toolbar-btn" on:click={(e) => handleToolbarSplit(node.id, 'vertical', e)} title="Split vertically">V</button>
-        <button class="toolbar-btn danger" on:click={(e) => handleToolbarClose(node.id, e)} title="Close terminal">×</button>
+        <button class="toolbar-btn" on:click={(e) => handleToolbarSplit(node.id, 'horizontal', e)} title="Split horizontally" aria-label="Split horizontally">
+          <Columns2 size={12} />
+        </button>
+        <button class="toolbar-btn" on:click={(e) => handleToolbarSplit(node.id, 'vertical', e)} title="Split vertically" aria-label="Split vertically">
+          <Rows2 size={12} />
+        </button>
+        <button class="toolbar-btn danger" on:click={(e) => handleToolbarClose(node.id, e)} title="Close terminal" aria-label="Close terminal">
+          <X size={12} />
+        </button>
       </div>
     </div>
     <div class="terminal-body">
@@ -302,6 +312,9 @@
     width: 100%;
     height: 100%;
     overflow: hidden;
+    background: var(--surface-bg, #111115);
+    padding: 2px;
+    box-sizing: border-box;
   }
 
   .split-container.horizontal {
@@ -316,6 +329,8 @@
     overflow: hidden;
     min-width: 0;
     min-height: 0;
+    box-sizing: border-box;
+    padding: 1px;
   }
 
   .terminal-pane {
@@ -323,9 +338,17 @@
     width: 100%;
     height: 100%;
     overflow: hidden;
-    background: #09090b;
+    background: var(--terminal-pane-bg, #09090b);
+    border: var(--terminal-pane-border-width, 1px) solid var(--terminal-pane-border-color, #27272a);
+    border-radius: var(--terminal-pane-border-radius, 8px);
     display: flex;
     flex-direction: column;
+    box-sizing: border-box;
+  }
+
+  .terminal-pane.active {
+    border-color: var(--terminal-pane-active-border-color, #a78bfa);
+    box-shadow: inset 0 0 0 1px var(--terminal-pane-active-border-color, #a78bfa);
   }
 
   .pane-toolbar {
@@ -335,8 +358,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 0 8px;
-    border-bottom: 1px solid #27272a;
-    background: #111115;
+    border-bottom: 1px solid var(--terminal-toolbar-border-color, #27272a);
+    background: var(--terminal-toolbar-bg, #111115);
     color: #a1a1aa;
     font-size: 12px;
   }

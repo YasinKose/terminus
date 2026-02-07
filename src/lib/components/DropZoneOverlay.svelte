@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { ArrowLeftRight, ChevronsDown, ChevronsLeft, ChevronsRight, ChevronsUp } from 'lucide-svelte';
   export let visible: boolean = false;
   export let activeZone: 'left' | 'right' | 'top' | 'bottom' | 'center' | null = null;
 </script>
@@ -11,9 +12,7 @@
       class:active={activeZone === 'left'}
     >
       <div class="zone-indicator">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-        </svg>
+        <ChevronsLeft class="w-6 h-6" />
       </div>
     </div>
 
@@ -23,9 +22,7 @@
       class:active={activeZone === 'right'}
     >
       <div class="zone-indicator">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-        </svg>
+        <ChevronsRight class="w-6 h-6" />
       </div>
     </div>
 
@@ -35,9 +32,7 @@
       class:active={activeZone === 'top'}
     >
       <div class="zone-indicator">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 11l7-7 7 7M5 19l7-7 7 7" />
-        </svg>
+        <ChevronsUp class="w-6 h-6" />
       </div>
     </div>
 
@@ -47,9 +42,7 @@
       class:active={activeZone === 'bottom'}
     >
       <div class="zone-indicator">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 13l-7 7-7-7m14-8l-7 7-7-7" />
-        </svg>
+        <ChevronsDown class="w-6 h-6" />
       </div>
     </div>
 
@@ -59,9 +52,7 @@
       class:active={activeZone === 'center'}
     >
       <div class="zone-indicator">
-        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-        </svg>
+        <ArrowLeftRight class="w-8 h-8" />
         <span class="text-xs mt-1">Swap</span>
       </div>
     </div>

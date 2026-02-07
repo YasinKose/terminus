@@ -7,7 +7,7 @@
   import { projectStore } from '../stores/projectStore';
   import { isSnippetModalOpen } from '../stores/uiStore';
   import { invoke } from '@tauri-apps/api/core';
-  import { Code2, ChevronRight, Star, Search, Folder, Plus, X } from 'lucide-svelte';
+  import { Code2, ChevronRight, Star, Search, Folder, Plus, X, Columns2, Rows2 } from 'lucide-svelte';
   import { DEFAULT_CATEGORIES } from '../types/snippet';
 
   export let x: number;
@@ -242,19 +242,13 @@
     role="menu"
   >
     <button class="menu-item" on:click={handleSplitHorizontal} role="menuitem">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-        <rect x="1" y="2" width="6" height="12" rx="1" stroke="currentColor" fill="none" stroke-width="1.5"/>
-        <rect x="9" y="2" width="6" height="12" rx="1" stroke="currentColor" fill="none" stroke-width="1.5"/>
-      </svg>
+      <Columns2 size={16} />
       <span>Split Horizontally</span>
       <span class="shortcut">⌘D</span>
     </button>
 
     <button class="menu-item" on:click={handleSplitVertical} role="menuitem">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-        <rect x="2" y="1" width="12" height="6" rx="1" stroke="currentColor" fill="none" stroke-width="1.5"/>
-        <rect x="2" y="9" width="12" height="6" rx="1" stroke="currentColor" fill="none" stroke-width="1.5"/>
-      </svg>
+      <Rows2 size={16} />
       <span>Split Vertically</span>
       <span class="shortcut">⇧⌘D</span>
     </button>
@@ -272,9 +266,7 @@
     <div class="separator"></div>
 
     <button class="menu-item danger" on:click={handleClose} role="menuitem">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-        <path d="M4 4L12 12M12 4L4 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-      </svg>
+      <X size={16} />
       <span>Close Pane</span>
       <span class="shortcut">⌘W</span>
     </button>

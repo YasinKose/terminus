@@ -109,29 +109,29 @@
 
 {#if $isCommandPaletteOpen}
   <div
-    class="fixed inset-0 z-50 flex items-start justify-center pt-[20vh] bg-black/60 backdrop-blur-sm"
+    class="command-overlay fixed inset-0 z-50 flex items-start justify-center pt-[20vh]"
     transition:fade={{ duration: 150 }}
     on:click={close}
     role="presentation"
   >
     <div
-      class="w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden flex flex-col"
+      class="command-panel w-full max-w-lg rounded-xl shadow-2xl overflow-hidden flex flex-col"
       transition:fly={{ y: 10, duration: 200 }}
       on:click|stopPropagation
       role="presentation"
     >
       <!-- Input Area -->
-      <div class="flex items-center px-4 py-3 border-b border-zinc-800">
-        <Search class="w-5 h-5 text-zinc-500 mr-3" />
+      <div class="command-input-row flex items-center px-4 py-3 border-b">
+        <Search class="w-5 h-5 mr-3" style="color: var(--text-muted, #71717a);" />
         <input
           bind:this={inputElement}
           bind:value={query}
           type="text"
           placeholder="Type a command..."
-          class="flex-1 bg-transparent border-none outline-none text-zinc-200 placeholder-zinc-500 text-lg"
+          class="command-input flex-1 bg-transparent border-none outline-none text-lg"
           autocomplete="off"
         />
-        <button on:click={close} class="text-zinc-500 hover:text-zinc-300">
+        <button on:click={close} class="command-close-btn">
           <X class="w-5 h-5" />
         </button>
       </div>
@@ -139,14 +139,14 @@
       <!-- Results List -->
       <div class="max-h-[300px] overflow-y-auto py-2">
         {#if filteredCommands.length === 0}
-          <div class="px-4 py-8 text-center text-zinc-500">
+          <div class="command-empty px-4 py-8 text-center">
             No results found.
           </div>
         {:else}
           {#each filteredCommands as command, i}
             <button
-              class="w-full px-4 py-3 flex items-center gap-3 text-left transition-colors
-                {i === selectedIndex ? 'bg-indigo-500/10 text-indigo-400' : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200'}"
+              class="command-item w-full px-4 py-3 flex items-center gap-3 text-left transition-colors"
+              class:selected={i === selectedIndex}
               on:click={() => execute(command)}
               on:mouseenter={() => selectedIndex = i}
             >
@@ -161,7 +161,7 @@
       </div>
 
       <!-- Footer -->
-      <div class="px-4 py-2 bg-zinc-950/50 border-t border-zinc-800 text-[10px] text-zinc-600 flex justify-between">
+      <div class="command-footer px-4 py-2 border-t text-[10px] flex justify-between">
         <span>Terminus Command Palette</span>
         <div class="flex gap-2">
           <span>↑↓ to navigate</span>
@@ -172,3 +172,62 @@
     </div>
   </div>
 {/if}
+
+<style>
+  .command-overlay {
+    background: var(--overlay-bg, rgba(0, 0, 0, 0.6));
+    backdrop-filter: blur(3px);
+  }
+
+  .command-panel {
+    background: var(--panel-bg, #18181b);
+    border: 1px solid var(--panel-border, #27272a);
+  }
+
+  .command-input-row {
+    border-color: var(--panel-border, #27272a);
+  }
+
+  .command-input {
+    color: var(--text-primary, #e4e4e7);
+  }
+
+  .command-input::placeholder {
+    color: var(--text-muted, #71717a);
+  }
+
+  .command-close-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted, #71717a);
+    transition: color 0.15s ease;
+  }
+
+  .command-close-btn:hover {
+    color: var(--text-primary, #d4d4d8);
+  }
+
+  .command-empty {
+    color: var(--text-muted, #71717a);
+  }
+
+  .command-item {
+    color: var(--text-secondary, #a1a1aa);
+  }
+
+  .command-item:hover {
+    background: var(--interactive-hover-bg, rgba(39, 39, 42, 0.6));
+    color: var(--text-primary, #e4e4e7);
+  }
+
+  .command-item.selected {
+    background: color-mix(in srgb, var(--ui-accent, #6366f1) 16%, transparent);
+    color: var(--ui-accent, #818cf8);
+  }
+
+  .command-footer {
+    background: color-mix(in srgb, var(--panel-bg, #09090b) 76%, #000 24%);
+    border-color: var(--panel-border, #27272a);
+    color: var(--text-muted, #71717a);
+  }
+</style>

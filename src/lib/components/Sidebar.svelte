@@ -82,7 +82,7 @@
 
 <svelte:window on:click={handleClickOutside} />
 
-<aside class="sidebar" style="--project-color: {activeProject?.color || '#6366f1'};">
+<aside class="sidebar">
   <!-- Header -->
   <div class="sidebar-header">
     <button onclick={handleAddProject} class="add-project-btn">
@@ -274,7 +274,7 @@
   }
 
   .search-icon {
-    color: #52525b;
+    color: var(--text-muted, #52525b);
     flex-shrink: 0;
   }
 
@@ -283,12 +283,12 @@
     background: transparent;
     border: none;
     outline: none;
-    color: #e4e4e7;
+    color: var(--text-primary, #e4e4e7);
     font-size: 12px;
   }
 
   .search-input::placeholder {
-    color: #52525b;
+    color: var(--text-muted, #52525b);
   }
 
   .search-shortcut {
@@ -296,9 +296,9 @@
     align-items: center;
     gap: 2px;
     padding: 2px 6px;
-    background-color: #27272a;
+    background-color: var(--panel-bg, #27272a);
     border-radius: 4px;
-    color: #71717a;
+    color: var(--text-secondary, #71717a);
     font-size: 10px;
   }
 
@@ -311,7 +311,7 @@
     display: flex;
     gap: 4px;
     padding: 4px;
-    background-color: color-mix(in srgb, var(--surface-bg, #18181b) 88%, #000 12%);
+    background-color: var(--panel-bg, #18181b);
     border-radius: 10px;
   }
 
@@ -325,7 +325,7 @@
     background: transparent;
     border: none;
     border-radius: 8px;
-    color: #71717a;
+    color: var(--text-secondary, #71717a);
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
@@ -333,16 +333,16 @@
   }
 
   .tab-pill:hover {
-    color: #a1a1aa;
+    color: var(--text-primary, #a1a1aa);
   }
 
   .tab-pill.active {
     background: linear-gradient(
       135deg,
-      color-mix(in srgb, var(--project-color, var(--project-accent, #6366f1)) 16%, #27272a),
-      color-mix(in srgb, var(--project-color, var(--project-accent, #6366f1)) 28%, #3f3f46)
+      color-mix(in srgb, var(--ui-accent, #6366f1) 16%, var(--panel-bg, #27272a)),
+      color-mix(in srgb, var(--ui-accent, #6366f1) 28%, var(--panel-bg-elevated, #3f3f46))
     );
-    color: #fafafa;
+    color: var(--text-primary, #fafafa);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   }
 
@@ -357,13 +357,13 @@
   .tab-count {
     font-size: 10px;
     padding: 2px 6px;
-    background-color: #3f3f46;
+    background-color: var(--panel-bg-elevated, #3f3f46);
     border-radius: 10px;
-    color: #a1a1aa;
+    color: var(--text-secondary, #a1a1aa);
   }
 
   .tab-pill.active .tab-count {
-    background-color: var(--project-accent, #4f46e5);
+    background-color: var(--ui-accent, #4f46e5);
     color: white;
   }
 
@@ -390,16 +390,17 @@
     margin-bottom: 8px;
     font-size: 10px;
     font-weight: 600;
-    color: #52525b;
+    color: var(--text-muted, #52525b);
     letter-spacing: 0.05em;
     text-transform: uppercase;
   }
 
   .section-count {
     padding: 2px 6px;
-    background-color: #27272a;
+    background-color: var(--panel-bg, #27272a);
     border-radius: 8px;
     font-size: 10px;
+    color: var(--text-secondary, #a1a1aa);
   }
 
   .project-list {
@@ -424,20 +425,20 @@
   }
 
   .project-item:hover {
-    background-color: #27272a;
-    border-color: #3f3f46;
+    background-color: var(--interactive-hover-bg, #27272a);
+    border-color: var(--panel-border-strong, #3f3f46);
   }
 
   .project-item.active {
-    background-color: color-mix(in srgb, var(--project-color, #6366f1) 20%, #16161b);
-    border-color: color-mix(in srgb, var(--project-color, #6366f1) 60%, #27272a);
+    background-color: color-mix(in srgb, var(--panel-bg, #111115) 84%, #000 16%);
+    border-color: var(--panel-border-strong, #52525b);
   }
 
   .project-indicator {
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background-color: #52525b;
+    background-color: var(--text-muted, #52525b);
     flex-shrink: 0;
     transition: all 0.15s ease;
   }
@@ -456,7 +457,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    color: #e4e4e7;
+    color: var(--text-primary, #e4e4e7);
     font-size: 13px;
     font-weight: 500;
   }
@@ -468,17 +469,17 @@
   }
 
   .project-icon {
-    color: #52525b;
+    color: var(--text-muted, #52525b);
     flex-shrink: 0;
   }
 
   .project-icon.active {
-    color: var(--project-color, var(--project-accent, #6366f1));
+    color: var(--text-primary, #e4e4e7);
   }
 
   .project-path {
     font-size: 11px;
-    color: #52525b;
+    color: var(--text-muted, #52525b);
     margin-top: 2px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -489,7 +490,7 @@
     padding: 4px;
     background: transparent;
     border: none;
-    color: #52525b;
+    color: var(--text-muted, #52525b);
     border-radius: 4px;
     cursor: pointer;
     opacity: 0;
@@ -501,8 +502,8 @@
   }
 
   .project-menu-btn:hover {
-    background-color: #3f3f46;
-    color: #a1a1aa;
+    background-color: var(--panel-bg-elevated, #3f3f46);
+    color: var(--text-primary, #a1a1aa);
   }
 
   .project-dropdown {
@@ -510,8 +511,8 @@
     top: 100%;
     right: 8px;
     margin-top: 4px;
-    background-color: #1c1c1e;
-    border: 1px solid var(--sidebar-border, #38383a);
+    background-color: var(--panel-bg-elevated, #1c1c1e);
+    border: 1px solid var(--panel-border, var(--sidebar-border, #38383a));
     border-radius: 8px;
     padding: 4px;
     min-width: 150px;
@@ -527,7 +528,7 @@
     padding: 8px 12px;
     background: transparent;
     border: none;
-    color: #e4e4e7;
+    color: var(--text-primary, #e4e4e7);
     font-size: 12px;
     cursor: pointer;
     border-radius: 6px;
@@ -535,7 +536,7 @@
   }
 
   .dropdown-item:hover {
-    background-color: #27272a;
+    background-color: var(--interactive-hover-bg, #27272a);
   }
 
   .dropdown-item.danger:hover {
@@ -553,7 +554,7 @@
   }
 
   .color-picker-row span {
-    color: #a1a1aa;
+    color: var(--text-secondary, #a1a1aa);
     font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.02em;
@@ -587,7 +588,7 @@
     align-items: center;
     justify-content: center;
     padding: 32px 16px;
-    color: #52525b;
+    color: var(--text-muted, #52525b);
     text-align: center;
   }
 
@@ -599,7 +600,7 @@
   .empty-state p {
     font-size: 13px;
     font-weight: 500;
-    color: #71717a;
+    color: var(--text-secondary, #71717a);
     margin: 0 0 4px;
   }
 
@@ -620,7 +621,7 @@
     padding: 10px 12px;
     background: transparent;
     border: none;
-    color: #71717a;
+    color: var(--text-secondary, #71717a);
     font-size: 13px;
     cursor: pointer;
     border-radius: 8px;
@@ -628,13 +629,13 @@
   }
 
   .bottom-action-btn:hover {
-    background-color: #27272a;
-    color: #a1a1aa;
+    background-color: var(--interactive-hover-bg, #27272a);
+    color: var(--text-primary, #a1a1aa);
   }
 
   .bottom-action-btn.active {
-    background-color: #27272a;
-    color: #e4e4e7;
+    background-color: var(--panel-bg, #27272a);
+    color: var(--text-primary, #e4e4e7);
   }
 
   .bottom-action-btn span {

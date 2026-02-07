@@ -274,13 +274,13 @@
       <span class="pane-title">{node.title || 'Terminal'}</span>
       <div class="pane-actions">
         <button class="toolbar-btn" on:click={(e) => handleToolbarSplit(node.id, 'horizontal', e)} title="Split horizontally" aria-label="Split horizontally">
-          <Columns2 size={12} />
+          <Columns2 size={14} />
         </button>
         <button class="toolbar-btn" on:click={(e) => handleToolbarSplit(node.id, 'vertical', e)} title="Split vertically" aria-label="Split vertically">
-          <Rows2 size={12} />
+          <Rows2 size={14} />
         </button>
         <button class="toolbar-btn danger" on:click={(e) => handleToolbarClose(node.id, e)} title="Close terminal" aria-label="Close terminal">
-          <X size={12} />
+          <X size={14} />
         </button>
       </div>
     </div>
@@ -312,7 +312,7 @@
     width: 100%;
     height: 100%;
     overflow: hidden;
-    background: var(--surface-bg, #111115);
+    background: var(--workspace-tone-bg, var(--surface-bg, #111115));
     padding: 2px;
     box-sizing: border-box;
   }
@@ -352,15 +352,15 @@
   }
 
   .pane-toolbar {
-    height: 30px;
-    flex: 0 0 30px;
+    height: 34px;
+    flex: 0 0 34px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 8px;
+    padding: 0 10px;
     border-bottom: 1px solid var(--terminal-toolbar-border-color, #27272a);
     background: var(--terminal-toolbar-bg, #111115);
-    color: #a1a1aa;
+    color: var(--text-secondary, #a1a1aa);
     font-size: 12px;
   }
 
@@ -374,25 +374,26 @@
   .pane-actions {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
   }
 
   .toolbar-btn {
-    width: 20px;
-    height: 20px;
-    border: 1px solid #3f3f46;
-    border-radius: 4px;
-    background: #18181b;
-    color: #d4d4d8;
+    width: var(--terminal-toolbar-btn-size, 24px);
+    height: var(--terminal-toolbar-btn-size, 24px);
+    border: 1px solid var(--terminal-toolbar-btn-border, #3f3f46);
+    border-radius: 6px;
+    background: var(--terminal-toolbar-btn-bg, #18181b);
+    color: var(--text-primary, #d4d4d8);
     font-size: 10px;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
   }
 
   .toolbar-btn:hover {
-    border-color: #71717a;
+    border-color: var(--terminal-toolbar-btn-hover-border, #71717a);
   }
 
   .toolbar-btn.danger:hover {

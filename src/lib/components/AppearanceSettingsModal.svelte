@@ -58,6 +58,7 @@
       <section class="section">
         <h3>Templates</h3>
         <p class="section-description">Select a ready-made visual style for terminal panes.</p>
+        <p class="section-note">Project colors only tint workspace areas. Global shell colors come from this theme.</p>
         <div class="template-grid">
           {#each appearanceTemplates as template}
             {@const preview = resolveAppearance({ ...$appearanceSettings, templateId: template.id })}
@@ -149,7 +150,7 @@
     position: fixed;
     inset: 0;
     z-index: 80;
-    background: rgba(0, 0, 0, 0.55);
+    background: var(--overlay-bg, rgba(0, 0, 0, 0.55));
     backdrop-filter: blur(3px);
     display: flex;
     justify-content: center;
@@ -161,12 +162,12 @@
     width: min(760px, 100%);
     max-height: min(720px, 100%);
     overflow: auto;
-    border: 1px solid #3f3f46;
+    border: 1px solid var(--panel-border, #3f3f46);
     border-radius: 14px;
-    background: #111115;
+    background: var(--panel-bg, #111115);
     box-shadow: 0 24px 56px rgba(0, 0, 0, 0.45);
     padding: 18px;
-    color: #e4e4e7;
+    color: var(--text-primary, #e4e4e7);
   }
 
   .modal-header {
@@ -180,7 +181,7 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    color: #f4f4f5;
+    color: var(--text-primary, #f4f4f5);
   }
 
   .title-block h2 {
@@ -192,10 +193,10 @@
   .icon-btn {
     width: 28px;
     height: 28px;
-    border: 1px solid #3f3f46;
+    border: 1px solid var(--panel-border, #3f3f46);
     border-radius: 6px;
-    background: #18181b;
-    color: #d4d4d8;
+    background: var(--panel-bg-elevated, #18181b);
+    color: var(--text-secondary, #d4d4d8);
     cursor: pointer;
     display: inline-flex;
     align-items: center;
@@ -203,15 +204,15 @@
   }
 
   .icon-btn:hover {
-    border-color: #71717a;
-    color: #fafafa;
+    border-color: var(--panel-border-strong, #71717a);
+    color: var(--text-primary, #fafafa);
   }
 
   .section {
     padding: 12px;
-    border: 1px solid #27272a;
+    border: 1px solid var(--panel-border, #27272a);
     border-radius: 10px;
-    background: #0f0f13;
+    background: color-mix(in srgb, var(--panel-bg, #0f0f13) 90%, #000 10%);
   }
 
   .section + .section {
@@ -222,13 +223,19 @@
     margin: 0;
     font-size: 13px;
     font-weight: 600;
-    color: #f4f4f5;
+    color: var(--text-primary, #f4f4f5);
   }
 
   .section-description {
     margin: 6px 0 12px;
-    color: #a1a1aa;
+    color: var(--text-secondary, #a1a1aa);
     font-size: 12px;
+  }
+
+  .section-note {
+    margin: -6px 0 12px;
+    color: var(--text-muted, #71717a);
+    font-size: 11px;
   }
 
   .template-grid {
@@ -238,30 +245,30 @@
   }
 
   .template-card {
-    border: 1px solid #3f3f46;
+    border: 1px solid var(--panel-border, #3f3f46);
     border-radius: 10px;
     padding: 10px;
-    background: #18181b;
+    background: var(--panel-bg-elevated, #18181b);
     color: inherit;
     cursor: pointer;
     text-align: left;
   }
 
   .template-card:hover {
-    border-color: #71717a;
+    border-color: var(--panel-border-strong, #71717a);
   }
 
   .template-card.selected {
-    border-color: #60a5fa;
-    box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.4);
+    border-color: var(--ui-accent, #60a5fa);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--ui-accent, #60a5fa) 45%, transparent);
   }
 
   .template-preview {
     height: 68px;
-    border: 1px solid #3f3f46;
+    border: 1px solid var(--panel-border, #3f3f46);
     border-radius: 8px;
     overflow: hidden;
-    background: #09090b;
+    background: var(--panel-bg, #09090b);
     margin-bottom: 8px;
     display: flex;
     flex-direction: column;
@@ -291,13 +298,13 @@
     justify-content: space-between;
     font-size: 12px;
     font-weight: 600;
-    color: #f4f4f5;
+    color: var(--text-primary, #f4f4f5);
   }
 
   .template-meta p {
     margin: 0;
     font-size: 11px;
-    color: #a1a1aa;
+    color: var(--text-secondary, #a1a1aa);
     line-height: 1.35;
   }
 
@@ -319,13 +326,13 @@
 
   .control-inputs input[type='range'] {
     flex: 1;
-    accent-color: #60a5fa;
+    accent-color: var(--ui-accent, #60a5fa);
   }
 
   .value-badge {
     min-width: 44px;
     text-align: right;
-    color: #a1a1aa;
+    color: var(--text-secondary, #a1a1aa);
     font-size: 11px;
   }
 
@@ -335,11 +342,11 @@
     align-items: center;
     gap: 8px;
     font-size: 12px;
-    color: #d4d4d8;
+    color: var(--text-primary, #d4d4d8);
   }
 
   .toggle-row input[type='checkbox'] {
-    accent-color: #60a5fa;
+    accent-color: var(--ui-accent, #60a5fa);
   }
 
   .modal-actions {
@@ -350,7 +357,7 @@
   }
 
   .modal-actions button {
-    border: 1px solid #3f3f46;
+    border: 1px solid var(--panel-border, #3f3f46);
     border-radius: 8px;
     padding: 7px 12px;
     font-size: 12px;
@@ -358,22 +365,22 @@
   }
 
   .modal-actions .secondary {
-    background: #18181b;
-    color: #d4d4d8;
+    background: var(--panel-bg-elevated, #18181b);
+    color: var(--text-primary, #d4d4d8);
   }
 
   .modal-actions .secondary:hover {
-    border-color: #71717a;
+    border-color: var(--panel-border-strong, #71717a);
   }
 
   .modal-actions .primary {
-    background: #2563eb;
-    border-color: #2563eb;
-    color: #eff6ff;
+    background: var(--ui-accent, #2563eb);
+    border-color: var(--ui-accent, #2563eb);
+    color: var(--text-primary, #eff6ff);
   }
 
   .modal-actions .primary:hover {
-    background: #1d4ed8;
-    border-color: #1d4ed8;
+    background: var(--ui-accent-strong, #1d4ed8);
+    border-color: var(--ui-accent-strong, #1d4ed8);
   }
 </style>

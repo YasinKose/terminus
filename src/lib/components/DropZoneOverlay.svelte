@@ -83,9 +83,9 @@
     justify-content: center;
     padding: 0.5rem;
     border-radius: 0.5rem;
-    background: rgba(59, 130, 246, 0.1);
-    border: 2px dashed rgba(59, 130, 246, 0.3);
-    color: rgba(59, 130, 246, 0.5);
+    background: color-mix(in srgb, var(--ui-accent, #3b82f6) 16%, transparent);
+    border: 2px dashed color-mix(in srgb, var(--ui-accent, #3b82f6) 34%, transparent);
+    color: color-mix(in srgb, var(--ui-accent, #3b82f6) 56%, transparent);
     opacity: 0;
     transform: scale(0.9);
     transition: all 0.15s ease;
@@ -94,9 +94,9 @@
   .zone.active .zone-indicator {
     opacity: 1;
     transform: scale(1);
-    background: rgba(59, 130, 246, 0.2);
-    border-color: rgba(59, 130, 246, 0.6);
-    color: rgb(59, 130, 246);
+    background: color-mix(in srgb, var(--ui-accent, #3b82f6) 24%, transparent);
+    border-color: color-mix(in srgb, var(--ui-accent, #3b82f6) 70%, transparent);
+    color: var(--ui-accent, rgb(59, 130, 246));
   }
 
   .zone-left {

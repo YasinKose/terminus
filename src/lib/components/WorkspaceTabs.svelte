@@ -19,10 +19,6 @@
     return projects.find(project => project.id === projectId)?.name || 'Unknown';
   }
 
-  function getProjectColor(projectId: string): string {
-    return projects.find(project => project.id === projectId)?.color || '#6366f1';
-  }
-
   function selectWorkspace(workspace: Workspace) {
     projectStore.setActiveWorkspace(workspace.projectId, workspace.id);
   }
@@ -126,7 +122,6 @@
         class:active={isActive}
         class:project-active={belongsToActiveProject}
         class:drag-over={dragOverWorkspaceId === workspace.id}
-        style="--workspace-project-color: {getProjectColor(workspace.projectId)};"
         on:click={() => selectWorkspace(workspace)}
         on:mousedown={(e) => e.button === 1 && handleMiddleClick(e, workspace)}
         on:contextmenu={(e) => handleContextMenu(e, workspace.id)}
@@ -197,8 +192,8 @@
 
 <style>
   .workspace-tabs {
-    background-color: var(--workspace-tabs-bg, #18181b);
-    border-bottom: 1px solid var(--workspace-tabs-border, #27272a);
+    background-color: var(--workspace-tone-bg-elevated, var(--workspace-tabs-bg, #18181b));
+    border-bottom: 1px solid var(--workspace-tone-border, var(--workspace-tabs-border, #27272a));
     padding: 0 8px;
   }
 
@@ -220,7 +215,7 @@
     gap: 8px;
     padding: 7px 10px;
     background-color: transparent;
-    color: #71717a;
+    color: var(--text-secondary, #71717a);
     border: none;
     cursor: pointer;
     font-size: 12px;
@@ -232,23 +227,23 @@
   }
 
   .tab:hover {
-    color: #d4d4d8;
-    background-color: var(--surface-bg, #27272a);
+    color: var(--text-primary, #d4d4d8);
+    background-color: color-mix(in srgb, var(--workspace-tone-bg, var(--surface-bg, #27272a)) 88%, #000 12%);
   }
 
   .tab.project-active {
-    border-bottom-color: var(--workspace-project-color, var(--project-accent, #6366f1));
+    border-bottom-color: var(--workspace-tone-border-soft, var(--ui-accent, #6366f1));
   }
 
   .tab.active {
-    color: #e4e4e7;
-    background-color: var(--surface-bg, #27272a);
-    border-bottom-color: var(--workspace-project-color, var(--project-accent, #a78bfa));
+    color: var(--text-primary, #e4e4e7);
+    background-color: color-mix(in srgb, var(--workspace-tone-bg, var(--surface-bg, #27272a)) 78%, #000 22%);
+    border-bottom-color: var(--workspace-tone-border, var(--ui-accent, #a78bfa));
   }
 
   .tab.drag-over {
-    background-color: #3b82f6;
-    box-shadow: inset 0 0 0 2px #60a5fa;
+    background-color: color-mix(in srgb, var(--ui-accent, #3b82f6) 36%, transparent);
+    box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--ui-accent, #3b82f6) 72%, #fff);
   }
 
   .tab-content {
@@ -267,9 +262,9 @@
 
   .project-badge {
     font-size: 10px;
-    color: #a1a1aa;
-    background: color-mix(in srgb, var(--surface-bg, #09090b) 82%, #000 18%);
-    border: 1px solid color-mix(in srgb, var(--workspace-project-color, var(--project-accent, #6366f1)) 55%, #3f3f46);
+    color: var(--text-secondary, #a1a1aa);
+    background: color-mix(in srgb, var(--workspace-tone-bg, var(--surface-bg, #09090b)) 82%, #000 18%);
+    border: 1px solid var(--workspace-tone-border-soft, #3f3f46);
     padding: 1px 6px;
     border-radius: 999px;
     max-width: 90px;
@@ -284,7 +279,7 @@
     padding: 0;
     border: none;
     background: transparent;
-    color: #a1a1aa;
+    color: var(--text-secondary, #a1a1aa);
     cursor: pointer;
     border-radius: 3px;
     display: inline-flex;
@@ -298,8 +293,8 @@
   }
 
   .close-btn:hover {
-    background: #3f3f46;
-    color: #f4f4f5;
+    background: var(--panel-bg-elevated, #3f3f46);
+    color: var(--text-primary, #f4f4f5);
   }
 
   .add-btn {
@@ -308,7 +303,7 @@
     justify-content: center;
     width: 28px;
     height: 28px;
-    color: #71717a;
+    color: var(--text-secondary, #71717a);
     border: none;
     background: transparent;
     border-radius: 6px;
@@ -317,8 +312,8 @@
   }
 
   .add-btn:hover:enabled {
-    background: var(--surface-bg, #27272a);
-    color: #e4e4e7;
+    background: var(--interactive-hover-bg, var(--surface-bg, #27272a));
+    color: var(--text-primary, #e4e4e7);
   }
 
   .add-btn:disabled {
@@ -332,7 +327,7 @@
     justify-content: center;
     width: 28px;
     height: 28px;
-    color: #71717a;
+    color: var(--text-secondary, #71717a);
     border: none;
     background: transparent;
     border-radius: 6px;
@@ -340,15 +335,15 @@
   }
 
   .settings-btn:hover {
-    background: var(--surface-bg, #27272a);
-    color: #e4e4e7;
+    background: var(--interactive-hover-bg, var(--surface-bg, #27272a));
+    color: var(--text-primary, #e4e4e7);
   }
 
   .rename-input {
-    background: #09090b;
-    border: 1px solid #52525b;
+    background: var(--panel-bg, #09090b);
+    border: 1px solid var(--panel-border-strong, #52525b);
     border-radius: 4px;
-    color: #f4f4f5;
+    color: var(--text-primary, #f4f4f5);
     padding: 3px 6px;
     font-size: 12px;
     width: 120px;
@@ -359,8 +354,8 @@
     position: fixed;
     z-index: 1000;
     min-width: 140px;
-    background: #18181b;
-    border: 1px solid #3f3f46;
+    background: var(--panel-bg-elevated, #18181b);
+    border: 1px solid var(--panel-border, #3f3f46);
     border-radius: 8px;
     padding: 4px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
@@ -373,13 +368,13 @@
     padding: 7px 10px;
     background: transparent;
     border: none;
-    color: #d4d4d8;
+    color: var(--text-primary, #d4d4d8);
     font-size: 13px;
     border-radius: 6px;
     cursor: pointer;
   }
 
   .context-menu button:hover {
-    background: #27272a;
+    background: var(--interactive-hover-bg, #27272a);
   }
 </style>

@@ -82,16 +82,40 @@
 
       <!-- Windows Controls (Right) -->
       <div class="flex items-center h-full ml-auto pointer-events-auto z-10">
-        <button onclick={minimize} aria-label="Minimize" class="h-full px-4 hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors flex items-center justify-center border-none rounded-none">
+        <button onclick={minimize} aria-label="Minimize" class="win-control">
           <Minus class="w-4 h-4" />
         </button>
-        <button onclick={toggleMaximize} aria-label="Maximize" class="h-full px-4 hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors flex items-center justify-center border-none rounded-none">
+        <button onclick={toggleMaximize} aria-label="Maximize" class="win-control">
           <Square class="w-3.5 h-3.5" />
         </button>
-        <button onclick={close} aria-label="Close" class="h-full px-4 hover:bg-red-900 text-zinc-400 hover:text-white transition-colors flex items-center justify-center border-none rounded-none">
+        <button onclick={close} aria-label="Close" class="win-control close-control">
           <X class="w-4 h-4" />
         </button>
       </div>
     {/if}
   </div>
 </div>
+
+<style>
+  .win-control {
+    height: 100%;
+    padding: 0 1rem;
+    border: none;
+    border-radius: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary, #a1a1aa);
+    background: transparent;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .win-control:hover {
+    background: var(--interactive-hover-bg, #27272a);
+    color: var(--text-primary, #fff);
+  }
+
+  .win-control.close-control:hover {
+    background: color-mix(in srgb, #b91c1c 64%, var(--interactive-hover-bg, #27272a));
+  }
+</style>

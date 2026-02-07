@@ -64,7 +64,7 @@
 
   .divider:hover,
   .divider.dragging {
-    background-color: #3b82f6;
+    background-color: var(--ui-accent, #3b82f6);
   }
 
   .divider.horizontal {

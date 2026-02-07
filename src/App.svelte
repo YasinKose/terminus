@@ -176,7 +176,7 @@
   $: resolvedAppearance = resolveAppearance($appearanceSettings);
   $: activeProjectColor = activeProject?.color || resolvedAppearance.uiAccent;
   $: activePaneBorderColor = $appearanceSettings.highlightActivePane
-    ? 'var(--project-accent)'
+    ? resolvedAppearance.effectiveActiveBorderColor
     : resolvedAppearance.paneBorderColor;
   $: appearanceCssVars = `
     --app-shell-bg: ${resolvedAppearance.appShellBackground};
@@ -192,7 +192,24 @@
     --surface-border: ${resolvedAppearance.surfaceBorder};
     --ui-accent: ${resolvedAppearance.uiAccent};
     --ui-accent-strong: ${resolvedAppearance.uiAccentStrong};
-    --project-accent: ${activeProjectColor};
+    --project-accent: ${resolvedAppearance.uiAccent};
+    --text-primary: color-mix(in srgb, #ffffff 88%, ${resolvedAppearance.titleBarText} 12%);
+    --text-secondary: color-mix(in srgb, ${resolvedAppearance.titleBarText} 88%, #9ca3af 12%);
+    --text-muted: color-mix(in srgb, ${resolvedAppearance.titleBarText} 62%, #6b7280 38%);
+    --panel-bg: color-mix(in srgb, ${resolvedAppearance.surfaceBackground} 88%, #000 12%);
+    --panel-bg-elevated: color-mix(in srgb, ${resolvedAppearance.surfaceBackground} 78%, #000 22%);
+    --panel-border: ${resolvedAppearance.surfaceBorder};
+    --panel-border-strong: color-mix(in srgb, ${resolvedAppearance.surfaceBorder} 72%, #71717a 28%);
+    --overlay-bg: color-mix(in srgb, ${resolvedAppearance.appShellBackground} 78%, #000 22%);
+    --interactive-hover-bg: color-mix(in srgb, ${resolvedAppearance.surfaceBackground} 70%, #000 30%);
+    --terminal-toolbar-btn-bg: color-mix(in srgb, ${resolvedAppearance.toolbarBackground} 86%, #000 14%);
+    --terminal-toolbar-btn-border: color-mix(in srgb, ${resolvedAppearance.toolbarBorderColor} 70%, #52525b 30%);
+    --terminal-toolbar-btn-hover-border: color-mix(in srgb, ${resolvedAppearance.uiAccent} 35%, ${resolvedAppearance.toolbarBorderColor});
+    --terminal-toolbar-btn-size: 24px;
+    --workspace-tone-bg: color-mix(in srgb, ${activeProjectColor} 10%, ${resolvedAppearance.surfaceBackground});
+    --workspace-tone-bg-elevated: color-mix(in srgb, ${activeProjectColor} 16%, ${resolvedAppearance.surfaceBackground});
+    --workspace-tone-border: color-mix(in srgb, ${activeProjectColor} 50%, ${resolvedAppearance.surfaceBorder});
+    --workspace-tone-border-soft: color-mix(in srgb, ${activeProjectColor} 28%, ${resolvedAppearance.surfaceBorder});
     --terminal-pane-bg: ${resolvedAppearance.paneBackground};
     --terminal-pane-border-color: ${resolvedAppearance.paneBorderColor};
     --terminal-pane-active-border-color: ${activePaneBorderColor};
@@ -249,7 +266,7 @@
       </div>
     {/if}
 
-    <main class="flex-1 relative flex flex-col overflow-hidden min-w-0" style="background-color: var(--surface-bg, #111115);">
+    <main class="flex-1 relative flex flex-col overflow-hidden min-w-0" style="background-color: var(--workspace-tone-bg-elevated, var(--surface-bg, #111115));">
       {#if activeProject}
         <WorkspaceTabs
           projects={$projectStore}
@@ -258,7 +275,7 @@
           activeWorkspaceId={$activeWorkspaceId}
         />
 
-        <div class="flex-1 relative overflow-hidden" bind:this={workspaceContainerEl} style="background-color: var(--surface-bg, #111115);">
+        <div class="flex-1 relative overflow-hidden" bind:this={workspaceContainerEl} style="background-color: var(--workspace-tone-bg, var(--surface-bg, #111115));">
           {#each $workspaces as workspace (workspace.id)}
             {@const workspaceProject = $projectStore.find(p => p.id === workspace.projectId)}
             {#if workspaceProject}
@@ -266,7 +283,13 @@
               <div
                 class="absolute inset-0 h-full w-full"
                 class:hidden={!isWorkspaceActive}
-                style="--project-accent: {workspaceProject.color};"
+                style="
+                  --project-accent: {workspaceProject.color};
+                  --workspace-tone-bg: color-mix(in srgb, {workspaceProject.color} 10%, var(--surface-bg, #111115));
+                  --workspace-tone-bg-elevated: color-mix(in srgb, {workspaceProject.color} 16%, var(--surface-bg, #111115));
+                  --workspace-tone-border: color-mix(in srgb, {workspaceProject.color} 50%, var(--surface-border, #27272a));
+                  --workspace-tone-border-soft: color-mix(in srgb, {workspaceProject.color} 28%, var(--surface-border, #27272a));
+                "
                 style:display={isWorkspaceActive ? 'block' : 'none'}
               >
                 {#if workspace.root}
@@ -335,17 +358,17 @@
     align-items: center;
     gap: 0.75rem;
     padding: 1.5rem;
-    border: 1px solid var(--surface-border, #27272a);
+    border: 1px solid var(--workspace-tone-border-soft, var(--surface-border, #27272a));
     border-radius: 0.75rem;
-    background: color-mix(in srgb, var(--surface-bg, #111115) 88%, #000 12%);
+    background: color-mix(in srgb, var(--workspace-tone-bg, var(--surface-bg, #111115)) 90%, #000 10%);
   }
 
   .empty-action {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    border: 1px solid var(--surface-border, #3f3f46);
-    background: var(--surface-bg, #18181b);
+    border: 1px solid var(--workspace-tone-border-soft, var(--surface-border, #3f3f46));
+    background: var(--workspace-tone-bg-elevated, var(--surface-bg, #18181b));
     color: #e4e4e7;
     padding: 0.5rem 0.75rem;
     border-radius: 0.5rem;
@@ -355,6 +378,6 @@
   }
 
   .empty-action:hover {
-    border-color: var(--project-accent, #71717a);
+    border-color: var(--workspace-tone-border, var(--ui-accent, #71717a));
   }
 </style>

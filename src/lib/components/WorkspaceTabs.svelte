@@ -33,7 +33,9 @@
     type: 'TERMINAL_DRAG';
     projectId: string;
     workspaceId: string;
-    terminalId: string;
+    paneId?: string;
+    paneKind?: 'terminal' | 'git';
+    terminalId?: string;
   };
 
   type DragData = WorkspaceDragData | TerminalDragData;
@@ -42,7 +44,35 @@
     if (!e.dataTransfer) return null;
 
     try {
-      return JSON.parse(e.dataTransfer.getData('text/plain')) as DragData;
+      const parsed = JSON.parse(e.dataTransfer.getData('text/plain')) as Partial<DragData>;
+      if (!parsed || typeof parsed !== 'object' || !('type' in parsed)) return null;
+
+      if (parsed.type === 'WORKSPACE_REORDER') {
+        if (typeof (parsed as WorkspaceDragData).workspaceId !== 'string') return null;
+        return parsed as WorkspaceDragData;
+      }
+
+      if (parsed.type === 'TERMINAL_DRAG') {
+        const terminalData = parsed as TerminalDragData;
+        const paneId = typeof terminalData.paneId === 'string' && terminalData.paneId.length > 0
+          ? terminalData.paneId
+          : terminalData.terminalId;
+
+        if (
+          typeof terminalData.projectId !== 'string'
+          || typeof terminalData.workspaceId !== 'string'
+          || typeof paneId !== 'string'
+        ) {
+          return null;
+        }
+
+        return {
+          ...terminalData,
+          paneId
+        };
+      }
+
+      return null;
     } catch {
       return null;
     }
@@ -147,7 +177,13 @@
     }
 
     if (data.type === 'TERMINAL_DRAG' && data.workspaceId !== targetWorkspace.id) {
-      projectStore.moveTerminal(data.projectId, data.workspaceId, targetWorkspace.id, data.terminalId);
+      if (data.paneKind === 'git') {
+        return;
+      }
+
+      const terminalId = data.paneId || data.terminalId;
+      if (!terminalId) return;
+      projectStore.moveTerminal(data.projectId, data.workspaceId, targetWorkspace.id, terminalId);
     }
   }
 

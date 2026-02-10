@@ -73,7 +73,8 @@
     align-items: center;
     justify-content: center;
     transition: all 0.15s ease;
-    pointer-events: auto;
+    /* Keep overlay purely visual; pane beneath must receive drag events. */
+    pointer-events: none;
   }
 
   .zone-indicator {

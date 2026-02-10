@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onDestroy, onMount } from 'svelte';
   import type { PaneNode, SplitDirection } from '../types/workspace';
   import { projectStore } from '../stores/projectStore';
   import { Columns2, Rows2, X } from 'lucide-svelte';
@@ -19,7 +20,7 @@
   const MIN_SIZE = 10;
 
   let containerEl: HTMLDivElement;
-  let terminalPaneEl: HTMLDivElement;
+  let paneEl: HTMLDivElement;
 
   // Context menu state
   let contextMenuVisible = false;
@@ -29,7 +30,134 @@
 
   // Drag & Drop state
   let isDragOver = false;
-  let activeDropZone: 'left' | 'right' | 'top' | 'bottom' | 'center' | null = null;
+  type DropZone = 'left' | 'right' | 'top' | 'bottom' | 'center';
+  let activeDropZone: DropZone | null = null;
+  const DRAG_DATA_KEY = '__terminusPaneDragData';
+  const MANUAL_DRAG_SESSION_KEY = '__terminusPaneDragSession';
+  const MANUAL_DRAG_EVENT = 'terminus-pane-drag-session';
+  type DragPaneKind = 'terminal' | 'git';
+  type PaneDragData = {
+    type: 'TERMINAL_DRAG';
+    projectId: string;
+    workspaceId: string;
+    paneId: string;
+    paneKind: DragPaneKind;
+    // Backward compatibility for older drag payloads.
+    terminalId?: string;
+  };
+  type PaneDragSession = {
+    sourceProjectId: string;
+    sourceWorkspaceId: string;
+    sourcePaneId: string;
+    sourcePaneKind: DragPaneKind;
+    targetPaneId: string | null;
+    targetZone: DropZone | null;
+  };
+  type WindowWithPaneDragState = Window & {
+    [DRAG_DATA_KEY]?: PaneDragData;
+    [MANUAL_DRAG_SESSION_KEY]?: PaneDragSession;
+  };
+
+  function getWindowWithPaneDragState(): WindowWithPaneDragState {
+    return window as unknown as WindowWithPaneDragState;
+  }
+
+  function setGlobalDragData(data: PaneDragData | null) {
+    if (typeof window === 'undefined') return;
+    const windowState = getWindowWithPaneDragState();
+    if (data) {
+      windowState[DRAG_DATA_KEY] = data;
+      return;
+    }
+    delete windowState[DRAG_DATA_KEY];
+  }
+
+  function getGlobalDragData(): PaneDragData | null {
+    if (typeof window === 'undefined') return null;
+    const data = getWindowWithPaneDragState()[DRAG_DATA_KEY];
+    if (!data || typeof data !== 'object') return null;
+    const candidate = data as Partial<PaneDragData>;
+    if (
+      candidate.type !== 'TERMINAL_DRAG'
+      || typeof candidate.projectId !== 'string'
+      || typeof candidate.workspaceId !== 'string'
+      || typeof candidate.paneId !== 'string'
+    ) {
+      return null;
+    }
+
+    return {
+      type: 'TERMINAL_DRAG',
+      projectId: candidate.projectId,
+      workspaceId: candidate.workspaceId,
+      paneId: candidate.paneId,
+      paneKind: candidate.paneKind === 'git' ? 'git' : 'terminal',
+      terminalId: typeof candidate.terminalId === 'string' ? candidate.terminalId : undefined
+    };
+  }
+
+  function setManualDragSession(session: PaneDragSession | null) {
+    if (typeof window === 'undefined') return;
+    const windowState = getWindowWithPaneDragState();
+    if (session) {
+      windowState[MANUAL_DRAG_SESSION_KEY] = session;
+    } else {
+      delete windowState[MANUAL_DRAG_SESSION_KEY];
+    }
+    window.dispatchEvent(new CustomEvent<PaneDragSession | null>(MANUAL_DRAG_EVENT, { detail: session }));
+  }
+
+  function getManualDragSession(): PaneDragSession | null {
+    if (typeof window === 'undefined') return null;
+    const candidate = getWindowWithPaneDragState()[MANUAL_DRAG_SESSION_KEY];
+    if (!candidate || typeof candidate !== 'object') return null;
+    const session = candidate as Partial<PaneDragSession>;
+    if (
+      typeof session.sourceProjectId !== 'string'
+      || typeof session.sourceWorkspaceId !== 'string'
+      || typeof session.sourcePaneId !== 'string'
+      || (session.sourcePaneKind !== 'terminal' && session.sourcePaneKind !== 'git')
+    ) {
+      return null;
+    }
+
+    return {
+      sourceProjectId: session.sourceProjectId,
+      sourceWorkspaceId: session.sourceWorkspaceId,
+      sourcePaneId: session.sourcePaneId,
+      sourcePaneKind: session.sourcePaneKind,
+      targetPaneId: typeof session.targetPaneId === 'string' ? session.targetPaneId : null,
+      targetZone: session.targetZone ?? null
+    };
+  }
+
+  function syncManualOverlay() {
+    const session = getManualDragSession();
+    if (!session || session.sourceWorkspaceId !== workspaceId || session.targetPaneId !== node.id) {
+      isDragOver = false;
+      activeDropZone = null;
+      return;
+    }
+
+    isDragOver = true;
+    activeDropZone = session.targetZone;
+  }
+
+  onMount(() => {
+    const listener = () => syncManualOverlay();
+    window.addEventListener(MANUAL_DRAG_EVENT, listener as EventListener);
+    syncManualOverlay();
+    return () => {
+      window.removeEventListener(MANUAL_DRAG_EVENT, listener as EventListener);
+    };
+  });
+
+  onDestroy(() => {
+    const session = getManualDragSession();
+    if (session && session.sourcePaneId === node.id) {
+      setManualDragSession(null);
+    }
+  });
 
   function getDropZoneFromPosition(x: number, y: number, rect: DOMRect): 'left' | 'right' | 'top' | 'bottom' | 'center' {
     const relX = (x - rect.left) / rect.width;
@@ -111,31 +239,42 @@
     projectStore.closePane(projectId, workspaceId, e.detail.terminalId);
   }
 
-  function handleDragStart(e: DragEvent, terminalId: string) {
+  function handleDragStart(e: DragEvent, paneId: string, paneKind: DragPaneKind) {
+    if (paneKind === 'terminal' && e.target instanceof HTMLElement && e.target.closest('.pane-actions')) {
+      e.preventDefault();
+      return;
+    }
+
     if (!e.dataTransfer) return;
-    e.dataTransfer.setData('text/plain', JSON.stringify({
+    const payload: PaneDragData = {
       projectId,
       workspaceId,
-      terminalId,
-      type: 'TERMINAL_DRAG'
-    }));
+      paneId,
+      paneKind,
+      type: 'TERMINAL_DRAG',
+      terminalId: paneKind === 'terminal' ? paneId : undefined
+    };
+    e.dataTransfer.setData('text/plain', JSON.stringify(payload));
     e.dataTransfer.effectAllowed = 'move';
+    setGlobalDragData(payload);
+  }
+
+  function handleDragEnd() {
+    isDragOver = false;
+    activeDropZone = null;
+    setGlobalDragData(null);
   }
 
   function handleDragOver(e: DragEvent) {
     e.preventDefault();
     if (!e.dataTransfer) return;
 
-    // Check if it's a terminal drag
-    const types = e.dataTransfer.types;
-    if (!types.includes('text/plain')) return;
-
     e.dataTransfer.dropEffect = 'move';
     isDragOver = true;
 
     // Calculate which zone we're in
-    if (terminalPaneEl) {
-      const rect = terminalPaneEl.getBoundingClientRect();
+    if (paneEl) {
+      const rect = paneEl.getBoundingClientRect();
       activeDropZone = getDropZoneFromPosition(e.clientX, e.clientY, rect);
     }
   }
@@ -143,74 +282,232 @@
   function handleDragLeave(e: DragEvent) {
     // Only reset if we're actually leaving the element
     const relatedTarget = e.relatedTarget as Node | null;
-    if (terminalPaneEl && relatedTarget && terminalPaneEl.contains(relatedTarget)) {
+    if (paneEl && relatedTarget && paneEl.contains(relatedTarget)) {
       return;
     }
     isDragOver = false;
     activeDropZone = null;
   }
 
+  function parseDragData(e: DragEvent): PaneDragData | null {
+    if (!e.dataTransfer) return null;
+
+    try {
+      const parsed = JSON.parse(e.dataTransfer.getData('text/plain')) as Partial<PaneDragData>;
+      if (parsed.type !== 'TERMINAL_DRAG') return null;
+
+      const paneId = typeof parsed.paneId === 'string' && parsed.paneId.length > 0
+        ? parsed.paneId
+        : (typeof parsed.terminalId === 'string' ? parsed.terminalId : '');
+
+      if (!paneId) return null;
+      if (typeof parsed.projectId !== 'string' || typeof parsed.workspaceId !== 'string') return null;
+
+      return {
+        type: 'TERMINAL_DRAG',
+        projectId: parsed.projectId,
+        workspaceId: parsed.workspaceId,
+        paneId,
+        paneKind: parsed.paneKind === 'git' ? 'git' : 'terminal',
+        terminalId: typeof parsed.terminalId === 'string' ? parsed.terminalId : undefined
+      };
+    } catch {
+      return null;
+    }
+  }
+
   function handleDrop(e: DragEvent) {
     e.preventDefault();
     isDragOver = false;
 
-    if (!e.dataTransfer) return;
+    const data = parseDragData(e) ?? getGlobalDragData();
+    if (!data) {
+      activeDropZone = null;
+      return;
+    }
 
-    try {
-      const data = JSON.parse(e.dataTransfer.getData('text/plain'));
-      if (data.type !== 'TERMINAL_DRAG') return;
+    const sourcePaneId = data.paneId;
+    const sourceWorkspaceId = data.workspaceId;
+    const sourceProjectId = data.projectId;
 
-      const sourceTerminalId = data.terminalId;
-      const sourceWorkspaceId = data.workspaceId;
-      const sourceProjectId = data.projectId;
+    // Don't drop on self
+    if (sourcePaneId === node.id && sourceWorkspaceId === workspaceId) {
+      activeDropZone = null;
+      return;
+    }
 
-      // Don't drop on self
-      if (sourceTerminalId === node.id && sourceWorkspaceId === workspaceId) {
-        activeDropZone = null;
-        return;
-      }
+    const dropZone = activeDropZone ?? (
+      paneEl ? getDropZoneFromPosition(e.clientX, e.clientY, paneEl.getBoundingClientRect()) : null
+    );
 
-      // Handle based on drop zone
-      if (activeDropZone === 'center') {
-        // Swap terminals
-        projectStore.swapTerminals(
-          projectId,
-          workspaceId,
-          node.id,
-          sourceProjectId,
-          sourceWorkspaceId,
-          sourceTerminalId
-        );
-      } else if (activeDropZone) {
-        // Insert at direction
-        const directionMap: Record<string, SplitDirection> = {
-          'left': 'horizontal',
-          'right': 'horizontal',
-          'top': 'vertical',
-          'bottom': 'vertical'
-        };
-        const insertBefore = activeDropZone === 'left' || activeDropZone === 'top';
+    // Handle based on drop zone
+    if (dropZone === 'center') {
+      // Swap leaf panes in-place.
+      projectStore.swapTerminals(
+        projectId,
+        workspaceId,
+        node.id,
+        sourceProjectId,
+        sourceWorkspaceId,
+        sourcePaneId
+      );
+    } else if (dropZone) {
+      // Insert at direction.
+      const directionMap: Record<string, SplitDirection> = {
+        'left': 'horizontal',
+        'right': 'horizontal',
+        'top': 'vertical',
+        'bottom': 'vertical'
+      };
+      const insertBefore = dropZone === 'left' || dropZone === 'top';
 
-        projectStore.insertTerminalAtPosition(
-          projectId,
-          workspaceId,
-          node.id,
-          sourceProjectId,
-          sourceWorkspaceId,
-          sourceTerminalId,
-          directionMap[activeDropZone],
-          insertBefore
-        );
-      }
-    } catch (err) {
-      console.error('Failed to parse drag data:', err);
+      projectStore.insertTerminalAtPosition(
+        projectId,
+        workspaceId,
+        node.id,
+        sourceProjectId,
+        sourceWorkspaceId,
+        sourcePaneId,
+        directionMap[dropZone],
+        insertBefore
+      );
     }
 
     activeDropZone = null;
+    setGlobalDragData(null);
+  }
+
+  function handleManualDragStart(e: MouseEvent, paneKind: DragPaneKind) {
+    if (e.button !== 0) return;
+    if (e.target instanceof HTMLElement && e.target.closest('.pane-actions')) return;
+
+    const sourcePaneId = node.id;
+    const sourceWorkspaceId = workspaceId;
+    const sourceProjectId = projectId;
+    let active = false;
+    const startX = e.clientX;
+    const startY = e.clientY;
+
+    const baseSession: PaneDragSession = {
+      sourceProjectId,
+      sourceWorkspaceId,
+      sourcePaneId,
+      sourcePaneKind: paneKind,
+      targetPaneId: null,
+      targetZone: null
+    };
+
+    const updateTargetFromPointer = (clientX: number, clientY: number) => {
+      const session = getManualDragSession();
+      if (!session) return;
+
+      const hovered = document.elementFromPoint(clientX, clientY) as HTMLElement | null;
+      const targetPane = hovered?.closest<HTMLElement>('.terminal-pane[data-pane-id][data-workspace-id]');
+      if (!targetPane) {
+        setManualDragSession({ ...session, targetPaneId: null, targetZone: null });
+        return;
+      }
+
+      const targetPaneId = targetPane.dataset.paneId || null;
+      const targetWorkspaceId = targetPane.dataset.workspaceId || null;
+      if (!targetPaneId || !targetWorkspaceId || targetWorkspaceId !== sourceWorkspaceId || targetPaneId === sourcePaneId) {
+        setManualDragSession({ ...session, targetPaneId: null, targetZone: null });
+        return;
+      }
+
+      const zone = getDropZoneFromPosition(clientX, clientY, targetPane.getBoundingClientRect());
+      setManualDragSession({ ...session, targetPaneId, targetZone: zone });
+    };
+
+    const commitDrop = () => {
+      const session = getManualDragSession();
+      if (!session || !session.targetPaneId || !session.targetZone) return;
+
+      if (session.targetZone === 'center') {
+        projectStore.swapTerminals(
+          sourceProjectId,
+          sourceWorkspaceId,
+          session.targetPaneId,
+          sourceProjectId,
+          sourceWorkspaceId,
+          sourcePaneId
+        );
+        return;
+      }
+
+      const directionMap: Record<DropZone, SplitDirection> = {
+        left: 'horizontal',
+        right: 'horizontal',
+        top: 'vertical',
+        bottom: 'vertical',
+        center: 'horizontal'
+      };
+      const insertBefore = session.targetZone === 'left' || session.targetZone === 'top';
+      projectStore.insertTerminalAtPosition(
+        sourceProjectId,
+        sourceWorkspaceId,
+        session.targetPaneId,
+        sourceProjectId,
+        sourceWorkspaceId,
+        sourcePaneId,
+        directionMap[session.targetZone],
+        insertBefore
+      );
+    };
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (!active) {
+        const dx = moveEvent.clientX - startX;
+        const dy = moveEvent.clientY - startY;
+        if (Math.hypot(dx, dy) < 4) {
+          return;
+        }
+        active = true;
+        setManualDragSession(baseSession);
+      }
+      moveEvent.preventDefault();
+      updateTargetFromPointer(moveEvent.clientX, moveEvent.clientY);
+    };
+
+    const cleanup = () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp, true);
+      document.body.classList.remove('pane-manual-dragging');
+      setManualDragSession(null);
+    };
+
+    const handleMouseUp = (upEvent: MouseEvent) => {
+      if (active) {
+        upEvent.preventDefault();
+        commitDrop();
+      }
+      cleanup();
+    };
+
+    document.body.classList.add('pane-manual-dragging');
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp, true);
+    e.preventDefault();
+    e.stopPropagation();
   }
 
   function hideContextMenu() {
     contextMenuVisible = false;
+  }
+
+  function isGitHeaderDragHandle(target: EventTarget | null): boolean {
+    if (!(target instanceof HTMLElement)) return false;
+    const header = target.closest('.git-pane-header');
+    if (!header) return false;
+    if (target.closest('button, a, input, textarea, select, label')) {
+      return false;
+    }
+    return true;
+  }
+
+  function handleGitPaneMouseDown(e: MouseEvent) {
+    if (!isGitHeaderDragHandle(e.target)) return;
+    handleManualDragStart(e, 'git');
   }
 
   function handleToolbarSplit(terminalId: string, direction: SplitDirection, e: MouseEvent) {
@@ -267,19 +564,26 @@
   <div
     class="terminal-pane"
     class:active={activeTerminalId === node.id}
-    bind:this={terminalPaneEl}
-    draggable="true"
-    on:dragstart={(e) => handleDragStart(e, node.id)}
-    on:dragover={handleDragOver}
-    on:dragleave={handleDragLeave}
-    on:drop={handleDrop}
+    bind:this={paneEl}
+    data-pane-id={node.id}
+    data-workspace-id={workspaceId}
+    data-pane-kind="terminal"
+    on:dragover|capture={handleDragOver}
+    on:dragleave|capture={handleDragLeave}
+    on:drop|capture={handleDrop}
     on:mousedown={() => handleTerminalFocus(node.id)}
     on:focus={() => handleTerminalFocus(node.id)}
     on:contextmenu={(e) => handleContextMenu(e, node.id)}
     role="button"
     tabindex="-1"
   >
-    <div class="pane-toolbar" on:mousedown|stopPropagation={() => handleTerminalFocus(node.id)}>
+    <div
+      class="pane-toolbar"
+      on:mousedown|stopPropagation={(e) => {
+        handleTerminalFocus(node.id);
+        handleManualDragStart(e, 'terminal');
+      }}
+    >
       <span class="pane-title">{node.title || 'Terminal'}</span>
       <div class="pane-actions">
         <button class="toolbar-btn" on:click={(e) => handleToolbarSplit(node.id, 'horizontal', e)} title="Split horizontally" aria-label="Split horizontally">
@@ -317,6 +621,18 @@
   <div
     class="terminal-pane git-pane"
     class:active={false}
+    bind:this={paneEl}
+    data-pane-id={node.id}
+    data-workspace-id={workspaceId}
+    data-pane-kind="git"
+    draggable="true"
+    on:dragstart={(e) => handleDragStart(e, node.id, 'git')}
+    on:dragend={handleDragEnd}
+    on:dragover|capture={handleDragOver}
+    on:dragleave|capture={handleDragLeave}
+    on:drop|capture={handleDrop}
+    on:mousedown={handleGitPaneMouseDown}
+    on:contextmenu={(e) => handleContextMenu(e, node.id)}
     role="region"
     aria-label="Git workbench pane"
   >
@@ -329,7 +645,18 @@
       on:detach={handleDetachGitPane}
       on:dock={handleDockGitPane}
     />
+    <DropZoneOverlay visible={isDragOver} activeZone={activeDropZone} />
   </div>
+
+  <PaneContextMenu
+    x={contextMenuX}
+    y={contextMenuY}
+    terminalId={contextMenuTerminalId}
+    visible={contextMenuVisible}
+    on:split={handleSplit}
+    on:close={handleClosePane}
+    on:hide={hideContextMenu}
+  />
 {/if}
 
 <style>
@@ -388,6 +715,13 @@
     background: var(--terminal-toolbar-bg, #111115);
     color: var(--text-secondary, #a1a1aa);
     font-size: 12px;
+    cursor: grab;
+    user-select: none;
+  }
+
+  :global(body.pane-manual-dragging) {
+    cursor: grabbing;
+    user-select: none;
   }
 
   .pane-title {
@@ -434,5 +768,15 @@
 
   .git-pane {
     padding: 0;
+  }
+
+  :global(.git-pane .git-pane-header) {
+    cursor: grab;
+    user-select: none;
+  }
+
+  :global(.git-pane .git-pane-header button),
+  :global(.git-pane .git-pane-header a) {
+    cursor: pointer;
   }
 </style>

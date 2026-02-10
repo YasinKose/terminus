@@ -256,6 +256,22 @@ function createProjectStore() {
     return node.children.flatMap(child => collectGitPaneIds(child));
   }
 
+  function isLeafPane(node: PaneNode | null): node is TerminalLeaf | GitLeaf {
+    return node !== null && node.type !== 'split';
+  }
+
+  function collectLeafPaneIds(node: PaneNode | null): string[] {
+    if (!node) return [];
+    if (node.type === 'split') {
+      return node.children.flatMap(child => collectLeafPaneIds(child));
+    }
+    return [node.id];
+  }
+
+  function firstLeafPaneId(node: PaneNode | null): string | null {
+    return collectLeafPaneIds(node)[0] || null;
+  }
+
   function firstTerminalId(node: PaneNode | null): string | null {
     return collectTerminalIds(node)[0] || null;
   }
@@ -371,9 +387,13 @@ function createProjectStore() {
     }
   }
 
-  function appendPaneNearActive(root: PaneNode, pane: PaneNode): PaneNode {
-    const anchorTerminalId = firstTerminalId(root);
-    if (!anchorTerminalId) {
+  function appendPaneNearActive(root: PaneNode, pane: PaneNode, preferredAnchorPaneId?: string | null): PaneNode {
+    const preferredAnchorNode = preferredAnchorPaneId ? findNode(root, preferredAnchorPaneId) : null;
+    const anchorPaneId = preferredAnchorNode && preferredAnchorNode.type !== 'split'
+      ? preferredAnchorNode.id
+      : firstLeafPaneId(root);
+
+    if (!anchorPaneId) {
       return {
         type: 'split',
         id: uuidv4(),
@@ -383,11 +403,11 @@ function createProjectStore() {
       };
     }
 
-    const parent = findParent(root, anchorTerminalId);
+    const parent = findParent(root, anchorPaneId);
     const direction: SplitDirection = 'horizontal';
 
     if (parent && parent.direction === direction) {
-      const targetIndex = parent.children.findIndex(child => child.id === anchorTerminalId);
+      const targetIndex = parent.children.findIndex(child => child.id === anchorPaneId);
       const newChildren = [...parent.children];
       newChildren.splice(targetIndex + 1, 0, pane);
       const equalSize = 100 / newChildren.length;
@@ -399,7 +419,7 @@ function createProjectStore() {
       });
     }
 
-    const targetNode = findNode(root, anchorTerminalId);
+    const targetNode = findNode(root, anchorPaneId);
     if (!targetNode) {
       return {
         type: 'split',
@@ -410,7 +430,7 @@ function createProjectStore() {
       };
     }
 
-    return replaceNode(root, anchorTerminalId, {
+    return replaceNode(root, anchorPaneId, {
       type: 'split',
       id: uuidv4(),
       direction,
@@ -538,7 +558,11 @@ function createProjectStore() {
         };
       }
 
-      const nextRoot = appendPaneNearActive(current.root, gitPane);
+      const nextRoot = appendPaneNearActive(
+        current.root,
+        gitPane,
+        current.activeTerminalId ?? current.gitPaneId ?? firstLeafPaneId(current.root)
+      );
       return {
         ...current,
         root: nextRoot,
@@ -1032,7 +1056,11 @@ function createProjectStore() {
           terminalId = terminal.id;
           return {
             ...workspace,
-            root: appendPaneNearActive(workspace.root, terminal),
+            root: appendPaneNearActive(
+              workspace.root,
+              terminal,
+              workspace.activeTerminalId ?? workspace.gitPaneId ?? firstLeafPaneId(workspace.root)
+            ),
             activeTerminalId: terminal.id
           };
         }
@@ -1126,7 +1154,7 @@ function createProjectStore() {
           }
 
           let newRoot: PaneNode;
-          const activeId = workspace.activeTerminalId || collectTerminalIds(workspace.root)[0] || null;
+          const activeId = workspace.activeTerminalId || workspace.gitPaneId || firstLeafPaneId(workspace.root);
 
           if (activeId) {
             const parent = findParent(workspace.root, activeId);
@@ -1148,7 +1176,11 @@ function createProjectStore() {
             } else {
               const targetNode = findNode(workspace.root, activeId);
               if (!targetNode) {
-                newRoot = terminalToMove;
+                newRoot = appendPaneNearActive(
+                  workspace.root,
+                  terminalToMove,
+                  firstLeafPaneId(workspace.root)
+                );
               } else {
                 newRoot = replaceNode(workspace.root, activeId, {
                   type: 'split',
@@ -1160,7 +1192,11 @@ function createProjectStore() {
               }
             }
           } else {
-            newRoot = appendPaneNearActive(workspace.root, terminalToMove);
+            newRoot = appendPaneNearActive(
+              workspace.root,
+              terminalToMove,
+              workspace.activeTerminalId ?? workspace.gitPaneId ?? firstLeafPaneId(workspace.root)
+            );
           }
 
           return {
@@ -1187,16 +1223,19 @@ function createProjectStore() {
 
     getWorkspacesByProject,
 
-    // Swap two terminals (for center drop zone)
+    // Swap two leaf panes (terminal/git) in the same workspace.
     swapTerminals: (
       targetProjectId: string,
       targetWorkspaceId: string,
-      targetTerminalId: string,
+      targetPaneId: string,
       sourceProjectId: string,
       sourceWorkspaceId: string,
-      sourceTerminalId: string
+      sourcePaneId: string
     ) => {
       if (targetProjectId !== sourceProjectId || targetWorkspaceId !== sourceWorkspaceId) {
+        return;
+      }
+      if (targetPaneId === sourcePaneId) {
         return;
       }
 
@@ -1208,19 +1247,19 @@ function createProjectStore() {
           return workspace;
         }
 
+        const sourceNode = findNode(workspace.root, sourcePaneId);
+        const targetNode = findNode(workspace.root, targetPaneId);
+        if (!isLeafPane(sourceNode) || !isLeafPane(targetNode)) {
+          return workspace;
+        }
+
         const swapNodes = (node: PaneNode): PaneNode => {
-          if (node.id === targetTerminalId) {
-            const sourceNode = findNode(workspace.root, sourceTerminalId);
-            return sourceNode && sourceNode.type === 'terminal'
-              ? { ...sourceNode, id: targetTerminalId }
-              : node;
+          if (node.id === targetPaneId) {
+            return { ...sourceNode, id: targetPaneId };
           }
 
-          if (node.id === sourceTerminalId) {
-            const targetNode = findNode(workspace.root, targetTerminalId);
-            return targetNode && targetNode.type === 'terminal'
-              ? { ...targetNode, id: sourceTerminalId }
-              : node;
+          if (node.id === sourcePaneId) {
+            return { ...targetNode, id: sourcePaneId };
           }
 
           if (node.type === 'split') {
@@ -1233,9 +1272,17 @@ function createProjectStore() {
           return node;
         };
 
+        let nextActiveTerminalId = workspace.activeTerminalId;
+        if (workspace.activeTerminalId === sourcePaneId && sourceNode.type === 'terminal') {
+          nextActiveTerminalId = targetNode.type === 'terminal' ? targetPaneId : null;
+        } else if (workspace.activeTerminalId === targetPaneId && targetNode.type === 'terminal') {
+          nextActiveTerminalId = sourceNode.type === 'terminal' ? sourcePaneId : null;
+        }
+
         return {
           ...workspace,
           root: swapNodes(workspace.root),
+          activeTerminalId: nextActiveTerminalId,
           updatedAt: nowTs()
         };
       });
@@ -1244,18 +1291,19 @@ function createProjectStore() {
       saveState(projects, nextWorkspaces);
     },
 
-    // Insert terminal at specific position (for directional drop zones)
+    // Insert a pane at specific position around target pane.
     insertTerminalAtPosition: (
       targetProjectId: string,
       targetWorkspaceId: string,
-      targetTerminalId: string,
+      targetPaneId: string,
       sourceProjectId: string,
       sourceWorkspaceId: string,
-      sourceTerminalId: string,
+      sourcePaneId: string,
       direction: SplitDirection,
       insertBefore: boolean
     ) => {
       if (targetProjectId !== sourceProjectId) return;
+      if (targetWorkspaceId === sourceWorkspaceId && targetPaneId === sourcePaneId) return;
 
       const projects = get(projectsStore);
       const workspaces = get(workspacesStore);
@@ -1265,22 +1313,25 @@ function createProjectStore() {
       if (!source || !target) return;
       if (source.projectId !== sourceProjectId || target.projectId !== targetProjectId) return;
 
-      const sourceNode = findNode(source.root, sourceTerminalId);
-      if (!sourceNode || sourceNode.type !== 'terminal') return;
-      const terminalToMove: TerminalLeaf = { ...sourceNode };
+      const sourceNode = findNode(source.root, sourcePaneId);
+      if (!isLeafPane(sourceNode)) return;
+      if (sourceNode.type === 'git' && sourceWorkspaceId !== targetWorkspaceId) return;
+      const paneToMove: TerminalLeaf | GitLeaf = { ...sourceNode };
 
       const extracted = workspaces.map(workspace => {
         if (workspace.id !== sourceWorkspaceId) return workspace;
 
-        const newRoot = removeNode(workspace.root, sourceTerminalId);
-        const newActiveId = workspace.activeTerminalId === sourceTerminalId
+        const newRoot = removeNode(workspace.root, sourcePaneId);
+        const newActiveId = workspace.activeTerminalId === sourcePaneId
           ? collectTerminalIds(newRoot)[0] || null
           : workspace.activeTerminalId;
+        const nextGitPaneId = workspace.gitPaneId === sourcePaneId ? null : workspace.gitPaneId;
 
         return {
           ...workspace,
           root: newRoot,
           activeTerminalId: newActiveId,
+          gitPaneId: nextGitPaneId,
           updatedAt: nowTs()
         };
       });
@@ -1291,20 +1342,21 @@ function createProjectStore() {
         if (!workspace.root) {
           return {
             ...workspace,
-            root: terminalToMove,
-            activeTerminalId: terminalToMove.id,
+            root: paneToMove,
+            activeTerminalId: paneToMove.type === 'terminal' ? paneToMove.id : null,
+            gitPaneId: paneToMove.type === 'git' ? paneToMove.id : workspace.gitPaneId,
             updatedAt: nowTs()
           };
         }
 
-        const parent = findParent(workspace.root, targetTerminalId);
+        const parent = findParent(workspace.root, targetPaneId);
         let newRoot: PaneNode;
 
         if (parent && parent.direction === direction) {
-          const targetIndex = parent.children.findIndex(child => child.id === targetTerminalId);
+          const targetIndex = parent.children.findIndex(child => child.id === targetPaneId);
           const insertIndex = insertBefore ? targetIndex : targetIndex + 1;
           const newChildren = [...parent.children];
-          newChildren.splice(insertIndex, 0, terminalToMove);
+          newChildren.splice(insertIndex, 0, paneToMove);
 
           const equalSize = 100 / newChildren.length;
           const newSizes = newChildren.map(() => equalSize);
@@ -1315,14 +1367,14 @@ function createProjectStore() {
             sizes: newSizes
           });
         } else {
-          const targetNode = findNode(workspace.root, targetTerminalId);
-          if (!targetNode) return workspace;
+          const targetNode = findNode(workspace.root, targetPaneId);
+          if (!targetNode || targetNode.type === 'split') return workspace;
 
           const children = insertBefore
-            ? [terminalToMove, targetNode]
-            : [targetNode, terminalToMove];
+            ? [paneToMove, targetNode]
+            : [targetNode, paneToMove];
 
-          newRoot = replaceNode(workspace.root, targetTerminalId, {
+          newRoot = replaceNode(workspace.root, targetPaneId, {
             type: 'split',
             id: uuidv4(),
             direction,
@@ -1331,10 +1383,17 @@ function createProjectStore() {
           });
         }
 
+        const nextActiveTerminalId = paneToMove.type === 'terminal'
+          ? paneToMove.id
+          : (workspace.activeTerminalId && findNode(newRoot, workspace.activeTerminalId)?.type === 'terminal'
+              ? workspace.activeTerminalId
+              : firstTerminalId(newRoot));
+
         return {
           ...workspace,
           root: newRoot,
-          activeTerminalId: terminalToMove.id,
+          activeTerminalId: nextActiveTerminalId,
+          gitPaneId: paneToMove.type === 'git' ? paneToMove.id : workspace.gitPaneId,
           updatedAt: nowTs()
         };
       });

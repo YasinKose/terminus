@@ -4,24 +4,36 @@ import type { Snippet } from '../types/snippet';
 
 const STORAGE_KEY = 'terminus_snippets';
 
-function createSnippetStore() {
-  // Load initial state from localStorage
-  const savedSnippets = localStorage.getItem(STORAGE_KEY);
-  let initialSnippets: Snippet[] = [];
+function hasLocalStorage(): boolean {
+  return typeof localStorage !== 'undefined';
+}
 
-  if (savedSnippets) {
-    try {
-      initialSnippets = JSON.parse(savedSnippets);
-    } catch (e) {
-      console.error('Failed to parse snippets from localStorage:', e);
-      initialSnippets = [];
-    }
+function loadInitialSnippets(): Snippet[] {
+  if (!hasLocalStorage()) {
+    return [];
   }
 
-  const { subscribe, set, update } = writable<Snippet[]>(initialSnippets);
+  const savedSnippets = localStorage.getItem(STORAGE_KEY);
+  if (!savedSnippets) {
+    return [];
+  }
 
-  // Helper to save state
+  try {
+    return JSON.parse(savedSnippets);
+  } catch (error) {
+    console.error('Failed to parse snippets from localStorage:', error);
+    return [];
+  }
+}
+
+function createSnippetStore() {
+  const { subscribe, update } = writable<Snippet[]>(loadInitialSnippets());
+
   function saveState(snippets: Snippet[]) {
+    if (!hasLocalStorage()) {
+      return;
+    }
+
     localStorage.setItem(STORAGE_KEY, JSON.stringify(snippets));
   }
 

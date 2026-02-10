@@ -12,7 +12,15 @@ export interface MakefileTarget {
 // Storage key for tracking which projects have been scanned
 const SCANNED_PROJECTS_KEY = 'terminus_makefile_scanned';
 
+function hasLocalStorage(): boolean {
+  return typeof localStorage !== 'undefined';
+}
+
 function getScannedProjects(): Record<string, number> {
+  if (!hasLocalStorage()) {
+    return {};
+  }
+
   const stored = localStorage.getItem(SCANNED_PROJECTS_KEY);
   if (stored) {
     try {
@@ -25,6 +33,10 @@ function getScannedProjects(): Record<string, number> {
 }
 
 function markProjectScanned(projectId: string) {
+  if (!hasLocalStorage()) {
+    return;
+  }
+
   const scanned = getScannedProjects();
   scanned[projectId] = Date.now();
   localStorage.setItem(SCANNED_PROJECTS_KEY, JSON.stringify(scanned));

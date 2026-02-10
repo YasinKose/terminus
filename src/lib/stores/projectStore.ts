@@ -24,6 +24,31 @@ const ACTIVE_WORKSPACE_KEY_V2 = 'terminus_active_workspace_v2';
 const LEGACY_PROJECTS_KEY = 'terminus_projects';
 const LEGACY_ACTIVE_PROJECT_KEY = 'terminus_active_project';
 
+function hasLocalStorage(): boolean {
+  return typeof localStorage !== 'undefined';
+}
+
+function storageGet(key: string): string | null {
+  if (!hasLocalStorage()) {
+    return null;
+  }
+  return localStorage.getItem(key);
+}
+
+function storageSet(key: string, value: string): void {
+  if (!hasLocalStorage()) {
+    return;
+  }
+  localStorage.setItem(key, value);
+}
+
+function storageRemove(key: string): void {
+  if (!hasLocalStorage()) {
+    return;
+  }
+  localStorage.removeItem(key);
+}
+
 export const PROJECT_COLOR_PRESETS = [
   '#6366f1',
   '#22c55e',
@@ -109,10 +134,10 @@ function normalizeWorkspace(raw: Workspace): Workspace {
 }
 
 function loadInitialState(): InitialState {
-  const savedProjectsV2 = localStorage.getItem(PROJECTS_KEY_V2);
-  const savedWorkspacesV2 = localStorage.getItem(WORKSPACES_KEY_V2);
-  const savedActiveProjectV2 = localStorage.getItem(ACTIVE_PROJECT_KEY_V2);
-  const savedActiveWorkspaceV2 = localStorage.getItem(ACTIVE_WORKSPACE_KEY_V2);
+  const savedProjectsV2 = storageGet(PROJECTS_KEY_V2);
+  const savedWorkspacesV2 = storageGet(WORKSPACES_KEY_V2);
+  const savedActiveProjectV2 = storageGet(ACTIVE_PROJECT_KEY_V2);
+  const savedActiveWorkspaceV2 = storageGet(ACTIVE_WORKSPACE_KEY_V2);
 
   if (savedProjectsV2 && savedWorkspacesV2) {
     try {
@@ -129,20 +154,20 @@ function loadInitialState(): InitialState {
     }
   }
 
-  const savedLegacyProjects = localStorage.getItem(LEGACY_PROJECTS_KEY);
-  const savedLegacyActiveProject = localStorage.getItem(LEGACY_ACTIVE_PROJECT_KEY);
+  const savedLegacyProjects = storageGet(LEGACY_PROJECTS_KEY);
+  const savedLegacyActiveProject = storageGet(LEGACY_ACTIVE_PROJECT_KEY);
 
   if (savedLegacyProjects) {
     try {
       const parsed = JSON.parse(savedLegacyProjects);
       const migrated = migrateProjects(parsed);
-      localStorage.setItem(PROJECTS_KEY_V2, JSON.stringify(migrated.projects));
-      localStorage.setItem(WORKSPACES_KEY_V2, JSON.stringify(migrated.workspaces));
+      storageSet(PROJECTS_KEY_V2, JSON.stringify(migrated.projects));
+      storageSet(WORKSPACES_KEY_V2, JSON.stringify(migrated.workspaces));
       if (savedLegacyActiveProject) {
-        localStorage.setItem(ACTIVE_PROJECT_KEY_V2, savedLegacyActiveProject);
+        storageSet(ACTIVE_PROJECT_KEY_V2, savedLegacyActiveProject);
       }
       if (migrated.activeWorkspaceId) {
-        localStorage.setItem(ACTIVE_WORKSPACE_KEY_V2, migrated.activeWorkspaceId);
+        storageSet(ACTIVE_WORKSPACE_KEY_V2, migrated.activeWorkspaceId);
       }
 
       return {
@@ -173,23 +198,23 @@ function createProjectStore() {
   const activeWorkspaceId = writable<string | null>(initial.activeWorkspaceId || null);
 
   function saveState(projects: Project[], workspaces: Workspace[]) {
-    localStorage.setItem(PROJECTS_KEY_V2, JSON.stringify(projects));
-    localStorage.setItem(WORKSPACES_KEY_V2, JSON.stringify(workspaces));
+    storageSet(PROJECTS_KEY_V2, JSON.stringify(projects));
+    storageSet(WORKSPACES_KEY_V2, JSON.stringify(workspaces));
   }
 
   activeProjectId.subscribe(id => {
     if (id) {
-      localStorage.setItem(ACTIVE_PROJECT_KEY_V2, id);
+      storageSet(ACTIVE_PROJECT_KEY_V2, id);
     } else {
-      localStorage.removeItem(ACTIVE_PROJECT_KEY_V2);
+      storageRemove(ACTIVE_PROJECT_KEY_V2);
     }
   });
 
   activeWorkspaceId.subscribe(id => {
     if (id) {
-      localStorage.setItem(ACTIVE_WORKSPACE_KEY_V2, id);
+      storageSet(ACTIVE_WORKSPACE_KEY_V2, id);
     } else {
-      localStorage.removeItem(ACTIVE_WORKSPACE_KEY_V2);
+      storageRemove(ACTIVE_WORKSPACE_KEY_V2);
     }
   });
 

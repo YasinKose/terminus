@@ -4,22 +4,36 @@ import type { SnippetCategory } from '../types/snippet';
 
 const STORAGE_KEY = 'terminus_categories';
 
-function createCategoryStore() {
-  const savedCategories = localStorage.getItem(STORAGE_KEY);
-  let initialCategories: SnippetCategory[] = [];
+function hasLocalStorage(): boolean {
+  return typeof localStorage !== 'undefined';
+}
 
-  if (savedCategories) {
-    try {
-      initialCategories = JSON.parse(savedCategories);
-    } catch (e) {
-      console.error('Failed to parse categories from localStorage:', e);
-      initialCategories = [];
-    }
+function loadInitialCategories(): SnippetCategory[] {
+  if (!hasLocalStorage()) {
+    return [];
   }
 
-  const { subscribe, set, update } = writable<SnippetCategory[]>(initialCategories);
+  const savedCategories = localStorage.getItem(STORAGE_KEY);
+  if (!savedCategories) {
+    return [];
+  }
+
+  try {
+    return JSON.parse(savedCategories);
+  } catch (error) {
+    console.error('Failed to parse categories from localStorage:', error);
+    return [];
+  }
+}
+
+function createCategoryStore() {
+  const { subscribe, update } = writable<SnippetCategory[]>(loadInitialCategories());
 
   function saveState(categories: SnippetCategory[]) {
+    if (!hasLocalStorage()) {
+      return;
+    }
+
     localStorage.setItem(STORAGE_KEY, JSON.stringify(categories));
   }
 

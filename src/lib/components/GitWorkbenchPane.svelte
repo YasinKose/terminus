@@ -106,6 +106,8 @@
   let operationLoading = false;
   let errorMessage = '';
   let successMessage = '';
+  let mounted = false;
+  const loadedTabs = new Set<WorkbenchTab>();
 
   let statuses: GitFileStatus[] = [];
   let selectedStagedPaths: Set<string> = new Set();
@@ -185,7 +187,9 @@
     }
 
     try {
-      diffContent = await gitDiff(projectPath, selectedDiffPath, selectedDiffStaged);
+      const nextDiff = await gitDiff(projectPath, selectedDiffPath, selectedDiffStaged);
+      if (!mounted) return;
+      diffContent = nextDiff;
     } catch (error) {
       setError(String(error));
       diffContent = '';
@@ -193,7 +197,9 @@
   }
 
   async function loadStatus(): Promise<void> {
-    statuses = await gitStatus(projectPath);
+    const nextStatus = await gitStatus(projectPath);
+    if (!mounted) return;
+    statuses = nextStatus;
     if (selectedDiffPath) {
       const stillExists = statuses.some(file => file.path === selectedDiffPath);
       if (!stillExists) {
@@ -203,32 +209,29 @@
     }
   }
 
-  async function loadCoreData(): Promise<void> {
-    const [nextStatus, nextCommits, nextBranches, nextRemotes] = await Promise.all([
-      gitStatus(projectPath),
-      gitLog(projectPath, 120),
-      gitListBranches(projectPath),
-      gitListRemotes(projectPath)
-    ]);
-
-    statuses = nextStatus;
-    commits = nextCommits;
-    branches = nextBranches;
-    remotes = nextRemotes;
-
+  function applyBranchDefaults(nextBranches: GitBranchSet): void {
     if (!remoteBranch) {
-      const currentBranch = branches.local.find(branch => branch.isCurrent);
+      const currentBranch = nextBranches.local.find(branch => branch.isCurrent);
       remoteBranch = currentBranch?.name || '';
     }
 
     if (!checkoutBranchName) {
-      checkoutBranchName = branches.local.find(branch => branch.isCurrent)?.name || '';
+      checkoutBranchName = nextBranches.local.find(branch => branch.isCurrent)?.name || '';
     }
   }
 
+  async function loadBranchesData(): Promise<void> {
+    const nextBranches = await gitListBranches(projectPath);
+    if (!mounted) return;
+    branches = nextBranches;
+    applyBranchDefaults(nextBranches);
+  }
+
   async function loadGitHubData(): Promise<void> {
-    ghStatus = await ghAuthStatus(projectPath);
-    if (!ghStatus.authenticated) {
+    const nextGhStatus = await ghAuthStatus(projectPath);
+    if (!mounted) return;
+    ghStatus = nextGhStatus;
+    if (!nextGhStatus.authenticated) {
       pullRequests = [];
       issues = [];
       return;
@@ -239,29 +242,109 @@
       ghIssueList(projectPath, 40)
     ]);
 
+    if (!mounted) return;
     pullRequests = prs;
     issues = nextIssues;
   }
 
-  async function refreshAll(): Promise<void> {
-    loading = true;
-    clearFlashMessages();
+  function markTabLoaded(tab: WorkbenchTab): void {
+    loadedTabs.add(tab);
+    if (tab === 'pull-requests' || tab === 'issues') {
+      loadedTabs.add('pull-requests');
+      loadedTabs.add('issues');
+    }
+  }
 
-    try {
-      await Promise.all([
-        loadCoreData(),
-        gitStashList(projectPath).then(data => stashEntries = data),
-        gitTagList(projectPath).then(data => tagEntries = data),
-        loadGitHubData()
-      ]);
+  async function loadTabData(tab: WorkbenchTab): Promise<void> {
+    if (!mounted) return;
+
+    if (tab === 'changes') {
+      await loadStatus();
       if (selectedDiffPath) {
         await loadDiff();
       }
+      markTabLoaded(tab);
+      return;
+    }
+
+    if (tab === 'history') {
+      const nextCommits = await gitLog(projectPath, 120);
+      if (!mounted) return;
+      commits = nextCommits;
+      markTabLoaded(tab);
+      return;
+    }
+
+    if (tab === 'branches') {
+      await loadBranchesData();
+      markTabLoaded(tab);
+      return;
+    }
+
+    if (tab === 'remotes') {
+      const [nextRemotes, nextBranches] = await Promise.all([
+        gitListRemotes(projectPath),
+        gitListBranches(projectPath)
+      ]);
+      if (!mounted) return;
+      remotes = nextRemotes;
+      branches = nextBranches;
+      applyBranchDefaults(nextBranches);
+      markTabLoaded(tab);
+      return;
+    }
+
+    if (tab === 'stash') {
+      const nextStashEntries = await gitStashList(projectPath);
+      if (!mounted) return;
+      stashEntries = nextStashEntries;
+      markTabLoaded(tab);
+      return;
+    }
+
+    if (tab === 'tags') {
+      const nextTagEntries = await gitTagList(projectPath);
+      if (!mounted) return;
+      tagEntries = nextTagEntries;
+      markTabLoaded(tab);
+      return;
+    }
+
+    if (tab === 'pull-requests' || tab === 'issues') {
+      await loadGitHubData();
+      markTabLoaded(tab);
+      return;
+    }
+
+    if (tab === 'advanced') {
+      await loadBranchesData();
+      markTabLoaded(tab);
+    }
+  }
+
+  async function refreshAll(options?: { preserveFlash?: boolean; force?: boolean }): Promise<void> {
+    const preserveFlash = options?.preserveFlash ?? false;
+    const force = options?.force ?? false;
+    if (!force && loadedTabs.has(activeTab)) return;
+
+    loading = true;
+    if (!preserveFlash) {
+      clearFlashMessages();
+    }
+
+    try {
+      await loadTabData(activeTab);
     } catch (error) {
       setError(String(error));
     } finally {
       loading = false;
     }
+  }
+
+  async function setActiveTab(nextTab: WorkbenchTab): Promise<void> {
+    if (activeTab === nextTab) return;
+    activeTab = nextTab;
+    await refreshAll({ preserveFlash: true });
   }
 
   async function runOperation(label: string, operation: () => Promise<GitCommandResult | void>): Promise<void> {
@@ -275,7 +358,8 @@
       } else {
         setSuccess(`${label} completed.`);
       }
-      await refreshAll();
+      loadedTabs.clear();
+      await refreshAll({ preserveFlash: true, force: true });
     } catch (error) {
       setError(String(error));
     } finally {
@@ -491,7 +575,13 @@
   }
 
   onMount(() => {
-    void refreshAll();
+    mounted = true;
+    void refreshAll({ force: true });
+
+    return () => {
+      mounted = false;
+      loadedTabs.clear();
+    };
   });
 </script>
 
@@ -504,7 +594,7 @@
     </div>
 
     <div class="right">
-      <button class="toolbar-btn" on:click={() => refreshAll()} disabled={loading || operationLoading}>
+      <button class="toolbar-btn" on:click={() => refreshAll({ force: true })} disabled={loading || operationLoading}>
         <RefreshCw size={14} />
         <span>Refresh</span>
       </button>
@@ -532,7 +622,7 @@
       <button
         class="tab-btn"
         class:active={activeTab === tab.id}
-        on:click={() => activeTab = tab.id}
+        on:click={() => setActiveTab(tab.id)}
       >
         {tab.label}
       </button>

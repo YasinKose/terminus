@@ -13,6 +13,7 @@ pub fn run() {
             pty::write_to_pty,
             pty::resize_pty,
             pty::close_pty,
+            pty::get_pty_snapshot,
             task::load_board,
             task::save_board,
             makefile::scan_makefile,

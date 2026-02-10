@@ -9,6 +9,19 @@
   import { appearanceSettings, resolveAppearance } from '$lib/stores/appearanceStore';
   import '@xterm/xterm/css/xterm.css';
 
+  const SNAPSHOT_MAX_BYTES = 4 * 1024 * 1024;
+  const ENABLE_WEBGL_RENDERER = !import.meta.env.DEV;
+
+  type PtyOutputChunk = {
+    seq: number;
+    data: string;
+  };
+
+  type PtySnapshot = {
+    seq: number;
+    data: string;
+  };
+
   export let workspaceId: string;
   export let termId: string;
   export let cwd: string | undefined = undefined;
@@ -25,6 +38,11 @@
   let unlisten: () => void;
   let exitUnlisten: () => void;
   let resizeObserver: ResizeObserver;
+  let isHydrating = true;
+  let lastSeq = 0;
+  let pendingChunks: PtyOutputChunk[] = [];
+  let pendingLegacyData: string[] = [];
+  let isDisposed = false;
   $: resolvedAppearance = resolveAppearance($appearanceSettings);
 
   function hexToRgba(hex: string, alpha: number): string {
@@ -66,6 +84,68 @@
     dispatch('contextmenu', { x: e.clientX, y: e.clientY, terminalId: termId });
   }
 
+  function parseOutputChunk(payload: unknown): PtyOutputChunk | null {
+    if (!payload || typeof payload !== 'object') {
+      return null;
+    }
+
+    const candidate = payload as Partial<PtyOutputChunk>;
+    if (typeof candidate.seq !== 'number' || typeof candidate.data !== 'string') {
+      return null;
+    }
+
+    return {
+      seq: candidate.seq,
+      data: candidate.data
+    };
+  }
+
+  function applyChunk(chunk: PtyOutputChunk) {
+    if (isDisposed || chunk.seq <= lastSeq) {
+      return;
+    }
+
+    term.write(chunk.data);
+    lastSeq = chunk.seq;
+  }
+
+  async function hydrateFromSnapshot() {
+    try {
+      const snapshot = await invoke<PtySnapshot>('get_pty_snapshot', {
+        id: termId,
+        maxBytes: SNAPSHOT_MAX_BYTES
+      });
+
+      if (isDisposed) return;
+
+      if (snapshot && typeof snapshot.data === 'string' && snapshot.data.length > 0) {
+        term.write(snapshot.data);
+      }
+      if (snapshot && typeof snapshot.seq === 'number') {
+        lastSeq = snapshot.seq;
+      }
+    } catch (error) {
+      console.warn('Failed to hydrate PTY snapshot:', error);
+    } finally {
+      if (isDisposed) return;
+      isHydrating = false;
+
+      if (pendingChunks.length > 0) {
+        const queued = [...pendingChunks].sort((a, b) => a.seq - b.seq);
+        pendingChunks = [];
+        queued.forEach((chunk) => applyChunk(chunk));
+      }
+
+      if (pendingLegacyData.length > 0) {
+        const legacyData = pendingLegacyData.join('');
+        pendingLegacyData = [];
+        if (legacyData.length > 0) {
+          term.write(legacyData);
+        }
+      }
+    }
+  }
+
   onMount(async () => {
     term = new Terminal({
       fontFamily: '"JetBrains Mono", "Fira Code", monospace',
@@ -79,12 +159,14 @@
     term.loadAddon(fitAddon);
     term.open(terminalContainer);
 
-    try {
-      webglAddon = new WebglAddon();
-      term.loadAddon(webglAddon);
-    } catch (e) {
-      console.warn('WebGL addon could not be loaded, falling back to canvas renderer:', e);
-      webglAddon = null;
+    if (ENABLE_WEBGL_RENDERER) {
+      try {
+        webglAddon = new WebglAddon();
+        term.loadAddon(webglAddon);
+      } catch (e) {
+        console.warn('WebGL addon could not be loaded, falling back to canvas renderer:', e);
+        webglAddon = null;
+      }
     }
 
     setTimeout(() => fitAddon.fit(), 100);
@@ -93,8 +175,24 @@
       invoke('write_to_pty', { id: termId, data }).catch(console.error);
     });
 
-    unlisten = await listen<string>(`pty-output-${termId}`, (event) => {
-      term.write(event.payload);
+    unlisten = await listen<unknown>(`pty-output-${termId}`, (event) => {
+      const chunk = parseOutputChunk(event.payload);
+      if (chunk) {
+        if (isHydrating) {
+          pendingChunks.push(chunk);
+          return;
+        }
+        applyChunk(chunk);
+        return;
+      }
+
+      if (typeof event.payload === 'string') {
+        if (isHydrating) {
+          pendingLegacyData.push(event.payload);
+          return;
+        }
+        term.write(event.payload);
+      }
     });
 
     exitUnlisten = await listen(`pty-exit-${termId}`, () => {
@@ -103,10 +201,12 @@
 
     try {
       await invoke('spawn_pty', { id: termId, cwd });
+      await hydrateFromSnapshot();
       term.focus();
     } catch (error) {
       console.error('Failed to spawn PTY:', error);
       term.write(`\r\nFailed to start terminal: ${error}\r\n`);
+      isHydrating = false;
     }
 
     resizeObserver = new ResizeObserver(() => {
@@ -123,6 +223,7 @@
   });
 
   onDestroy(() => {
+    isDisposed = true;
     if (resizeObserver) resizeObserver.disconnect();
     if (unlisten) unlisten();
     if (exitUnlisten) exitUnlisten();

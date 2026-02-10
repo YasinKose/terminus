@@ -1,4 +1,5 @@
 use portable_pty::{native_pty_system, CommandBuilder, MasterPty, PtySize};
+use serde::Serialize;
 use std::{
     collections::HashMap,
     env,
@@ -9,6 +10,8 @@ use std::{
 };
 use tauri::{AppHandle, Emitter, State};
 
+const MAX_SCROLLBACK_BYTES: usize = 4 * 1024 * 1024;
+
 pub struct PtySession {
     pub master: Box<dyn MasterPty + Send>,
     pub writer: Box<dyn Write + Send>,
@@ -17,6 +20,20 @@ pub struct PtySession {
 pub struct PtyState {
     pub ptys: Arc<Mutex<HashMap<String, PtySession>>>,
     pub login_env: Arc<Mutex<HashMap<String, String>>>,
+    pub scrollbacks: Arc<Mutex<HashMap<String, String>>>,
+    pub output_seq: Arc<Mutex<HashMap<String, u64>>>,
+}
+
+#[derive(Clone, Serialize)]
+pub struct PtyOutputChunk {
+    pub seq: u64,
+    pub data: String,
+}
+
+#[derive(Serialize)]
+pub struct PtySnapshot {
+    pub seq: u64,
+    pub data: String,
 }
 
 impl Default for PtyState {
@@ -26,6 +43,8 @@ impl Default for PtyState {
         Self {
             ptys: Arc::new(Mutex::new(HashMap::new())),
             login_env: Arc::new(Mutex::new(login_env)),
+            scrollbacks: Arc::new(Mutex::new(HashMap::new())),
+            output_seq: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 }
@@ -124,10 +143,14 @@ pub fn spawn_pty(
             writer,
         },
     );
+    state.scrollbacks.lock().unwrap().entry(id.clone()).or_default();
+    state.output_seq.lock().unwrap().entry(id.clone()).or_insert(0);
 
     let app_reader = app.clone();
     let app_exit = app.clone();
     let id_clone = id.clone();
+    let scrollback_state = state.scrollbacks.clone();
+    let output_seq_state = state.output_seq.clone();
 
     // Reader thread with UTF-8 boundary handling and output coalescing
     thread::spawn(move || {
@@ -146,7 +169,13 @@ pub fn spawn_pty(
                     if valid_len > 0 {
                         let valid_bytes = &leftover[..valid_len];
                         if let Ok(data) = String::from_utf8(valid_bytes.to_vec()) {
-                            let _ = app_reader.emit(&format!("pty-output-{}", id_clone), data);
+                            emit_output_chunk(
+                                &app_reader,
+                                &id_clone,
+                                data,
+                                &scrollback_state,
+                                &output_seq_state,
+                            );
                         }
                         leftover = leftover[valid_len..].to_vec();
                     }
@@ -158,15 +187,25 @@ pub fn spawn_pty(
         // Emit any remaining bytes
         if !leftover.is_empty() {
             let data = String::from_utf8_lossy(&leftover).to_string();
-            let _ = app_reader.emit(&format!("pty-output-{}", id_clone), data);
+            emit_output_chunk(
+                &app_reader,
+                &id_clone,
+                data,
+                &scrollback_state,
+                &output_seq_state,
+            );
         }
     });
 
-    let state_clone = state.ptys.clone();
+    let pty_state = state.ptys.clone();
+    let scrollback_cleanup = state.scrollbacks.clone();
+    let output_seq_cleanup = state.output_seq.clone();
     let id_clone_2 = id.clone();
     thread::spawn(move || {
         let _ = child.wait();
-        state_clone.lock().unwrap().remove(&id_clone_2);
+        pty_state.lock().unwrap().remove(&id_clone_2);
+        scrollback_cleanup.lock().unwrap().remove(&id_clone_2);
+        output_seq_cleanup.lock().unwrap().remove(&id_clone_2);
         let _ = app_exit.emit(&format!("pty-exit-{}", id_clone_2), ());
     });
 
@@ -193,6 +232,59 @@ fn find_utf8_boundary(bytes: &[u8]) -> usize {
     }
 
     0
+}
+
+fn emit_output_chunk(
+    app: &AppHandle,
+    id: &str,
+    data: String,
+    scrollback_state: &Arc<Mutex<HashMap<String, String>>>,
+    output_seq_state: &Arc<Mutex<HashMap<String, u64>>>,
+) {
+    {
+        let mut scrollbacks = scrollback_state.lock().unwrap();
+        let scrollback = scrollbacks.entry(id.to_string()).or_default();
+        append_scrollback(scrollback, &data);
+    }
+
+    let seq = {
+        let mut output_seq = output_seq_state.lock().unwrap();
+        let entry = output_seq.entry(id.to_string()).or_insert(0);
+        *entry += 1;
+        *entry
+    };
+
+    let payload = PtyOutputChunk { seq, data };
+    let _ = app.emit(&format!("pty-output-{}", id), payload);
+}
+
+fn append_scrollback(scrollback: &mut String, data: &str) {
+    scrollback.push_str(data);
+    if scrollback.len() <= MAX_SCROLLBACK_BYTES {
+        return;
+    }
+
+    let overflow = scrollback.len() - MAX_SCROLLBACK_BYTES;
+    let mut trim_at = overflow;
+    while trim_at < scrollback.len() && !scrollback.is_char_boundary(trim_at) {
+        trim_at += 1;
+    }
+    scrollback.drain(..trim_at);
+}
+
+fn trim_to_last_bytes(data: String, max_bytes: usize) -> String {
+    if max_bytes == 0 {
+        return String::new();
+    }
+    if data.len() <= max_bytes {
+        return data;
+    }
+
+    let mut start = data.len() - max_bytes;
+    while start < data.len() && !data.is_char_boundary(start) {
+        start += 1;
+    }
+    data[start..].to_string()
 }
 
 #[tauri::command]
@@ -228,10 +320,33 @@ pub fn resize_pty(
 #[tauri::command]
 pub fn close_pty(state: State<'_, PtyState>, id: String) -> Result<(), String> {
     let mut ptys = state.ptys.lock().unwrap();
-    if ptys.remove(&id).is_some() {
-        // PTY session dropped, master/writer closed automatically
-        Ok(())
-    } else {
-        Ok(()) // Already closed, not an error
-    }
+    let _ = ptys.remove(&id);
+    drop(ptys);
+
+    state.scrollbacks.lock().unwrap().remove(&id);
+    state.output_seq.lock().unwrap().remove(&id);
+    Ok(())
+}
+
+#[tauri::command]
+pub fn get_pty_snapshot(
+    state: State<'_, PtyState>,
+    id: String,
+    max_bytes: Option<usize>,
+) -> Result<PtySnapshot, String> {
+    let seq = {
+        let output_seq = state.output_seq.lock().unwrap();
+        *output_seq.get(&id).unwrap_or(&0)
+    };
+
+    let data = {
+        let scrollbacks = state.scrollbacks.lock().unwrap();
+        scrollbacks.get(&id).cloned().unwrap_or_default()
+    };
+
+    let requested_max = max_bytes.unwrap_or(MAX_SCROLLBACK_BYTES);
+    let capped_max = requested_max.min(MAX_SCROLLBACK_BYTES);
+    let data = trim_to_last_bytes(data, capped_max);
+
+    Ok(PtySnapshot { seq, data })
 }

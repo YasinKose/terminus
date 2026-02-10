@@ -1,5 +1,5 @@
 export type SplitDirection = 'horizontal' | 'vertical';
-export type PaneNode = SplitContainer | TerminalLeaf;
+export type PaneNode = SplitContainer | TerminalLeaf | GitLeaf;
 
 export interface SplitContainer {
   type: 'split';
@@ -15,12 +15,20 @@ export interface TerminalLeaf {
   title: string;
 }
 
+export interface GitLeaf {
+  type: 'git';
+  id: string;
+  title: string;
+}
+
 export interface Workspace {
   id: string;
   projectId: string;
   name: string;
   root: PaneNode | null;
   activeTerminalId: string | null;
+  gitPaneId?: string | null;
+  gitDetached?: boolean;
   createdAt: number;
   updatedAt: number;
 }

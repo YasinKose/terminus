@@ -139,6 +139,8 @@ function toWorkspaceV2(projectId: string, workspace: ProjectV1['workspaces'][num
     name: workspace.name,
     root: workspace.root,
     activeTerminalId: workspace.activeTerminalId,
+    gitPaneId: null,
+    gitDetached: false,
     createdAt: now,
     updatedAt: now
   };
@@ -198,6 +200,9 @@ export function collectTerminalIds(node: PaneNode | null): string[] {
   if (!node) return [];
   if (node.type === 'terminal') {
     return [node.id];
+  }
+  if (node.type === 'git') {
+    return [];
   }
   return node.children.flatMap(child => collectTerminalIds(child));
 }

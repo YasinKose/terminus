@@ -6,6 +6,7 @@
   import Terminal from './Terminal.svelte';
   import PaneContextMenu from './PaneContextMenu.svelte';
   import DropZoneOverlay from './DropZoneOverlay.svelte';
+  import GitWorkbenchPane from './GitWorkbenchPane.svelte';
 
   export let node: PaneNode;
   export let projectId: string;
@@ -221,6 +222,14 @@
     e.stopPropagation();
     projectStore.closePane(projectId, workspaceId, terminalId);
   }
+
+  async function handleDetachGitPane() {
+    await projectStore.detachGitPane(projectId, workspaceId);
+  }
+
+  async function handleDockGitPane() {
+    await projectStore.dockGitPane(projectId, workspaceId);
+  }
 </script>
 
 {#if node.type === 'split'}
@@ -253,7 +262,7 @@
       {/if}
     {/each}
   </div>
-{:else}
+{:else if node.type === 'terminal'}
   <!-- Terminal leaf -->
   <div
     class="terminal-pane"
@@ -304,6 +313,23 @@
     on:close={handleClosePane}
     on:hide={hideContextMenu}
   />
+{:else}
+  <div
+    class="terminal-pane git-pane"
+    class:active={false}
+    role="region"
+    aria-label="Git workbench pane"
+  >
+    <GitWorkbenchPane
+      {workspaceId}
+      {projectId}
+      {projectPath}
+      detached={false}
+      on:close={() => projectStore.closeGitPane(projectId, workspaceId)}
+      on:detach={handleDetachGitPane}
+      on:dock={handleDockGitPane}
+    />
+  </div>
 {/if}
 
 <style>
@@ -404,5 +430,9 @@
   .terminal-body {
     flex: 1 1 auto;
     min-height: 0;
+  }
+
+  .git-pane {
+    padding: 0;
   }
 </style>

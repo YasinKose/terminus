@@ -4,7 +4,7 @@
   import { isCommandPaletteOpen, isTaskBoardOpen, isSidebarOpen } from '../stores/uiStore';
   import { projectStore } from '../stores/projectStore';
   import { rescanMakefileSnippets } from '../utils/makefileScanner';
-  import { Search, Terminal, Layout, CheckSquare, X, RefreshCw } from 'lucide-svelte';
+  import { Search, Terminal, Layout, CheckSquare, X, RefreshCw, FolderGit2, ExternalLink } from 'lucide-svelte';
   import { get } from 'svelte/store';
 
   let inputElement: HTMLInputElement;
@@ -54,6 +54,38 @@
       action: () => isSidebarOpen.update(v => !v)
     },
     {
+      id: 'open-git-workbench',
+      label: 'Open Git Workbench',
+      icon: FolderGit2,
+      action: async () => {
+        const activeProject = get(projectStore.activeProjectId);
+        const activeWorkspace = get(projectStore.activeWorkspaceId);
+        if (!activeProject || !activeWorkspace) {
+          syncStatus = 'No active workspace';
+          setTimeout(() => syncStatus = '', 2000);
+          return;
+        }
+
+        await projectStore.openGitPane(activeProject, activeWorkspace);
+      }
+    },
+    {
+      id: 'detach-git-workbench',
+      label: 'Detach Git Workbench',
+      icon: ExternalLink,
+      action: async () => {
+        const activeProject = get(projectStore.activeProjectId);
+        const activeWorkspace = get(projectStore.activeWorkspaceId);
+        if (!activeProject || !activeWorkspace) {
+          syncStatus = 'No active workspace';
+          setTimeout(() => syncStatus = '', 2000);
+          return;
+        }
+
+        await projectStore.detachGitPane(activeProject, activeWorkspace);
+      }
+    },
+    {
       id: 'reload-window',
       label: 'Reload Window',
       icon: Terminal,
@@ -70,9 +102,14 @@
     tick().then(() => inputElement.focus());
   }
 
-  function execute(command: typeof commands[0]) {
-    command.action();
-    close();
+  async function execute(command: typeof commands[0]) {
+    try {
+      await command.action();
+    } catch (error) {
+      console.error('Command palette action failed:', error);
+    } finally {
+      close();
+    }
   }
 
   function close() {

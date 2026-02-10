@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import TitleBar from './lib/components/TitleBar.svelte';
   import Sidebar from './lib/components/Sidebar.svelte';
   import WorkspaceTabs from './lib/components/WorkspaceTabs.svelte';
@@ -22,6 +23,7 @@
   import { FolderPlus, Terminal } from 'lucide-svelte';
   import { calculatePaneRects, findAdjacentPane } from './lib/utils/layoutUtils';
   import { invoke } from '@tauri-apps/api/core';
+  import { listen } from '@tauri-apps/api/event';
 
   const { activeProjectId, activeWorkspaceId, workspaces } = projectStore;
 
@@ -62,6 +64,16 @@
 
   function createTerminalInWorkspace(workspaceId: string) {
     projectStore.ensureWorkspaceTerminal(workspaceId);
+  }
+
+  async function openGitWorkbenchInActiveWorkspace() {
+    if (!activeProject || !activeWorkspace) return;
+    await projectStore.openGitPane(activeProject.id, activeWorkspace.id);
+  }
+
+  async function detachGitWorkbenchInActiveWorkspace() {
+    if (!activeProject || !activeWorkspace) return;
+    await projectStore.detachGitPane(activeProject.id, activeWorkspace.id);
   }
 
   // Workspace container element reference for rect calculations
@@ -187,8 +199,12 @@
 
     if (matchesShortcut(e, $shortcutSettings.closePane)) {
       e.preventDefault();
-      if (activeProject && activeWorkspace && activeWorkspace.activeTerminalId) {
-        projectStore.closePane(activeProject.id, activeWorkspace.id, activeWorkspace.activeTerminalId);
+      if (activeProject && activeWorkspace) {
+        if (activeWorkspace.activeTerminalId) {
+          projectStore.closePane(activeProject.id, activeWorkspace.id, activeWorkspace.activeTerminalId);
+        } else if (activeWorkspace.gitPaneId) {
+          projectStore.closeGitPane(activeProject.id, activeWorkspace.id);
+        }
       }
       return;
     }
@@ -196,8 +212,42 @@
     if (matchesShortcut(e, $shortcutSettings.runSnippetModal)) {
       e.preventDefault();
       isSnippetModalOpen.update(v => !v);
+      return;
+    }
+
+    if (matchesShortcut(e, $shortcutSettings.toggleGitWorkbench)) {
+      e.preventDefault();
+      void openGitWorkbenchInActiveWorkspace();
+      return;
+    }
+
+    if (matchesShortcut(e, $shortcutSettings.detachGitWorkbench)) {
+      e.preventDefault();
+      void detachGitWorkbenchInActiveWorkspace();
     }
   }
+
+  onMount(() => {
+    let unlistenGitDock: (() => void) | null = null;
+
+    void (async () => {
+      unlistenGitDock = await listen<Record<string, string>>('git-dock-request', (event) => {
+        const workspaceId = event.payload.workspaceId || event.payload.workspace_id;
+        const projectId = event.payload.projectId || event.payload.project_id;
+        if (!workspaceId || !projectId) return;
+
+        projectStore.setActiveWorkspace(projectId, workspaceId);
+        projectStore.setGitDetachedState(workspaceId, false);
+        void projectStore.openGitPane(projectId, workspaceId);
+      });
+    })();
+
+    return () => {
+      if (unlistenGitDock) {
+        unlistenGitDock();
+      }
+    };
+  });
 
   $: activeWorkspace = $workspaces.find(w => w.id === $activeWorkspaceId) || null;
   $: activeProject = (() => {

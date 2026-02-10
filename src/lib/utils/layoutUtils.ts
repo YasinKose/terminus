@@ -25,6 +25,10 @@ export function calculatePaneRects(
     }];
   }
 
+  if (node.type === 'git') {
+    return [];
+  }
+
   // Split container
   const rects: PaneRect[] = [];
   let offset = 0;
@@ -147,6 +151,9 @@ export function findAdjacentPane(
 export function collectAllTerminalIds(node: PaneNode): string[] {
   if (node.type === 'terminal') {
     return [node.id];
+  }
+  if (node.type === 'git') {
+    return [];
   }
   return node.children.flatMap(child => collectAllTerminalIds(child));
 }

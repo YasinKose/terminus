@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { List, Plus, Settings2, X } from 'lucide-svelte';
+  import { FolderGit2, List, Plus, Settings2, X } from 'lucide-svelte';
   import type { Project, Workspace } from '../stores/projectStore';
   import { projectStore } from '../stores/projectStore';
   import { isAppearanceSettingsOpen } from '../stores/uiStore';
@@ -63,6 +63,11 @@
 
   function openAppearanceSettings() {
     isAppearanceSettingsOpen.set(true);
+  }
+
+  async function openGitWorkbench() {
+    if (!activeProjectId || !activeWorkspaceId) return;
+    await projectStore.openGitPane(activeProjectId, activeWorkspaceId);
   }
 
   function closeWorkspace(workspace: Workspace) {
@@ -359,6 +364,10 @@
         <Plus size={14} />
       </button>
 
+      <button class="settings-btn" on:click={openGitWorkbench} aria-label="Open git workbench" title="Open git workbench" disabled={!activeWorkspaceId}>
+        <FolderGit2 size={14} />
+      </button>
+
       <button class="settings-btn" on:click={openAppearanceSettings} aria-label="Open appearance settings" title="Appearance settings">
         <Settings2 size={14} />
       </button>
@@ -605,6 +614,11 @@
   }
 
   .add-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .settings-btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
   }

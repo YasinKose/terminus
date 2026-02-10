@@ -1,6 +1,7 @@
+mod git;
+mod makefile;
 mod pty;
 mod task;
-mod makefile;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -14,7 +15,46 @@ pub fn run() {
             pty::close_pty,
             task::load_board,
             task::save_board,
-            makefile::scan_makefile
+            makefile::scan_makefile,
+            git::git_status,
+            git::git_diff,
+            git::git_log,
+            git::git_stage,
+            git::git_stage_all,
+            git::git_unstage,
+            git::git_unstage_all,
+            git::git_commit,
+            git::git_list_branches,
+            git::git_checkout_branch,
+            git::git_create_branch,
+            git::git_delete_branch,
+            git::git_rename_branch,
+            git::git_list_remotes,
+            git::git_fetch,
+            git::git_pull,
+            git::git_push,
+            git::git_rebase_start,
+            git::git_rebase_continue,
+            git::git_rebase_abort,
+            git::git_cherry_pick,
+            git::git_reset,
+            git::git_revert,
+            git::git_stash_save,
+            git::git_stash_list,
+            git::git_stash_apply,
+            git::git_stash_drop,
+            git::git_tag_list,
+            git::git_tag_create,
+            git::git_tag_delete,
+            git::gh_auth_status,
+            git::gh_pr_list,
+            git::gh_pr_create,
+            git::gh_issue_list,
+            git::gh_issue_create,
+            git::open_git_window,
+            git::focus_git_window,
+            git::close_git_window,
+            git::dock_git_window
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {

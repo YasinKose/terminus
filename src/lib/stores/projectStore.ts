@@ -1,12 +1,20 @@
 import { get, writable, type Readable } from 'svelte/store';
 import { invoke } from '@tauri-apps/api/core';
 import { v4 as uuidv4 } from 'uuid';
-import type { PaneNode, Project, Workspace, TerminalLeaf, SplitContainer, SplitDirection } from '../types/workspace';
+import type {
+  PaneNode,
+  Project,
+  Workspace,
+  TerminalLeaf,
+  SplitContainer,
+  SplitDirection,
+  GitLeaf
+} from '../types/workspace';
 import { addMakefileSnippets } from '../utils/makefileScanner';
 import { migrateProjects } from './migration';
 
 // Re-export types for convenience
-export type { Project, Workspace, PaneNode, TerminalLeaf, SplitContainer, SplitDirection };
+export type { Project, Workspace, PaneNode, TerminalLeaf, SplitContainer, SplitDirection, GitLeaf };
 
 const PROJECTS_KEY_V2 = 'terminus_projects_v2';
 const WORKSPACES_KEY_V2 = 'terminus_workspaces_v2';
@@ -63,6 +71,14 @@ function createTerminalLeaf(id?: string, title = 'Terminal 1'): TerminalLeaf {
   };
 }
 
+function createGitLeaf(id?: string, title = 'GitHub Workbench'): GitLeaf {
+  return {
+    type: 'git',
+    id: id ?? uuidv4(),
+    title
+  };
+}
+
 function createWorkspace(projectId: string, name: string): Workspace {
   const terminal = createTerminalLeaf();
   const now = nowTs();
@@ -72,6 +88,8 @@ function createWorkspace(projectId: string, name: string): Workspace {
     name,
     root: terminal,
     activeTerminalId: terminal.id,
+    gitPaneId: null,
+    gitDetached: false,
     createdAt: now,
     updatedAt: now
   };
@@ -83,6 +101,8 @@ function normalizeWorkspace(raw: Workspace): Workspace {
     ...raw,
     root: raw.root ?? null,
     activeTerminalId: raw.activeTerminalId ?? null,
+    gitPaneId: raw.gitPaneId ?? null,
+    gitDetached: raw.gitDetached ?? false,
     createdAt: raw.createdAt ?? now,
     updatedAt: raw.updatedAt ?? now
   };
@@ -219,7 +239,25 @@ function createProjectStore() {
     if (node.type === 'terminal') {
       return [node.id];
     }
+    if (node.type === 'git') {
+      return [];
+    }
     return node.children.flatMap(child => collectTerminalIds(child));
+  }
+
+  function collectGitPaneIds(node: PaneNode | null): string[] {
+    if (!node) return [];
+    if (node.type === 'git') {
+      return [node.id];
+    }
+    if (node.type === 'terminal') {
+      return [];
+    }
+    return node.children.flatMap(child => collectGitPaneIds(child));
+  }
+
+  function firstTerminalId(node: PaneNode | null): string | null {
+    return collectTerminalIds(node)[0] || null;
   }
 
   function replaceNode(root: PaneNode, targetId: string, newNode: PaneNode): PaneNode {
@@ -300,6 +338,87 @@ function createProjectStore() {
     }
   }
 
+  async function focusGitWindow(workspaceId: string): Promise<boolean> {
+    try {
+      return await invoke<boolean>('focus_git_window', { workspaceId });
+    } catch {
+      return false;
+    }
+  }
+
+  async function closeGitWindowByWorkspace(workspaceId: string): Promise<void> {
+    try {
+      await invoke('close_git_window', { workspaceId });
+    } catch (error) {
+      console.error(`Failed to close Git window for workspace ${workspaceId}:`, error);
+    }
+  }
+
+  async function openGitWindowByWorkspace(workspaceId: string, projectId: string): Promise<boolean> {
+    const project = getProjectById(projectId);
+    if (!project) return false;
+
+    try {
+      await invoke('open_git_window', {
+        workspaceId,
+        projectId,
+        projectPath: project.path
+      });
+      return true;
+    } catch (error) {
+      console.error(`Failed to open Git window for workspace ${workspaceId}:`, error);
+      return false;
+    }
+  }
+
+  function appendPaneNearActive(root: PaneNode, pane: PaneNode): PaneNode {
+    const anchorTerminalId = firstTerminalId(root);
+    if (!anchorTerminalId) {
+      return {
+        type: 'split',
+        id: uuidv4(),
+        direction: 'horizontal',
+        children: [root, pane],
+        sizes: [50, 50]
+      };
+    }
+
+    const parent = findParent(root, anchorTerminalId);
+    const direction: SplitDirection = 'horizontal';
+
+    if (parent && parent.direction === direction) {
+      const targetIndex = parent.children.findIndex(child => child.id === anchorTerminalId);
+      const newChildren = [...parent.children];
+      newChildren.splice(targetIndex + 1, 0, pane);
+      const equalSize = 100 / newChildren.length;
+      const newSizes = newChildren.map(() => equalSize);
+      return replaceNode(root, parent.id, {
+        ...parent,
+        children: newChildren,
+        sizes: newSizes
+      });
+    }
+
+    const targetNode = findNode(root, anchorTerminalId);
+    if (!targetNode) {
+      return {
+        type: 'split',
+        id: uuidv4(),
+        direction,
+        children: [root, pane],
+        sizes: [50, 50]
+      };
+    }
+
+    return replaceNode(root, anchorTerminalId, {
+      type: 'split',
+      id: uuidv4(),
+      direction,
+      children: [targetNode, pane],
+      sizes: [50, 50]
+    });
+  }
+
   function ensureWorkspaceForProject(projectId: string): string {
     const projects = get(projectsStore);
     const workspaces = get(workspacesStore);
@@ -366,6 +485,72 @@ function createProjectStore() {
     }
   }
 
+  async function openGitPaneInternal(projectId: string, workspaceId: string): Promise<string | null> {
+    const workspace = getWorkspaceById(workspaceId);
+    if (!workspace || workspace.projectId !== projectId) return null;
+
+    if (workspace.gitDetached) {
+      const focused = await focusGitWindow(workspaceId);
+      if (focused) {
+        return null;
+      }
+
+      updateWorkspaceById(workspaceId, current => ({
+        ...current,
+        gitDetached: false
+      }));
+    }
+
+    const focusedExistingWindow = await focusGitWindow(workspaceId);
+    if (focusedExistingWindow) {
+      updateWorkspaceById(workspaceId, current => ({
+        ...current,
+        gitDetached: true
+      }));
+      return null;
+    }
+
+    let gitPaneId: string | null = null;
+
+    updateWorkspaceById(workspaceId, current => {
+      if (current.projectId !== projectId) return current;
+
+      const existingGitIds = collectGitPaneIds(current.root);
+      if (existingGitIds.length > 0) {
+        gitPaneId = existingGitIds[0] || null;
+        return {
+          ...current,
+          gitPaneId,
+          gitDetached: false
+        };
+      }
+
+      const gitPane = createGitLeaf();
+      gitPaneId = gitPane.id;
+
+      if (!current.root) {
+        return {
+          ...current,
+          root: gitPane,
+          activeTerminalId: null,
+          gitPaneId: gitPane.id,
+          gitDetached: false
+        };
+      }
+
+      const nextRoot = appendPaneNearActive(current.root, gitPane);
+      return {
+        ...current,
+        root: nextRoot,
+        gitPaneId: gitPane.id,
+        gitDetached: false,
+        activeTerminalId: current.activeTerminalId || firstTerminalId(nextRoot)
+      };
+    });
+
+    return gitPaneId;
+  }
+
   return {
     subscribe: projectsStore.subscribe,
     workspaces: workspacesStore as Readable<Workspace[]>,
@@ -416,6 +601,7 @@ function createProjectStore() {
       const nextProjects = projects.filter(project => project.id !== id);
       const removedWorkspaces = workspaces.filter(workspace => workspace.projectId === id);
       const removedTerminalIds = removedWorkspaces.flatMap(workspace => collectTerminalIds(workspace.root));
+      const removedWorkspaceIds = removedWorkspaces.map(workspace => workspace.id);
       const nextWorkspaces = workspaces.filter(workspace => workspace.projectId !== id);
 
       projectsStore.set(nextProjects);
@@ -424,6 +610,9 @@ function createProjectStore() {
 
       removedTerminalIds.forEach(terminalId => {
         void closePtySession(terminalId);
+      });
+      removedWorkspaceIds.forEach(workspaceId => {
+        void closeGitWindowByWorkspace(workspaceId);
       });
 
       const currentActiveProject = get(activeProjectId);
@@ -509,6 +698,7 @@ function createProjectStore() {
       terminalIds.forEach(id => {
         void closePtySession(id);
       });
+      void closeGitWindowByWorkspace(workspaceId);
 
       const currentWorkspace = get(activeWorkspaceId);
       if (currentWorkspace === workspaceId) {
@@ -598,6 +788,95 @@ function createProjectStore() {
       saveState(projects, next);
     },
 
+    openGitPane: async (projectId: string, workspaceId: string) =>
+      await openGitPaneInternal(projectId, workspaceId),
+
+    closeGitPane: (projectId: string, workspaceId: string) => {
+      const workspace = getWorkspaceById(workspaceId);
+      if (!workspace || workspace.projectId !== projectId) return;
+
+      updateWorkspaceById(workspaceId, current => {
+        if (current.projectId !== projectId) return current;
+        if (!current.gitPaneId) {
+          return {
+            ...current,
+            gitDetached: false
+          };
+        }
+
+        const nextRoot = removeNode(current.root, current.gitPaneId);
+        return {
+          ...current,
+          root: nextRoot,
+          gitPaneId: null,
+          gitDetached: false,
+          activeTerminalId: current.activeTerminalId && findNode(nextRoot, current.activeTerminalId)?.type === 'terminal'
+            ? current.activeTerminalId
+            : firstTerminalId(nextRoot)
+        };
+      });
+    },
+
+    detachGitPane: async (projectId: string, workspaceId: string) => {
+      const workspace = getWorkspaceById(workspaceId);
+      if (!workspace || workspace.projectId !== projectId) return false;
+
+      const focused = await focusGitWindow(workspaceId);
+      if (focused) {
+        updateWorkspaceById(workspaceId, current => {
+          const nextRoot = current.gitPaneId ? removeNode(current.root, current.gitPaneId) : current.root;
+          return {
+            ...current,
+            gitDetached: true,
+            gitPaneId: null,
+            root: nextRoot,
+            activeTerminalId: current.activeTerminalId && findNode(nextRoot, current.activeTerminalId)?.type === 'terminal'
+              ? current.activeTerminalId
+              : firstTerminalId(nextRoot)
+          };
+        });
+        return true;
+      }
+
+      const opened = await openGitWindowByWorkspace(workspaceId, projectId);
+      if (!opened) return false;
+
+      updateWorkspaceById(workspaceId, current => {
+        const nextRoot = current.gitPaneId ? removeNode(current.root, current.gitPaneId) : current.root;
+        return {
+          ...current,
+          root: nextRoot,
+          gitPaneId: null,
+          gitDetached: true,
+          activeTerminalId: current.activeTerminalId && findNode(nextRoot, current.activeTerminalId)?.type === 'terminal'
+            ? current.activeTerminalId
+            : firstTerminalId(nextRoot)
+        };
+      });
+
+      return true;
+    },
+
+    dockGitPane: async (projectId: string, workspaceId: string) => {
+      const workspace = getWorkspaceById(workspaceId);
+      if (!workspace || workspace.projectId !== projectId) return null;
+
+      await closeGitWindowByWorkspace(workspaceId);
+      updateWorkspaceById(workspaceId, current => ({
+        ...current,
+        gitDetached: false
+      }));
+
+      return await openGitPaneInternal(projectId, workspaceId);
+    },
+
+    setGitDetachedState: (workspaceId: string, detached: boolean) => {
+      updateWorkspaceById(workspaceId, workspace => ({
+        ...workspace,
+        gitDetached: detached
+      }));
+    },
+
     // Pane methods
     splitPane: (projectId: string, workspaceId: string, paneId: string, direction: SplitDirection) => {
       let newTerminalId = '';
@@ -663,6 +942,7 @@ function createProjectStore() {
     ) => {
       const workspace = getWorkspaceById(workspaceId);
       if (!workspace || workspace.projectId !== projectId) return;
+      const targetNodeType = findNode(workspace.root, paneId)?.type ?? null;
 
       updateWorkspaceById(workspaceId, current => {
         if (!current.root) return current;
@@ -673,7 +953,8 @@ function createProjectStore() {
           return {
             ...current,
             root: null,
-            activeTerminalId: null
+            activeTerminalId: null,
+            gitPaneId: targetNodeType === 'git' ? null : current.gitPaneId
           };
         }
 
@@ -686,11 +967,12 @@ function createProjectStore() {
         return {
           ...current,
           root: newRoot,
-          activeTerminalId: newActiveId
+          activeTerminalId: newActiveId,
+          gitPaneId: targetNodeType === 'git' ? null : current.gitPaneId
         };
       });
 
-      if (!options?.skipPtyClose) {
+      if (!options?.skipPtyClose && targetNodeType === 'terminal') {
         void closePtySession(paneId);
       }
     },
@@ -731,14 +1013,27 @@ function createProjectStore() {
         if (workspace.root) {
           if (workspace.activeTerminalId) {
             terminalId = workspace.activeTerminalId;
-          } else {
-            const allIds = collectTerminalIds(workspace.root);
-            terminalId = allIds[0] || null;
+            return {
+              ...workspace,
+              activeTerminalId: terminalId
+            };
           }
 
+          const allIds = collectTerminalIds(workspace.root);
+          if (allIds.length > 0) {
+            terminalId = allIds[0] || null;
+            return {
+              ...workspace,
+              activeTerminalId: terminalId
+            };
+          }
+
+          const terminal = createTerminalLeaf();
+          terminalId = terminal.id;
           return {
             ...workspace,
-            activeTerminalId: terminalId
+            root: appendPaneNearActive(workspace.root, terminal),
+            activeTerminalId: terminal.id
           };
         }
 
@@ -865,7 +1160,7 @@ function createProjectStore() {
               }
             }
           } else {
-            newRoot = terminalToMove;
+            newRoot = appendPaneNearActive(workspace.root, terminalToMove);
           }
 
           return {

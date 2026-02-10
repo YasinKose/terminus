@@ -15,7 +15,9 @@ export type ShortcutId =
   | 'splitHorizontal'
   | 'splitVertical'
   | 'closePane'
-  | 'runSnippetModal';
+  | 'runSnippetModal'
+  | 'toggleGitWorkbench'
+  | 'detachGitWorkbench';
 
 export interface ShortcutBinding {
   key: string;
@@ -50,7 +52,9 @@ export const shortcutDefinitions: ShortcutDefinition[] = [
   { id: 'splitHorizontal', label: 'Split Horizontally', description: 'Splits active terminal into left/right panes.' },
   { id: 'splitVertical', label: 'Split Vertically', description: 'Splits active terminal into top/bottom panes.' },
   { id: 'closePane', label: 'Close Active Pane', description: 'Closes currently active terminal pane.' },
-  { id: 'runSnippetModal', label: 'Run Snippet Modal', description: 'Opens snippet run modal.' }
+  { id: 'runSnippetModal', label: 'Run Snippet Modal', description: 'Opens snippet run modal.' },
+  { id: 'toggleGitWorkbench', label: 'Open Git Workbench', description: 'Opens Git workbench in active workspace.' },
+  { id: 'detachGitWorkbench', label: 'Detach Git Workbench', description: 'Detaches active workspace git workbench to native window.' }
 ];
 
 export const defaultShortcutSettings: ShortcutSettings = {
@@ -68,7 +72,9 @@ export const defaultShortcutSettings: ShortcutSettings = {
   splitHorizontal: { key: 'd', primary: true, shift: false, alt: false },
   splitVertical: { key: 'd', primary: true, shift: true, alt: false },
   closePane: { key: 'w', primary: true, shift: false, alt: false },
-  runSnippetModal: { key: 's', primary: true, shift: true, alt: false }
+  runSnippetModal: { key: 's', primary: true, shift: true, alt: false },
+  toggleGitWorkbench: { key: 'g', primary: true, shift: true, alt: false },
+  detachGitWorkbench: { key: 'g', primary: true, shift: true, alt: true }
 };
 
 function normalizeShortcutKey(value: string): string {

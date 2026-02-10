@@ -217,10 +217,10 @@
 
         <!-- Scope Selection -->
         <div>
-          <label class="form-label block text-sm font-medium text-zinc-300 mb-2">
+          <p id="snippet-scope-label" class="form-label block text-sm font-medium text-zinc-300 mb-2">
             Scope
-          </label>
-          <div class="flex gap-3">
+          </p>
+          <div class="flex gap-3" role="radiogroup" aria-labelledby="snippet-scope-label">
             <label class="flex items-center gap-2 cursor-pointer">
               <input
                 type="radio"

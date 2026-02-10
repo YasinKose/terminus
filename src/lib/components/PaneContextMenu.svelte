@@ -244,7 +244,9 @@
     class="context-menu"
     style="left: {adjustedX}px; top: {adjustedY}px;"
     on:click|stopPropagation
+    on:keydown|stopPropagation
     role="menu"
+    tabindex="-1"
   >
     <button class="menu-item" on:click={handleSplitHorizontal} role="menuitem">
       <Columns2 size={16} />

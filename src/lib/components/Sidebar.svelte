@@ -165,7 +165,13 @@
               </button>
 
               {#if showProjectMenu === project.id}
-                <div class="project-dropdown" onclick={(e) => e.stopPropagation()} role="menu" tabindex="-1">
+                <div
+                  class="project-dropdown"
+                  onclick={(e) => e.stopPropagation()}
+                  onkeydown={(e) => e.stopPropagation()}
+                  role="menu"
+                  tabindex="-1"
+                >
                   <div class="color-picker-row">
                     <span>Project Color</span>
                     <div class="color-swatches">

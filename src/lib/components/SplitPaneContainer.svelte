@@ -583,6 +583,9 @@
         handleTerminalFocus(node.id);
         handleManualDragStart(e, 'terminal');
       }}
+      on:keydown|stopPropagation
+      role="button"
+      tabindex="-1"
     >
       <span class="pane-title">{node.title || 'Terminal'}</span>
       <div class="pane-actions">
@@ -633,7 +636,8 @@
     on:drop|capture={handleDrop}
     on:mousedown={handleGitPaneMouseDown}
     on:contextmenu={(e) => handleContextMenu(e, node.id)}
-    role="region"
+    role="button"
+    tabindex="-1"
     aria-label="Git workbench pane"
   >
     <GitWorkbenchPane

@@ -420,6 +420,7 @@
       on:click|stopPropagation
       on:keydown|stopPropagation
       role="menu"
+      tabindex="-1"
     >
       <button on:click={() => startRename(menuWorkspace.id)}>
         Rename

@@ -51,9 +51,12 @@
   class="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm"
   transition:fade={{ duration: 150 }}
   onclick={onCancel}
+  onkeydown={handleKeydown}
   role="dialog"
   aria-modal="true"
   aria-labelledby="dialog-title"
+  aria-describedby="dialog-message"
+  tabindex="-1"
 >
   <div
     class="w-full max-w-md bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl overflow-hidden"
@@ -84,7 +87,7 @@
 
     <!-- Content -->
     <div class="px-5 py-4">
-      <p class="text-sm text-zinc-300 leading-relaxed">
+      <p id="dialog-message" class="text-sm text-zinc-300 leading-relaxed">
         {message}
       </p>
     </div>

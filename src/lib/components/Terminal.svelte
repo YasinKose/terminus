@@ -242,6 +242,7 @@
   class:visible
   bind:this={terminalContainer}
   on:contextmenu={handleContextMenu}
+  role="presentation"
 ></div>
 
 <style>

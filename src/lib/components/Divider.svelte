@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onDestroy } from 'svelte';
   import type { SplitDirection } from '../types/workspace';
 
   export let direction: SplitDirection;
@@ -13,6 +13,13 @@
 
   let isDragging = false;
   let startPos = 0;
+
+  function cleanupListeners() {
+    window.removeEventListener('mousemove', handleMouseMove);
+    window.removeEventListener('mouseup', handleMouseUp);
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  }
 
   function handleMouseDown(e: MouseEvent) {
     e.preventDefault();
@@ -36,26 +43,34 @@
   }
 
   function handleMouseUp() {
+    if (!isDragging) {
+      cleanupListeners();
+      return;
+    }
+
     isDragging = false;
-    window.removeEventListener('mousemove', handleMouseMove);
-    window.removeEventListener('mouseup', handleMouseUp);
-    document.body.style.cursor = '';
-    document.body.style.userSelect = '';
+    cleanupListeners();
     dispatch('resizeEnd', { containerId });
   }
+
+  onDestroy(() => {
+    cleanupListeners();
+  });
 </script>
 
-<div
+<button
+  type="button"
   class="divider {direction}"
   class:dragging={isDragging}
   on:mousedown={handleMouseDown}
-  role="separator"
-  aria-orientation={direction === 'horizontal' ? 'vertical' : 'horizontal'}
-  tabindex="0"
-></div>
+  aria-label={direction === 'horizontal' ? 'Resize panes horizontally' : 'Resize panes vertically'}
+></button>
 
 <style>
   .divider {
+    border: none;
+    padding: 0;
+    appearance: none;
     flex-shrink: 0;
     background-color: transparent;
     transition: background-color 0.15s ease;

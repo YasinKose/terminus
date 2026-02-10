@@ -40,6 +40,8 @@
     class="absolute inset-0 w-full h-full"
     data-tauri-drag-region
     ondblclick={toggleMaximize}
+    role="presentation"
+    aria-hidden="true"
   ></div>
 
   <!-- Content Layer -->

@@ -5,6 +5,7 @@
   import { WebglAddon } from '@xterm/addon-webgl';
   import { invoke } from '@tauri-apps/api/core';
   import { listen } from '@tauri-apps/api/event';
+  import { getCurrentWindow } from '@tauri-apps/api/window';
   import { projectStore } from '$lib/stores/projectStore';
   import { appearanceSettings, resolveAppearance } from '$lib/stores/appearanceStore';
   import '@xterm/xterm/css/xterm.css';
@@ -43,6 +44,8 @@
   let pendingChunks: PtyOutputChunk[] = [];
   let pendingLegacyData: string[] = [];
   let isDisposed = false;
+  let showFileDrop = false;
+  let fileDropUnlisten: (() => void) | null = null;
   $: resolvedAppearance = resolveAppearance($appearanceSettings);
 
   function hexToRgba(hex: string, alpha: number): string {
@@ -82,6 +85,13 @@
   function handleContextMenu(e: MouseEvent) {
     e.preventDefault();
     dispatch('contextmenu', { x: e.clientX, y: e.clientY, terminalId: termId });
+  }
+
+  function escapePath(path: string): string {
+    if (/[ "'\\$`!#&|;()<>{}\[\]*?~^]/.test(path)) {
+      return `'${path.replace(/'/g, "'\\''")}'`;
+    }
+    return path;
   }
 
   function parseOutputChunk(payload: unknown): PtyOutputChunk | null {
@@ -220,6 +230,29 @@
     });
 
     resizeObserver.observe(terminalContainer);
+
+    fileDropUnlisten = await getCurrentWindow().onDragDropEvent((event) => {
+      if (isDisposed) return;
+      const rect = terminalContainer.getBoundingClientRect();
+      const scale = window.devicePixelRatio || 1;
+
+      if (event.payload.type === 'over') {
+        const lx = event.payload.position.x / scale;
+        const ly = event.payload.position.y / scale;
+        showFileDrop = lx >= rect.left && lx <= rect.right && ly >= rect.top && ly <= rect.bottom;
+      } else if (event.payload.type === 'drop') {
+        const lx = event.payload.position.x / scale;
+        const ly = event.payload.position.y / scale;
+        const isOverMe = lx >= rect.left && lx <= rect.right && ly >= rect.top && ly <= rect.bottom;
+        if (isOverMe && event.payload.paths.length > 0) {
+          const paths = event.payload.paths.map(escapePath).join(' ');
+          invoke('write_to_pty', { id: termId, data: paths });
+        }
+        showFileDrop = false;
+      } else if (event.payload.type === 'leave') {
+        showFileDrop = false;
+      }
+    });
   });
 
   onDestroy(() => {
@@ -227,6 +260,7 @@
     if (resizeObserver) resizeObserver.disconnect();
     if (unlisten) unlisten();
     if (exitUnlisten) exitUnlisten();
+    if (fileDropUnlisten) fileDropUnlisten();
     if (webglAddon) webglAddon.dispose();
     if (term) term.dispose();
     // PTY is intentionally kept alive across component unmounts.
@@ -243,10 +277,17 @@
   bind:this={terminalContainer}
   on:contextmenu={handleContextMenu}
   role="presentation"
-></div>
+>
+  {#if showFileDrop}
+    <div class="file-drop-overlay">
+      <span class="file-drop-label">Drop to paste path</span>
+    </div>
+  {/if}
+</div>
 
 <style>
   .terminal-wrapper {
+    position: relative;
     width: 100%;
     height: 100%;
     background-color: var(--terminal-pane-bg, #09090b);
@@ -259,5 +300,27 @@
 
   .terminal-wrapper:not(.visible) {
     display: none;
+  }
+
+  .file-drop-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(139, 92, 246, 0.08);
+    border: 2px dashed rgba(139, 92, 246, 0.5);
+    border-radius: 6px;
+    pointer-events: none;
+  }
+
+  .file-drop-label {
+    padding: 6px 14px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #c4b5fd;
+    font-size: 13px;
+    font-weight: 500;
   }
 </style>

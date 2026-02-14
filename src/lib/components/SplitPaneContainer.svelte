@@ -269,6 +269,11 @@
     e.preventDefault();
     if (!e.dataTransfer) return;
 
+    // Skip overlay for external file drops (handled by Terminal.svelte via Tauri events)
+    if (e.dataTransfer.types.includes('Files') && !e.dataTransfer.types.includes('text/plain')) {
+      return;
+    }
+
     e.dataTransfer.dropEffect = 'move';
     isDragOver = true;
 
@@ -319,6 +324,12 @@
   function handleDrop(e: DragEvent) {
     e.preventDefault();
     isDragOver = false;
+
+    // Skip external file drops (handled by Terminal.svelte via Tauri events)
+    if (e.dataTransfer?.types.includes('Files') && !parseDragData(e) && !getGlobalDragData()) {
+      activeDropZone = null;
+      return;
+    }
 
     const data = parseDragData(e) ?? getGlobalDragData();
     if (!data) {

@@ -18,7 +18,7 @@
     isAppearanceSettingsOpen
   } from './lib/stores/uiStore';
   import { projectStore } from './lib/stores/projectStore';
-  import { appearanceSettings, resolveAppearance } from './lib/stores/appearanceStore';
+  import { appearanceSettings, resolveAppearance, buildAppearanceCssVars } from './lib/stores/appearanceStore';
   import { shortcutSettings, matchesShortcut, formatShortcut } from './lib/stores/shortcutStore';
   import { FolderPlus, Terminal } from 'lucide-svelte';
   import { calculatePaneRects, findAdjacentPane } from './lib/utils/layoutUtils';
@@ -261,47 +261,13 @@
     ? resolvedAppearance.effectiveActiveBorderColor
     : resolvedAppearance.paneBorderColor;
   $: exitZenShortcutLabel = formatShortcut($shortcutSettings.exitZen);
-  $: appearanceCssVars = `
-    --app-shell-bg: ${resolvedAppearance.appShellBackground};
-    --app-shell-border: ${resolvedAppearance.appShellBorder};
-    --titlebar-bg: ${resolvedAppearance.titleBarBackground};
-    --titlebar-border: ${resolvedAppearance.titleBarBorder};
-    --titlebar-text: ${resolvedAppearance.titleBarText};
-    --sidebar-bg: ${resolvedAppearance.sidebarBackground};
-    --sidebar-border: ${resolvedAppearance.sidebarBorder};
-    --workspace-tabs-bg: ${resolvedAppearance.workspaceTabsBackground};
-    --workspace-tabs-border: ${resolvedAppearance.workspaceTabsBorder};
-    --surface-bg: ${resolvedAppearance.surfaceBackground};
-    --surface-border: ${resolvedAppearance.surfaceBorder};
-    --ui-accent: ${resolvedAppearance.uiAccent};
-    --ui-accent-strong: ${resolvedAppearance.uiAccentStrong};
-    --project-accent: ${resolvedAppearance.uiAccent};
-    --text-primary: color-mix(in srgb, #ffffff 88%, ${resolvedAppearance.titleBarText} 12%);
-    --text-secondary: color-mix(in srgb, ${resolvedAppearance.titleBarText} 88%, #9ca3af 12%);
-    --text-muted: color-mix(in srgb, ${resolvedAppearance.titleBarText} 62%, #6b7280 38%);
-    --panel-bg: color-mix(in srgb, ${resolvedAppearance.surfaceBackground} 88%, #000 12%);
-    --panel-bg-elevated: color-mix(in srgb, ${resolvedAppearance.surfaceBackground} 78%, #000 22%);
-    --panel-border: ${resolvedAppearance.surfaceBorder};
-    --panel-border-strong: color-mix(in srgb, ${resolvedAppearance.surfaceBorder} 72%, #71717a 28%);
-    --overlay-bg: color-mix(in srgb, ${resolvedAppearance.appShellBackground} 78%, #000 22%);
-    --interactive-hover-bg: color-mix(in srgb, ${resolvedAppearance.surfaceBackground} 70%, #000 30%);
-    --terminal-toolbar-btn-bg: color-mix(in srgb, ${resolvedAppearance.toolbarBackground} 86%, #000 14%);
-    --terminal-toolbar-btn-border: color-mix(in srgb, ${resolvedAppearance.toolbarBorderColor} 70%, #52525b 30%);
-    --terminal-toolbar-btn-hover-border: color-mix(in srgb, ${resolvedAppearance.uiAccent} 35%, ${resolvedAppearance.toolbarBorderColor});
-    --terminal-toolbar-btn-size: 24px;
-    --workspace-canvas-gap: 6px;
-    --workspace-tone-bg: color-mix(in srgb, ${activeProjectColor} 10%, ${resolvedAppearance.surfaceBackground});
-    --workspace-tone-bg-elevated: color-mix(in srgb, ${activeProjectColor} 16%, ${resolvedAppearance.surfaceBackground});
-    --workspace-tone-border: color-mix(in srgb, ${activeProjectColor} 50%, ${resolvedAppearance.surfaceBorder});
-    --workspace-tone-border-soft: color-mix(in srgb, ${activeProjectColor} 28%, ${resolvedAppearance.surfaceBorder});
-    --terminal-pane-bg: ${resolvedAppearance.paneBackground};
-    --terminal-pane-border-color: ${resolvedAppearance.paneBorderColor};
-    --terminal-pane-active-border-color: ${activePaneBorderColor};
-    --terminal-pane-border-width: ${resolvedAppearance.paneBorderWidth}px;
-    --terminal-pane-border-radius: ${resolvedAppearance.paneBorderRadius}px;
-    --terminal-toolbar-bg: ${resolvedAppearance.toolbarBackground};
-    --terminal-toolbar-border-color: ${resolvedAppearance.toolbarBorderColor};
-  `;
+  $: appearanceCssVars = buildAppearanceCssVars(
+    {
+      ...resolvedAppearance,
+      effectiveActiveBorderColor: activePaneBorderColor
+    },
+    activeProjectColor
+  );
 </script>
 
 <svelte:window on:keydown|capture={handleKeydown} />

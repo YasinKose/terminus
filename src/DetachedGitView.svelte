@@ -5,7 +5,8 @@
   import TitleBar from './lib/components/TitleBar.svelte';
   import GitWorkbenchPane from './lib/components/GitWorkbenchPane.svelte';
   import { projectStore } from './lib/stores/projectStore';
-  import { appearanceSettings, resolveAppearance } from './lib/stores/appearanceStore';
+  import { appearanceSettings, resolveAppearance, buildAppearanceCssVars } from './lib/stores/appearanceStore';
+  import { matchesShortcut, shortcutSettings } from './lib/stores/shortcutStore';
 
   export let workspaceId: string;
   export let projectId: string;
@@ -15,6 +16,7 @@
   $: resolvedAppearance = resolveAppearance($appearanceSettings);
   $: project = $projectStore.find(candidate => candidate.id === projectId) || null;
   $: projectPath = project?.path || '';
+  $: appearanceCssVars = buildAppearanceCssVars(resolvedAppearance, project?.color || resolvedAppearance.uiAccent);
 
   async function dockToMainWindow() {
     if (!workspaceId || !projectId) return;
@@ -23,6 +25,14 @@
 
   async function closeWindow() {
     await appWindow.close();
+  }
+
+  function handleKeydown(event: KeyboardEvent) {
+    const isMacCmdW = event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey && event.key.toLowerCase() === 'w';
+    if (isMacCmdW || matchesShortcut(event, $shortcutSettings.closePane)) {
+      event.preventDefault();
+      void closeWindow();
+    }
   }
 
   onMount(() => {
@@ -39,9 +49,11 @@
   });
 </script>
 
+<svelte:window on:keydown|capture={handleKeydown} />
+
 <div
   class="detached-shell"
-  style="background-color: {resolvedAppearance.appShellBackground}; border-color: {resolvedAppearance.appShellBorder};"
+  style={appearanceCssVars + 'background-color: var(--app-shell-bg, #09090b); border-color: var(--app-shell-border, #27272a);'}
 >
   <TitleBar />
 

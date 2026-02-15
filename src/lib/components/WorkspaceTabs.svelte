@@ -21,6 +21,7 @@
   let isOverflowMenuOpen = false;
   let overflowRecalcRaf: number | null = null;
   let hiddenWorkspaceIds = new Set<string>();
+  const overflowVisibilityEpsilon = 0.5;
 
   $: hiddenWorkspaces = workspaces.filter(workspace => hiddenWorkspaceIds.has(workspace.id));
 
@@ -220,8 +221,8 @@
     }
 
     const nextHiddenWorkspaceIds = new Set<string>();
-    const viewportStart = tabsScrollEl.scrollLeft + 0.5;
-    const viewportEnd = tabsScrollEl.scrollLeft + tabsScrollEl.clientWidth - 0.5;
+    const viewportStart = tabsScrollEl.scrollLeft;
+    const viewportEnd = viewportStart + tabsScrollEl.clientWidth;
 
     for (const tab of tabsScrollEl.querySelectorAll<HTMLElement>('.tab[data-workspace-id]')) {
       const workspaceId = tab.dataset.workspaceId;
@@ -230,7 +231,10 @@
       const tabStart = tab.offsetLeft;
       const tabEnd = tabStart + tab.offsetWidth;
 
-      if (tabStart < viewportStart || tabEnd > viewportEnd) {
+      const isBeforeViewport = tabStart + overflowVisibilityEpsilon < viewportStart;
+      const isAfterViewport = tabEnd - overflowVisibilityEpsilon > viewportEnd;
+
+      if (isBeforeViewport || isAfterViewport) {
         nextHiddenWorkspaceIds.add(workspaceId);
       }
     }
@@ -481,10 +485,15 @@
     font-size: 12px;
     white-space: nowrap;
     max-width: 240px;
-    transition: all 0.15s ease;
+    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
     border-radius: 6px 6px 0 0;
     border-bottom: 2px solid transparent;
     flex-shrink: 0;
+  }
+
+  .tab:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--ui-accent, #6366f1) 70%, #fff 30%);
+    outline-offset: -2px;
   }
 
   .tab:hover {
@@ -553,13 +562,20 @@
   }
 
   .tab:hover .close-btn,
-  .tab.active .close-btn {
+  .tab.active .close-btn,
+  .tab:focus-within .close-btn {
     opacity: 1;
   }
 
   .close-btn:hover {
     background: var(--panel-bg-elevated, #3f3f46);
     color: var(--text-primary, #f4f4f5);
+  }
+
+  .close-btn:focus-visible {
+    opacity: 1;
+    outline: 2px solid color-mix(in srgb, var(--ui-accent, #6366f1) 70%, #fff 30%);
+    outline-offset: 1px;
   }
 
   .overflow-menu-wrap {
@@ -588,6 +604,13 @@
   .settings-btn:hover {
     background: var(--interactive-hover-bg, var(--surface-bg, #27272a));
     color: var(--text-primary, #e4e4e7);
+  }
+
+  .overflow-btn:focus-visible,
+  .add-btn:focus-visible,
+  .settings-btn:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--ui-accent, #6366f1) 70%, #fff 30%);
+    outline-offset: 1px;
   }
 
   .overflow-count {

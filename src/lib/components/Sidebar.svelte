@@ -25,6 +25,10 @@
   $: projectCount = $projectStore.length;
   $: snippetCount = $snippetStore.length;
 
+  function formatCompactCount(count: number): string {
+    return count > 99 ? '99+' : String(count);
+  }
+
   async function handleAddProject() {
     try {
       const selected = await open({
@@ -110,9 +114,9 @@
         class="tab-pill {activeTab === 'projects' ? 'active' : ''}"
       >
         <FolderOpen size={14} />
-        <span>Projects</span>
+        <span class="tab-label">Projects</span>
         {#if projectCount > 0}
-          <span class="tab-count">{projectCount}</span>
+          <span class="tab-count" title={`${projectCount} projects`}>{formatCompactCount(projectCount)}</span>
         {/if}
       </button>
       <button
@@ -120,9 +124,9 @@
         class="tab-pill {activeTab === 'snippets' ? 'active' : ''}"
       >
         <Code2 size={14} />
-        <span>Snippets</span>
+        <span class="tab-label">Snippets</span>
         {#if snippetCount > 0}
-          <span class="tab-count">{snippetCount}</span>
+          <span class="tab-count" title={`${snippetCount} snippets`}>{formatCompactCount(snippetCount)}</span>
         {/if}
       </button>
     </div>
@@ -160,6 +164,7 @@
               <button
                 onclick={(e) => toggleProjectMenu(project.id, e)}
                 class="project-menu-btn"
+                aria-label="Project actions"
               >
                 <MoreHorizontal size={14} />
               </button>
@@ -253,7 +258,7 @@
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
     box-shadow: 0 1px 6px color-mix(in srgb, var(--ui-accent, #6366f1) 28%, transparent);
   }
 
@@ -261,6 +266,11 @@
     background: var(--ui-accent-strong, #4f46e5);
     border-color: color-mix(in srgb, var(--ui-accent-strong, #4f46e5) 78%, #0f172a 22%);
     box-shadow: 0 2px 10px color-mix(in srgb, var(--ui-accent, #6366f1) 34%, transparent);
+  }
+
+  .add-project-btn:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--ui-accent, #6366f1) 70%, #fff 30%);
+    outline-offset: 2px;
   }
 
   .search-container {
@@ -319,13 +329,15 @@
     padding: 4px;
     background-color: var(--panel-bg, #18181b);
     border-radius: 10px;
+    min-width: 0;
+    overflow: hidden;
   }
 
   .tab-pill {
     flex: 1;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 6px;
     padding: 8px 12px;
     background: transparent;
@@ -335,11 +347,18 @@
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    min-width: 0;
+    overflow: hidden;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
   }
 
   .tab-pill:hover {
     color: var(--text-primary, #a1a1aa);
+  }
+
+  .tab-pill:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--ui-accent, #6366f1) 70%, #fff 30%);
+    outline-offset: 1px;
   }
 
   .tab-pill.active {
@@ -351,18 +370,35 @@
 
   .tab-pill :global(svg) {
     opacity: 0.7;
+    flex-shrink: 0;
   }
 
   .tab-pill.active :global(svg) {
     opacity: 1;
   }
 
+  .tab-label {
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .tab-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     font-size: 10px;
     padding: 2px 6px;
+    min-width: 2rem;
+    margin-left: auto;
     background-color: var(--panel-bg-elevated, #3f3f46);
     border-radius: 10px;
     color: var(--text-secondary, #a1a1aa);
+    flex-shrink: 0;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
   }
 
   .tab-pill.active .tab-count {
@@ -423,7 +459,7 @@
     border: 1px solid transparent;
     border-radius: 10px;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
     text-align: left;
   }
 
@@ -443,7 +479,7 @@
     border-radius: 50%;
     background-color: var(--text-muted, #52525b);
     flex-shrink: 0;
-    transition: all 0.15s ease;
+    transition: background-color 0.15s ease, box-shadow 0.15s ease;
   }
 
   .project-indicator.active {
@@ -497,7 +533,7 @@
     border-radius: 4px;
     cursor: pointer;
     opacity: 0;
-    transition: all 0.15s ease;
+    transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease;
   }
 
   .project-item:hover .project-menu-btn {
@@ -507,6 +543,12 @@
   .project-menu-btn:hover {
     background-color: var(--panel-bg-elevated, #3f3f46);
     color: var(--text-primary, #a1a1aa);
+  }
+
+  .project-menu-btn:focus-visible {
+    opacity: 1;
+    outline: 2px solid color-mix(in srgb, var(--ui-accent, #6366f1) 70%, #fff 30%);
+    outline-offset: 1px;
   }
 
   .project-dropdown {
@@ -535,7 +577,7 @@
     font-size: 12px;
     cursor: pointer;
     border-radius: 6px;
-    transition: all 0.15s ease;
+    transition: background-color 0.15s ease, color 0.15s ease;
   }
 
   .dropdown-item:hover {
@@ -545,6 +587,11 @@
   .dropdown-item.danger:hover {
     background-color: #3a1c1c;
     color: #f87171;
+  }
+
+  .dropdown-item:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--ui-accent, #6366f1) 70%, #fff 30%);
+    outline-offset: 1px;
   }
 
   .color-picker-row {
@@ -628,7 +675,7 @@
     font-size: 13px;
     cursor: pointer;
     border-radius: 8px;
-    transition: all 0.15s ease;
+    transition: background-color 0.15s ease, color 0.15s ease;
   }
 
   .bottom-action-btn:hover {
@@ -639,6 +686,11 @@
   .bottom-action-btn.active {
     background-color: var(--panel-bg, #27272a);
     color: var(--text-primary, #e4e4e7);
+  }
+
+  .bottom-action-btn:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--ui-accent, #6366f1) 70%, #fff 30%);
+    outline-offset: 1px;
   }
 
   .bottom-action-btn span {

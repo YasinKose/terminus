@@ -1280,11 +1280,11 @@ function createProjectStore() {
 
         const swapNodes = (node: PaneNode): PaneNode => {
           if (node.id === targetPaneId) {
-            return { ...sourceNode, id: targetPaneId };
+            return { ...sourceNode };
           }
 
           if (node.id === sourcePaneId) {
-            return { ...targetNode, id: sourcePaneId };
+            return { ...targetNode };
           }
 
           if (node.type === 'split') {
@@ -1297,17 +1297,23 @@ function createProjectStore() {
           return node;
         };
 
-        let nextActiveTerminalId = workspace.activeTerminalId;
-        if (workspace.activeTerminalId === sourcePaneId && sourceNode.type === 'terminal') {
-          nextActiveTerminalId = targetNode.type === 'terminal' ? targetPaneId : null;
-        } else if (workspace.activeTerminalId === targetPaneId && targetNode.type === 'terminal') {
-          nextActiveTerminalId = sourceNode.type === 'terminal' ? sourcePaneId : null;
-        }
+        const nextRoot = swapNodes(workspace.root);
+        const currentActiveTerminalId = workspace.activeTerminalId;
+        const nextActiveTerminalId = currentActiveTerminalId
+          && findNode(nextRoot, currentActiveTerminalId)?.type === 'terminal'
+          ? currentActiveTerminalId
+          : firstTerminalId(nextRoot);
+        const gitPaneIdInTree = collectGitPaneIds(nextRoot)[0] || null;
+        const nextGitPaneId = workspace.gitPaneId
+          && findNode(nextRoot, workspace.gitPaneId)?.type === 'git'
+          ? workspace.gitPaneId
+          : gitPaneIdInTree;
 
         return {
           ...workspace,
-          root: swapNodes(workspace.root),
+          root: nextRoot,
           activeTerminalId: nextActiveTerminalId,
+          gitPaneId: nextGitPaneId,
           updatedAt: nowTs()
         };
       });

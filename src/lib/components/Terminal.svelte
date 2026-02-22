@@ -79,7 +79,7 @@
         rows: term.rows,
         cols: term.cols
       }).catch(console.error);
-    }, 50);
+    }, 200);
   }
 
   function handleContextMenu(e: MouseEvent) {
@@ -222,14 +222,20 @@
       isHydrating = false;
     }
 
+    let resizeTimeout: ReturnType<typeof setTimeout>;
     resizeObserver = new ResizeObserver(() => {
       if (!visible) return;
-      fitAddon.fit();
-      invoke('resize_pty', {
-        id: termId,
-        rows: term.rows,
-        cols: term.cols
-      }).catch(console.error);
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        if (terminalContainer && terminalContainer.clientWidth > 0 && terminalContainer.clientHeight > 0) {
+          fitAddon.fit();
+          invoke("resize_pty", {
+            id: termId,
+            rows: term.rows,
+            cols: term.cols
+          }).catch(console.error);
+        }
+      }, 150);
     });
 
     resizeObserver.observe(terminalContainer);
@@ -277,10 +283,11 @@
 <div
   class="terminal-wrapper"
   class:visible
-  bind:this={terminalContainer}
+  
   on:contextmenu={handleContextMenu}
   role="presentation"
 >
+  <div class="terminal-inner" bind:this={terminalContainer}></div>
   {#if showFileDrop}
     <div class="file-drop-overlay">
       <span class="file-drop-label">Drop to paste path</span>
@@ -299,7 +306,13 @@
     box-sizing: border-box;
   }
 
-  :global(.terminal-wrapper .xterm) {
+  .terminal-inner {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  :global(.terminal-inner .xterm) {
     height: 100%;
     box-sizing: content-box !important;
   }

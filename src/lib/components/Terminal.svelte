@@ -162,7 +162,8 @@
       fontSize: 14,
       cursorBlink: true,
       theme: xtermTheme,
-      allowTransparency: true
+      allowTransparency: false,
+      scrollback: 10000
     });
 
     fitAddon = new FitAddon();
@@ -172,6 +173,8 @@
     if (ENABLE_WEBGL_RENDERER) {
       try {
         webglAddon = new WebglAddon();
+        // This handles glyphs that are wider than their cell to prevent overlapping
+        term.options.rescaleOverlappingGlyphs = true;
         term.loadAddon(webglAddon);
       } catch (e) {
         console.warn('WebGL addon could not be loaded, falling back to canvas renderer:', e);
@@ -292,6 +295,13 @@
     height: 100%;
     background-color: var(--terminal-pane-bg, #09090b);
     padding: 0 8px;
+    overflow: hidden !important;
+    box-sizing: border-box;
+  }
+
+  :global(.terminal-wrapper .xterm) {
+    height: 100%;
+    box-sizing: content-box !important;
   }
 
   .terminal-wrapper.visible {

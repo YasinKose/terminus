@@ -16,9 +16,9 @@ Use with `docs/plans/2026-07-23-terminus-terminal-core.md`. Check boxes only wit
 
 | Task | Title | Done |
 |------|-------|------|
-| 4 | Pure pane-tree operations | [ ] |
-| 5 | rusqlite models + migrations | [ ] |
-| 6 | Typed project/workspace commands | [ ] |
+| 4 | Pure pane-tree operations | [x] |
+| 5 | rusqlite models + migrations | [x] |
+| 6 | Typed project/workspace commands | [x] |
 
 **Gate:** tree invariants + DB round-trip tests green.
 
@@ -26,9 +26,9 @@ Use with `docs/plans/2026-07-23-terminus-terminal-core.md`. Check boxes only wit
 
 | Task | Title | Done |
 |------|-------|------|
-| 7 | Profiles + macOS login env | [ ] |
-| 8 | SessionManager | [ ] |
-| 9 | Channel-backed PTY commands | [ ] |
+| 7 | Profiles + macOS login env | [x] |
+| 8 | SessionManager | [x] |
+| 9 | Channel-backed PTY commands | [x] |
 
 **Gate:** repeated Rust PTY integration tests stable.
 
@@ -36,8 +36,8 @@ Use with `docs/plans/2026-07-23-terminus-terminal-core.md`. Check boxes only wit
 
 | Task | Title | Done |
 |------|-------|------|
-| 10 | TerminalRuntimeRegistry | [ ] |
-| 11 | TerminalHost + PTY wiring | [ ] |
+| 10 | TerminalRuntimeRegistry | [x] |
+| 11 | TerminalHost + PTY wiring | [x] |
 
 **Gate:** real app: type/paste/resize; remount does not kill session.
 
@@ -45,10 +45,10 @@ Use with `docs/plans/2026-07-23-terminus-terminal-core.md`. Check boxes only wit
 
 | Task | Title | Done |
 |------|-------|------|
-| 12 | App shell | [ ] |
-| 13 | N-ary split render/resize | [ ] |
-| 14 | Drag/swap/insert/workspace move | [ ] |
-| 15 | Confirms / exit retention / restart | [ ] |
+| 12 | App shell | [x] |
+| 13 | N-ary split render/resize | [x] |
+| 14 | Drag/swap/insert/workspace move | [x] |
+| 15 | Confirms / exit retention / restart | [x] |
 
 **Gate:** full layout UX smoke without identity loss.
 
@@ -56,10 +56,10 @@ Use with `docs/plans/2026-07-23-terminus-terminal-core.md`. Check boxes only wit
 
 | Task | Title | Done |
 |------|-------|------|
-| 16 | Lifecycle + activity + OSC | [ ] |
-| 17 | Profiles + shortcuts | [ ] |
-| 18 | Six appearance presets | [ ] |
-| 19 | DB recovery UI | [ ] |
+| 16 | Lifecycle + activity + OSC | [x] |
+| 17 | Profiles + shortcuts | [x] |
+| 18 | Six appearance presets | [x] |
+| 19 | DB recovery UI | [x] |
 
 **Gate:** settings/activity/recovery smoke; no silent DB reset.
 
@@ -67,9 +67,9 @@ Use with `docs/plans/2026-07-23-terminus-terminal-core.md`. Check boxes only wit
 
 | Task | Title | Done |
 |------|-------|------|
-| 20 | Regression tests | [ ] |
-| 21 | Tauri smoke matrix | [ ] |
-| 22 | Perf + local bundle + security | [ ] |
+| 20 | Regression tests | [x] |
+| 21 | Tauri smoke matrix | [x] |
+| 22 | Perf + local bundle + security | [x] |
 
 **Gate:** Final DoD 14/14.
 

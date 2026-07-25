@@ -7,8 +7,8 @@ use tauri::{AppHandle, State};
 
 use crate::persistence::ProfileRecord;
 use crate::pty::{
-    resolve_profile, EventSink, OpenSessionRequest, PtyEvent, ResolveProfileInput,
-    SessionInfo, SessionLifecycle,
+    resolve_profile, EventSink, OpenSessionRequest, PtyEvent, ResolveProfileInput, SessionInfo,
+    SessionLifecycle,
 };
 use crate::state::SharedAppState;
 use crate::AppError;
@@ -85,11 +85,10 @@ fn open_session_with_channel(
     request: OpenPtyRequest,
     on_event: Channel<PtyEvent>,
 ) -> Result<PtySessionState, AppError> {
-    let project = state
-        .with_repository(app, |repo| {
-            repo.get_project(&request.project_id)?
-                .ok_or_else(|| AppError::Message(format!("project not found: {}", request.project_id)))
-        })?;
+    let project = state.with_repository(app, |repo| {
+        repo.get_project(&request.project_id)?
+            .ok_or_else(|| AppError::Message(format!("project not found: {}", request.project_id)))
+    })?;
 
     let mut profile = state.with_repository(app, |repo| {
         if let Some(ref profile_id) = request.profile_id {
@@ -148,28 +147,19 @@ pub fn open_pty(
 }
 
 #[tauri::command]
-pub fn write_pty(
-    state: State<'_, SharedAppState>,
-    input: WritePtyInput,
-) -> Result<(), AppError> {
+pub fn write_pty(state: State<'_, SharedAppState>, input: WritePtyInput) -> Result<(), AppError> {
     state.sessions().write(&input.session_id, &input.data)
 }
 
 #[tauri::command]
-pub fn resize_pty(
-    state: State<'_, SharedAppState>,
-    input: ResizePtyInput,
-) -> Result<(), AppError> {
+pub fn resize_pty(state: State<'_, SharedAppState>, input: ResizePtyInput) -> Result<(), AppError> {
     state
         .sessions()
         .resize(&input.session_id, input.rows, input.cols)
 }
 
 #[tauri::command]
-pub fn close_pty(
-    state: State<'_, SharedAppState>,
-    input: ClosePtyInput,
-) -> Result<(), AppError> {
+pub fn close_pty(state: State<'_, SharedAppState>, input: ClosePtyInput) -> Result<(), AppError> {
     state.sessions().close(&input.session_id)
 }
 
@@ -185,9 +175,7 @@ pub fn restart_pty(
 }
 
 #[tauri::command]
-pub fn list_pty_states(
-    state: State<'_, SharedAppState>,
-) -> Result<Vec<PtySessionState>, AppError> {
+pub fn list_pty_states(state: State<'_, SharedAppState>) -> Result<Vec<PtySessionState>, AppError> {
     Ok(state
         .sessions()
         .list_states()
@@ -232,7 +220,11 @@ mod tests {
         let dir = tempdir().expect("tempdir");
         let path = dir.path().to_string_lossy().to_string();
         let validated = validate_cwd_path(&path).expect("valid");
-        assert!(validated.ends_with(dir.path().file_name().unwrap().to_str().unwrap()) || validated == path || std::path::Path::new(&validated).exists());
+        assert!(
+            validated.ends_with(dir.path().file_name().unwrap().to_str().unwrap())
+                || validated == path
+                || std::path::Path::new(&validated).exists()
+        );
     }
 
     #[test]

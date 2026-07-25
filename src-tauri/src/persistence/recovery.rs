@@ -56,9 +56,8 @@ pub fn list_backups(db_path: &Path) -> Result<Vec<PathBuf>, AppError> {
         .unwrap_or("terminus.db");
     let prefix = format!("{stem}.backup-");
     let mut out = Vec::new();
-    let entries = fs::read_dir(parent).map_err(|e| {
-        AppError::Message(format!("failed to list backup directory: {e}"))
-    })?;
+    let entries = fs::read_dir(parent)
+        .map_err(|e| AppError::Message(format!("failed to list backup directory: {e}")))?;
     for entry in entries.flatten() {
         let name = entry.file_name();
         let name = name.to_string_lossy();
@@ -71,7 +70,9 @@ pub fn list_backups(db_path: &Path) -> Result<Vec<PathBuf>, AppError> {
 }
 
 pub fn backup_available(db_path: &Path) -> bool {
-    list_backups(db_path).map(|b| !b.is_empty()).unwrap_or(false)
+    list_backups(db_path)
+        .map(|b| !b.is_empty())
+        .unwrap_or(false)
 }
 
 pub fn create_timestamped_backup(db_path: &Path) -> Result<BackupResult, AppError> {
@@ -89,9 +90,8 @@ pub fn create_timestamped_backup(db_path: &Path) -> Result<BackupResult, AppErro
     let stamp = timestamp_stamp();
     let backup_path = parent.join(format!("{stem}.backup-{stamp}"));
 
-    fs::copy(db_path, &backup_path).map_err(|e| {
-        AppError::Message(format!("failed to create database backup: {e}"))
-    })?;
+    fs::copy(db_path, &backup_path)
+        .map_err(|e| AppError::Message(format!("failed to create database backup: {e}")))?;
 
     let wal = sidecar_path(db_path, "-wal");
     if wal.exists() {
@@ -127,10 +127,7 @@ pub fn remove_db_files(db_path: &Path) -> Result<(), AppError> {
     ] {
         if path.exists() {
             fs::remove_file(&path).map_err(|e| {
-                AppError::Message(format!(
-                    "failed to remove {}: {e}",
-                    path.display()
-                ))
+                AppError::Message(format!("failed to remove {}: {e}", path.display()))
             })?;
         }
     }
@@ -161,9 +158,7 @@ pub fn reveal_database_path(db_path: &Path) -> Result<(), AppError> {
                 if s.success() {
                     Ok(())
                 } else {
-                    Err(AppError::Message(format!(
-                        "reveal command exited with {s}"
-                    )))
+                    Err(AppError::Message(format!("reveal command exited with {s}")))
                 }
             })
     }
@@ -179,9 +174,7 @@ pub fn reveal_database_path(db_path: &Path) -> Result<(), AppError> {
                 if s.success() {
                     Ok(())
                 } else {
-                    Err(AppError::Message(format!(
-                        "reveal command exited with {s}"
-                    )))
+                    Err(AppError::Message(format!("reveal command exited with {s}")))
                 }
             })
     }
@@ -259,7 +252,10 @@ mod tests {
         let path = dir.path().join("terminus.db");
         fs::write(&path, b"corrupt").expect("write");
         let reset_result = reset_database(&path, false);
-        assert!(reset_result.is_err(), "reset without backup/force must fail");
+        assert!(
+            reset_result.is_err(),
+            "reset without backup/force must fail"
+        );
         if let Err(err) = reset_result {
             assert!(err.to_string().contains("backup") || err.to_string().contains("force"));
         }

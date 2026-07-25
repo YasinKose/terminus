@@ -146,11 +146,15 @@ fn which_exists(name: &str) -> bool {
 }
 
 fn resolve_args(profile: &ProfileRecord) -> Result<Vec<String>, AppError> {
-    let args: Vec<String> = serde_json::from_str(&profile.args_json).map_err(|e| {
-        AppError::profile_invalid(format!("invalid profile args_json: {e}"))
-    })?;
+    let args: Vec<String> = serde_json::from_str(&profile.args_json)
+        .map_err(|e| AppError::profile_invalid(format!("invalid profile args_json: {e}")))?;
 
-    if profile.executable.as_deref().map(str::trim).filter(|s| !s.is_empty()).is_none()
+    if profile
+        .executable
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .is_none()
         && args.is_empty()
     {
         return Ok(vec!["-l".to_string()]);

@@ -50,9 +50,8 @@ impl AppState {
             .path()
             .app_data_dir()
             .map_err(|e| AppError::Message(format!("failed to resolve app data dir: {e}")))?;
-        std::fs::create_dir_all(&dir).map_err(|e| {
-            AppError::Message(format!("failed to create app data directory: {e}"))
-        })?;
+        std::fs::create_dir_all(&dir)
+            .map_err(|e| AppError::Message(format!("failed to create app data directory: {e}")))?;
         let p = dir.join("terminus.db");
         *self.db_path.lock() = Some(p.clone());
         Ok(p)

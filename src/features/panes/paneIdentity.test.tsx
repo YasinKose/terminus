@@ -7,12 +7,13 @@ import {
   swapPanes,
 } from "./tree";
 import type { PaneNode, TerminalLeaf } from "./model";
+import { createTerminalLeaf } from "./model";
 import { TerminalRuntimeRegistry } from "@/features/terminal/runtime/TerminalRuntimeRegistry";
 import { resetParkingContainerForTests } from "@/features/terminal/runtime/parking";
 import type { TerminalAdapter } from "@/features/terminal/runtime/types";
 
 function leaf(id: string): TerminalLeaf {
-  return { type: "terminal", id };
+  return createTerminalLeaf(id);
 }
 
 type FakeAdapter = TerminalAdapter & {

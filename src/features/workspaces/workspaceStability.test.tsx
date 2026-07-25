@@ -77,7 +77,9 @@ describe("workspace stability invariants", () => {
       ensureDefaultWorkspace: vi.fn(),
       setLastActiveWorkspace: vi.fn().mockResolvedValue(undefined),
       saveWorkspace: vi.fn(async (w) => w),
-      saveTwoWorkspaces: vi.fn(async (a, b) => [a, b]),
+      saveTwoWorkspaces: vi.fn(
+        async (a, b): Promise<[typeof a, typeof b]> => [a, b],
+      ),
       deleteWorkspace: vi.fn(),
     };
     useWorkspaceStore.getState().setApi(api);

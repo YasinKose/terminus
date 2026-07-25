@@ -19,10 +19,7 @@ fn cat_profile() -> ResolvedProfile {
 fn open_cat(
     manager: &SessionManager,
     id: &str,
-) -> (
-    terminus_lib::pty::SessionInfo,
-    Arc<Mutex<Vec<PtyEvent>>>,
-) {
+) -> (terminus_lib::pty::SessionInfo, Arc<Mutex<Vec<PtyEvent>>>) {
     let events = Arc::new(Mutex::new(Vec::new()));
     let sink = {
         let events = Arc::clone(&events);
@@ -116,9 +113,11 @@ fn process_exit_retains_metadata_until_explicit_close() {
         )
         .expect("open exit shell");
 
-    let exited = wait_for_event(&events, Duration::from_secs(3), |e| {
-        matches!(e, PtyEvent::Exited { session_id, .. } if session_id == "life-exit")
-    });
+    let exited = wait_for_event(
+        &events,
+        Duration::from_secs(3),
+        |e| matches!(e, PtyEvent::Exited { session_id, .. } if session_id == "life-exit"),
+    );
     match exited {
         PtyEvent::Exited { code, .. } => {
             assert_eq!(code, Some(7));
@@ -205,17 +204,25 @@ fn list_states_exposes_running_and_exited_sessions() {
         )
         .expect("open exit");
 
-    wait_for_event(&events, Duration::from_secs(3), |e| {
-        matches!(e, PtyEvent::Exited { session_id, .. } if session_id == "life-list-b")
-    });
+    wait_for_event(
+        &events,
+        Duration::from_secs(3),
+        |e| matches!(e, PtyEvent::Exited { session_id, .. } if session_id == "life-list-b"),
+    );
 
     let states = manager.list_states();
     let ids: Vec<_> = states.iter().map(|s| s.session_id.as_str()).collect();
     assert!(ids.contains(&"life-list-a"));
     assert!(ids.contains(&"life-list-b"));
 
-    let a = states.iter().find(|s| s.session_id == "life-list-a").unwrap();
-    let b = states.iter().find(|s| s.session_id == "life-list-b").unwrap();
+    let a = states
+        .iter()
+        .find(|s| s.session_id == "life-list-a")
+        .unwrap();
+    let b = states
+        .iter()
+        .find(|s| s.session_id == "life-list-b")
+        .unwrap();
     assert_eq!(a.lifecycle, SessionLifecycle::Running);
     assert!(matches!(b.lifecycle, SessionLifecycle::Exited { .. }));
 

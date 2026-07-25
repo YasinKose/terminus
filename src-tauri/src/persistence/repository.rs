@@ -160,14 +160,10 @@ impl Repository {
         })
     }
 
-    pub fn create_default_workspace(
-        &self,
-        project_id: &str,
-    ) -> Result<WorkspaceRecord, AppError> {
+    pub fn create_default_workspace(&self, project_id: &str) -> Result<WorkspaceRecord, AppError> {
         self.db.with_conn(|conn| {
-            let _project = load_project_by_id(conn, project_id)?.ok_or_else(|| {
-                AppError::Message(format!("project not found: {project_id}"))
-            })?;
+            let _project = load_project_by_id(conn, project_id)?
+                .ok_or_else(|| AppError::Message(format!("project not found: {project_id}")))?;
 
             let position = next_workspace_position(conn, project_id)?;
             let now = now_ms();
@@ -193,10 +189,7 @@ impl Repository {
         })
     }
 
-    pub fn ensure_default_workspace(
-        &self,
-        project_id: &str,
-    ) -> Result<WorkspaceRecord, AppError> {
+    pub fn ensure_default_workspace(&self, project_id: &str) -> Result<WorkspaceRecord, AppError> {
         self.db.with_conn(|conn| {
             let existing = load_workspaces_for_project(conn, project_id)?;
             if let Some(first) = existing.into_iter().next() {
@@ -275,12 +268,14 @@ impl Repository {
 
     pub fn delete_workspace(&self, workspace_id: &str) -> Result<(), AppError> {
         self.db.with_conn_mut(|conn| {
-            let workspace = load_workspace_by_id(conn, workspace_id)?.ok_or_else(|| {
-                AppError::Message(format!("workspace not found: {workspace_id}"))
-            })?;
+            let workspace = load_workspace_by_id(conn, workspace_id)?
+                .ok_or_else(|| AppError::Message(format!("workspace not found: {workspace_id}")))?;
 
             let n = conn
-                .execute("DELETE FROM workspaces WHERE id = ?1", params![workspace_id])
+                .execute(
+                    "DELETE FROM workspaces WHERE id = ?1",
+                    params![workspace_id],
+                )
                 .map_err(sql_err)?;
             if n == 0 {
                 return Err(AppError::Message(format!(
@@ -308,8 +303,11 @@ impl Repository {
 
         self.db.with_conn(|conn| {
             if profile.is_default {
-                conn.execute("UPDATE profiles SET is_default = 0 WHERE is_default = 1", [])
-                    .map_err(sql_err)?;
+                conn.execute(
+                    "UPDATE profiles SET is_default = 0 WHERE is_default = 1",
+                    [],
+                )
+                .map_err(sql_err)?;
             }
 
             conn.execute(
@@ -418,6 +416,7 @@ impl Repository {
         })
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn insert_workspace_raw(
         &self,
         id: &str,
@@ -558,7 +557,9 @@ fn load_settings(conn: &Connection) -> Result<HashMap<String, serde_json::Value>
         .prepare("SELECT key, value_json FROM settings")
         .map_err(sql_err)?;
     let rows = stmt
-        .query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)))
+        .query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })
         .map_err(sql_err)?;
     let mut settings = HashMap::new();
     for row in rows {

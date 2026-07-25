@@ -57,6 +57,7 @@ pub struct PtySession {
 }
 
 impl PtySession {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         session_id: String,
         cwd: PathBuf,
@@ -264,11 +265,7 @@ impl PtySession {
 
         {
             let mut life = self.lifecycle.write();
-            if !matches!(*life, SessionLifecycle::Closing) {
-                *life = SessionLifecycle::Exited { code };
-            } else {
-                *life = SessionLifecycle::Exited { code };
-            }
+            *life = SessionLifecycle::Exited { code };
         }
 
         self.emit(PtyEvent::Exited {

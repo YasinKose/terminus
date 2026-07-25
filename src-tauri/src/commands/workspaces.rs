@@ -2,9 +2,7 @@ use std::path::PathBuf;
 
 use tauri::{AppHandle, State};
 
-use crate::persistence::{
-    default_workspace_name, BootstrapState, ProjectRecord, WorkspaceRecord,
-};
+use crate::persistence::{default_workspace_name, BootstrapState, ProjectRecord, WorkspaceRecord};
 use crate::state::SharedAppState;
 use crate::AppError;
 
@@ -89,9 +87,7 @@ pub fn remove_project(
     if input.project_id.trim().is_empty() {
         return Err(AppError::Message("project_id is required".into()));
     }
-    state.with_repository(&app, |repo| {
-        repo.remove_project_metadata(&input.project_id)
-    })
+    state.with_repository(&app, |repo| repo.remove_project_metadata(&input.project_id))
 }
 
 #[tauri::command]

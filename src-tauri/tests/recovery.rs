@@ -1,12 +1,12 @@
 use std::fs;
 use std::path::PathBuf;
 
+use tempfile::TempDir;
 use terminus_lib::persistence::{
     backup_available, create_timestamped_backup, read_bytes, recovery_info_for, reset_database,
     try_open_repository, Repository,
 };
 use terminus_lib::AppError;
-use tempfile::TempDir;
 
 #[test]
 fn corrupt_open_does_not_overwrite_original_bytes() {

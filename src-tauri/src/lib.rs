@@ -105,19 +105,14 @@ mod tests {
             .add_project(dir.path(), "Demo", "#fff")
             .expect("add project");
 
-        let ws1 = repo
-            .ensure_default_workspace(&project.id)
-            .expect("ensure");
+        let ws1 = repo.ensure_default_workspace(&project.id).expect("ensure");
         assert_eq!(ws1.name, "Workspace 1");
         let ws2 = repo
             .ensure_default_workspace(&project.id)
             .expect("ensure again");
         assert_eq!(ws1.id, ws2.id);
 
-        let updated = repo
-            .get_project(&project.id)
-            .expect("get")
-            .expect("exists");
+        let updated = repo.get_project(&project.id).expect("get").expect("exists");
         assert_eq!(
             updated.last_active_workspace_id.as_deref(),
             Some(ws1.id.as_str())

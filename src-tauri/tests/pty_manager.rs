@@ -25,20 +25,19 @@ fn true_profile() -> ResolvedProfile {
     }
 }
 
-fn collect_sink() -> (Arc<dyn Fn(PtyEvent) + Send + Sync>, Arc<Mutex<Vec<PtyEvent>>>) {
+type EventSinkFn = Arc<dyn Fn(PtyEvent) + Send + Sync>;
+type EventLog = Arc<Mutex<Vec<PtyEvent>>>;
+
+fn collect_sink() -> (EventSinkFn, EventLog) {
     let events = Arc::new(Mutex::new(Vec::new()));
     let events_for_sink = events.clone();
-    let sink: Arc<dyn Fn(PtyEvent) + Send + Sync> = Arc::new(move |event| {
+    let sink: EventSinkFn = Arc::new(move |event| {
         events_for_sink.lock().expect("events").push(event);
     });
     (sink, events)
 }
 
-fn wait_for_event<F>(
-    events: &Arc<Mutex<Vec<PtyEvent>>>,
-    timeout: Duration,
-    mut predicate: F,
-) -> Option<PtyEvent>
+fn wait_for_event<F>(events: &EventLog, timeout: Duration, mut predicate: F) -> Option<PtyEvent>
 where
     F: FnMut(&PtyEvent) -> bool,
 {
@@ -46,7 +45,7 @@ where
     loop {
         {
             let mut guard = events.lock().expect("events");
-            if let Some(idx) = guard.iter().position(|e| predicate(e)) {
+            if let Some(idx) = guard.iter().position(&mut predicate) {
                 return Some(guard.remove(idx));
             }
         }
@@ -82,15 +81,16 @@ fn wait_for_output_containing(
             }
         }
         if Instant::now() >= deadline {
-            panic!(
-                "timeout waiting for output containing {needle:?}; got so far: {acc:?}"
-            );
+            panic!("timeout waiting for output containing {needle:?}; got so far: {acc:?}");
         }
         std::thread::sleep(Duration::from_millis(10));
     }
 }
 
-fn open_cat(manager: &SessionManager, session_id: &str) -> (SessionInfo, Arc<Mutex<Vec<PtyEvent>>>) {
+fn open_cat(
+    manager: &SessionManager,
+    session_id: &str,
+) -> (SessionInfo, Arc<Mutex<Vec<PtyEvent>>>) {
     let (sink, events) = collect_sink();
     let info = manager
         .open(
@@ -103,9 +103,11 @@ fn open_cat(manager: &SessionManager, session_id: &str) -> (SessionInfo, Arc<Mut
             sink,
         )
         .expect("open cat");
-    let started = wait_for_event(&events, Duration::from_secs(3), |e| {
-        matches!(e, PtyEvent::Started { session_id: id } if id == session_id)
-    });
+    let started = wait_for_event(
+        &events,
+        Duration::from_secs(3),
+        |e| matches!(e, PtyEvent::Started { session_id: id } if id == session_id),
+    );
     assert!(started.is_some(), "expected Started event");
     (info, events)
 }
@@ -176,7 +178,9 @@ fn missing_session_returns_session_not_found() {
     let write_err = manager.write("missing", "x").expect_err("write missing");
     assert_eq!(write_err.into_payload().code, "SESSION_NOT_FOUND");
 
-    let resize_err = manager.resize("missing", 24, 80).expect_err("resize missing");
+    let resize_err = manager
+        .resize("missing", 24, 80)
+        .expect_err("resize missing");
     assert_eq!(resize_err.into_payload().code, "SESSION_NOT_FOUND");
 
     let close_err = manager.close("missing").expect_err("close missing");
@@ -201,9 +205,11 @@ fn process_exit_reports_code_and_retains_metadata() {
         .expect("open true");
     assert_eq!(info.session_id, "s-exit");
 
-    let exited = wait_for_event(&events, Duration::from_secs(3), |e| {
-        matches!(e, PtyEvent::Exited { session_id, .. } if session_id == "s-exit")
-    })
+    let exited = wait_for_event(
+        &events,
+        Duration::from_secs(3),
+        |e| matches!(e, PtyEvent::Exited { session_id, .. } if session_id == "s-exit"),
+    )
     .expect("Exited event");
 
     match exited {
@@ -330,9 +336,11 @@ fn open_request_uses_profile_cwd() {
         )
         .expect("open");
 
-    let _ = wait_for_event(&events, Duration::from_secs(3), |e| {
-        matches!(e, PtyEvent::Started { session_id } if session_id == "s-cwd")
-    })
+    let _ = wait_for_event(
+        &events,
+        Duration::from_secs(3),
+        |e| matches!(e, PtyEvent::Started { session_id } if session_id == "s-cwd"),
+    )
     .expect("started");
 
     let info = manager.session_info("s-cwd").expect("info");

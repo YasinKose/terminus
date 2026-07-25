@@ -111,10 +111,13 @@ fn projects_table_is_compatible(tx: &Transaction<'_>) -> Result<bool, AppError> 
         .prepare("PRAGMA table_info(projects)")
         .map_err(|e| AppError::Message(format!("failed to inspect projects table: {e}")))?;
     let cols: Result<Vec<(String, String)>, _> = stmt
-        .query_map([], |row| Ok((row.get::<_, String>(1)?, row.get::<_, String>(2)?)))
+        .query_map([], |row| {
+            Ok((row.get::<_, String>(1)?, row.get::<_, String>(2)?))
+        })
         .map_err(|e| AppError::Message(format!("failed to read projects columns: {e}")))?
         .collect();
-    let cols = cols.map_err(|e| AppError::Message(format!("failed to read projects columns: {e}")))?;
+    let cols =
+        cols.map_err(|e| AppError::Message(format!("failed to read projects columns: {e}")))?;
     Ok(cols
         .iter()
         .any(|(name, ty)| name == "id" && ty.to_uppercase().contains("TEXT"))

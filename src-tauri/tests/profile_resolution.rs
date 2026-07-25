@@ -106,9 +106,15 @@ fn environment_overrides_win_over_login_env() {
     })
     .expect("resolve");
 
-    assert_eq!(resolved.env.get("FOO").map(String::as_str), Some("override"));
+    assert_eq!(
+        resolved.env.get("FOO").map(String::as_str),
+        Some("override")
+    );
     assert_eq!(resolved.env.get("BAR").map(String::as_str), Some("new"));
-    assert_eq!(resolved.env.get("PATH").map(String::as_str), Some("/login/bin"));
+    assert_eq!(
+        resolved.env.get("PATH").map(String::as_str),
+        Some("/login/bin")
+    );
     assert_eq!(
         resolved.env.get("TERM").map(String::as_str),
         Some("xterm-256color")

@@ -3,11 +3,11 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use tempfile::TempDir;
 use terminus_lib::persistence::{
     BootstrapState, Database, PaneNode, ProfileRecord, ProjectRecord, Repository, SettingValue,
     WorkspaceRecord,
 };
-use tempfile::TempDir;
 
 fn now_ms() -> i64 {
     SystemTime::now()
@@ -164,7 +164,10 @@ fn failed_migration_rolls_back() {
     }
 
     let result = Database::open(&path);
-    assert!(result.is_err(), "migration should fail on conflicting schema");
+    assert!(
+        result.is_err(),
+        "migration should fail on conflicting schema"
+    );
 
     let conn = rusqlite::Connection::open(&path).expect("reopen");
     let version: i32 = conn
@@ -331,4 +334,3 @@ fn delete_workspace_missing_is_error() {
     let payload: terminus_lib::ErrorPayload = err.into();
     assert!(payload.message.contains("workspace not found"));
 }
-

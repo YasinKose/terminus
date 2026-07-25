@@ -1,6 +1,8 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { ProfileRecord } from "@/lib/tauri/contracts";
+import { useProfileStore } from "@/features/profiles/profileStore";
 import { PaneTree } from "./PaneTree";
 import {
   createTerminalLeaf,
@@ -14,8 +16,29 @@ vi.mock("@/features/terminal/TerminalPane", () => ({
   ),
 }));
 
+function profile(overrides: Partial<ProfileRecord> = {}): ProfileRecord {
+  return {
+    id: "default",
+    name: "Zsh",
+    executable: null,
+    argsJson: "[]",
+    envJson: "{}",
+    cwdOverride: null,
+    isDefault: true,
+    ...overrides,
+  };
+}
+
+beforeEach(() => {
+  useProfileStore.getState().hydrate([
+    profile(),
+    profile({ id: "fish", name: "Fish", isDefault: false }),
+  ]);
+});
+
 afterEach(() => {
   cleanup();
+  useProfileStore.getState().hydrate([]);
 });
 
 function split(
@@ -314,5 +337,34 @@ describe("PaneTree", () => {
     expect(next.direction).toBe("column");
     expect(next.sizes[0]! + next.sizes[1]!).toBeCloseTo(100, 5);
     expect(next.sizes[0]).toBeCloseTo(25, 0);
+  });
+
+  it("shows profile label and pins a profile from the context menu", async () => {
+    const onTreeChange = vi.fn();
+    const root = createTerminalLeaf("terminal-1");
+
+    render(
+      <PaneTree
+        root={root}
+        projectId="p1"
+        workspaceId="ws-1"
+        onTreeChange={onTreeChange}
+      />,
+    );
+
+    expect(screen.getByTestId("pane-profile-terminal-1")).toHaveTextContent(
+      "Zsh",
+    );
+
+    fireEvent.contextMenu(screen.getByTestId("pane-leaf-terminal-1"));
+    fireEvent.click(await screen.findByText("Profile"));
+    fireEvent.click(await screen.findByText("Fish"));
+
+    expect(onTreeChange).toHaveBeenCalled();
+    expect(onTreeChange.mock.calls.at(-1)?.[0]).toMatchObject({
+      type: "terminal",
+      id: "terminal-1",
+      profileId: "fish",
+    });
   });
 });

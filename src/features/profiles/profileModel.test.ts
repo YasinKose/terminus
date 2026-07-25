@@ -3,6 +3,7 @@ import type { ProfileRecord } from "@/lib/tauri/contracts";
 import {
   applyDefaultUniqueness,
   draftFromRecord,
+  paneProfileLabel,
   parseArgsJson,
   parseEnvJson,
   resolvePaneProfile,
@@ -137,6 +138,16 @@ describe("profileModel", () => {
     expect(resolvePaneProfile("missing", profiles)?.id).toBe("def");
     expect(resolvePaneProfile(null, profiles)?.id).toBe("def");
     expect(resolvePaneProfile(null, [])).toBeNull();
+  });
+
+  it("labels pinned, global-default, and system profiles", () => {
+    const profiles = [
+      sample({ id: "default", name: "Zsh", isDefault: true }),
+      sample({ id: "fish", name: "Fish", isDefault: false }),
+    ];
+    expect(paneProfileLabel("fish", profiles)).toBe("Fish");
+    expect(paneProfileLabel(null, profiles)).toBe("Zsh");
+    expect(paneProfileLabel(null, [])).toBe("System shell");
   });
 
   it("round-trips draftFromRecord", () => {

@@ -19,6 +19,7 @@ import type { PaneNode } from "@/features/panes/model";
 import { WorkspaceArea } from "@/features/workspaces/WorkspaceArea";
 import { WorkspaceTabs } from "@/features/workspaces/WorkspaceTabs";
 import { useWorkspaceStore } from "@/features/workspaces/workspaceStore";
+import { reportError } from "@/lib/errors";
 import type { WorkspaceRecord } from "@/lib/tauri/contracts";
 import type { DialogApi } from "@/lib/tauri/dialog";
 import { tauriDialogApi } from "@/lib/tauri/dialog";
@@ -51,12 +52,14 @@ export function AppShell({
   const projects = useProjectStore((s) => s.projects);
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
   const addProject = useProjectStore((s) => s.addProject);
+  const renameProject = useProjectStore((s) => s.renameProject);
   const selectProject = useProjectStore((s) => s.selectProject);
   const selectWorkspace = useProjectStore((s) => s.selectWorkspace);
 
   const workspaces = useWorkspaceStore((s) => s.workspaces);
   const activeWorkspaceId = useWorkspaceStore((s) => s.activeWorkspaceId);
   const saveWorkspace = useWorkspaceStore((s) => s.saveWorkspace);
+  const reorderWorkspace = useWorkspaceStore((s) => s.reorderWorkspace);
   const listForProject = useWorkspaceStore((s) => s.listForProject);
 
   const sidebarCollapsed = useUiStore((s) => s.sidebarCollapsed);
@@ -67,6 +70,13 @@ export function AppShell({
   const projectWorkspaces = activeProjectId
     ? listForProject(activeProjectId)
     : [];
+
+  const runAction = useCallback(
+    (title: string, action: () => Promise<void>): void => {
+      void action().catch((error) => reportError(title, error));
+    },
+    [],
+  );
 
   const handleOpenProject = useCallback(async () => {
     const path = await dialogApi.openDirectory({
@@ -191,12 +201,17 @@ export function AppShell({
               activeProjectId={activeProjectId}
               collapsed={sidebarCollapsed}
               onOpenProject={() => {
-                void handleOpenProject();
+                runAction("Could not open project", handleOpenProject);
               }}
               onSelectProject={(id) => {
-                void selectProject(id);
+                runAction("Could not select project", () => selectProject(id));
               }}
               onCloseProject={handleCloseProject}
+              onRenameProject={(projectId, name) => {
+                runAction("Could not rename project", () =>
+                  renameProject(projectId, name),
+                );
+              }}
             />
           )}
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -207,15 +222,27 @@ export function AppShell({
                     workspaces={projectWorkspaces}
                     activeWorkspaceId={activeWorkspaceId}
                     onSelectWorkspace={(id) => {
-                      void handleSelectWorkspace(id);
+                      runAction("Could not select workspace", () =>
+                        handleSelectWorkspace(id),
+                      );
                     }}
                     onRenameWorkspace={(id, name) => {
-                      void handleRenameWorkspace(id, name);
+                      runAction("Could not rename workspace", () =>
+                        handleRenameWorkspace(id, name),
+                      );
                     }}
                     onCreateWorkspace={() => {
-                      void handleCreateWorkspace();
+                      runAction(
+                        "Could not create workspace",
+                        handleCreateWorkspace,
+                      );
                     }}
                     onCloseWorkspace={handleCloseWorkspace}
+                    onMoveWorkspace={(workspaceId, direction) => {
+                      runAction("Could not reorder workspace", () =>
+                        reorderWorkspace(workspaceId, direction),
+                      );
+                    }}
                     onNewTerminal={() => {
                       void commandContext.newTerminal();
                     }}
@@ -254,7 +281,7 @@ export function AppShell({
                   type="button"
                   className="mt-5"
                   onClick={() => {
-                    void handleOpenProject();
+                    runAction("Could not open project", handleOpenProject);
                   }}
                 >
                   <FolderOpen aria-hidden className="size-4" />

@@ -7,10 +7,12 @@ import {
   movePaneBetweenWorkspaces,
   removePane,
   resizeSplit,
+  setTerminalProfile,
   splitPane,
   swapPanes,
   validatePaneTree,
 } from "./tree";
+import type { TerminalLeaf } from "./model";
 
 function leaf(id: string, cwd = "/tmp"): ReturnType<typeof createTerminalLeaf> {
   return createTerminalLeaf(id, { initialCwd: cwd });
@@ -249,5 +251,19 @@ describe("pane tree domain", () => {
     expect(validatePaneTree(empty).ok).toBe(false);
 
     expect(validatePaneTree(null).ok).toBe(true);
+  });
+
+  it("pins and clears a terminal profile without mutating the input tree", () => {
+    const root = leaf("t1");
+    const pinned = setTerminalProfile(root, "t1", "profile-zsh");
+    expect(pinned.ok).toBe(true);
+    if (!pinned.ok) return;
+    expect((pinned.value as TerminalLeaf).profileId).toBe("profile-zsh");
+    expect(root.profileId).toBeNull();
+
+    const cleared = setTerminalProfile(pinned.value, "t1", null);
+    expect(cleared.ok).toBe(true);
+    if (!cleared.ok) return;
+    expect((cleared.value as TerminalLeaf).profileId).toBeNull();
   });
 });

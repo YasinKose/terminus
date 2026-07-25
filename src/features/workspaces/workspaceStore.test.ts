@@ -17,6 +17,25 @@ function workspace(
   };
 }
 
+function mockWorkspaceApi(): WorkspaceApi {
+  return {
+    loadBootstrapState: vi.fn(),
+    addProject: vi.fn(),
+    removeProject: vi.fn(),
+    renameProject: vi.fn(),
+    ensureDefaultWorkspace: vi.fn(),
+    setLastActiveWorkspace: vi.fn(),
+    saveWorkspace: vi.fn(async (record) => record),
+    saveTwoWorkspaces: vi.fn(
+      async (first, second): Promise<[WorkspaceRecord, WorkspaceRecord]> => [
+        first,
+        second,
+      ],
+    ),
+    deleteWorkspace: vi.fn(),
+  };
+}
+
 describe("workspaceStore", () => {
   beforeEach(() => {
     useWorkspaceStore.setState({
@@ -55,6 +74,36 @@ describe("workspaceStore", () => {
       true,
     );
     expect(useWorkspaceStore.getState().activeWorkspaceId).toBe("w2");
+  });
+
+  it("moves a workspace left by atomically swapping adjacent positions", async () => {
+    const a = workspace({ id: "a", projectId: "p1", name: "A", position: 0 });
+    const b = workspace({ id: "b", projectId: "p1", name: "B", position: 1 });
+    const c = workspace({ id: "c", projectId: "p1", name: "C", position: 2 });
+    const api = mockWorkspaceApi();
+    useWorkspaceStore.getState().setApi(api);
+    useWorkspaceStore.getState().hydrateFromBootstrap([a, b, c]);
+
+    await useWorkspaceStore.getState().reorderWorkspace("b", -1);
+
+    expect(api.saveTwoWorkspaces).toHaveBeenCalledOnce();
+    const [moved, neighbor] = vi.mocked(api.saveTwoWorkspaces).mock.calls[0]!;
+    expect([moved.id, moved.position]).toEqual(["b", 0]);
+    expect([neighbor.id, neighbor.position]).toEqual(["a", 1]);
+    expect(
+      useWorkspaceStore.getState().listForProject("p1").map((item) => item.id),
+    ).toEqual(["b", "a", "c"]);
+  });
+
+  it("does not persist when a workspace is already at the requested edge", async () => {
+    const a = workspace({ id: "a", projectId: "p1", name: "A", position: 0 });
+    const api = mockWorkspaceApi();
+    useWorkspaceStore.getState().setApi(api);
+    useWorkspaceStore.getState().hydrateFromBootstrap([a]);
+
+    await useWorkspaceStore.getState().reorderWorkspace("a", -1);
+
+    expect(api.saveTwoWorkspaces).not.toHaveBeenCalled();
   });
 
   it("saveWorkspace persists via api and keeps initialized flag", async () => {

@@ -26,6 +26,10 @@ export interface WorkspaceStoreState extends WorkspaceStoreApi {
     first: WorkspaceRecord,
     second: WorkspaceRecord,
   ) => Promise<[WorkspaceView, WorkspaceView]>;
+  reorderWorkspace: (
+    workspaceId: string,
+    direction: -1 | 1,
+  ) => Promise<void>;
   removeWorkspace: (workspaceId: string) => Promise<void>;
 }
 
@@ -111,6 +115,30 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
     get().upsertWorkspace(a);
     get().upsertWorkspace(b);
     return [get().getWorkspace(a.id)!, get().getWorkspace(b.id)!];
+  },
+
+  reorderWorkspace: async (workspaceId, direction) => {
+    const current = get().getWorkspace(workspaceId);
+    if (!current) {
+      throw new Error(`workspace not found: ${workspaceId}`);
+    }
+    const ordered = get().listForProject(current.projectId);
+    const currentIndex = ordered.findIndex((item) => item.id === workspaceId);
+    const neighbor = ordered[currentIndex + direction];
+    if (!neighbor) return;
+
+    const now = Date.now();
+    const moved: WorkspaceRecord = {
+      ...current,
+      position: neighbor.position,
+      updatedAt: now,
+    };
+    const swapped: WorkspaceRecord = {
+      ...neighbor,
+      position: current.position,
+      updatedAt: now,
+    };
+    await get().saveTwoWorkspaces(moved, swapped);
   },
 
   removeWorkspace: async (workspaceId) => {

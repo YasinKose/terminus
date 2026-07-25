@@ -3,6 +3,7 @@ import {
   collectTerminalIds,
   movePaneBetweenWorkspaces,
   removePane,
+  setTerminalProfile,
   splitPane,
   swapPanes,
 } from "./tree";
@@ -166,5 +167,14 @@ describe("pane identity invariants", () => {
       "existing",
       "new-one",
     ]);
+  });
+
+  it("profile change preserves runtime identity", () => {
+    const root = leaf("keep");
+    const before = registry.acquire("keep");
+    const updated = setTerminalProfile(root, "keep", "fish");
+    expect(updated.ok).toBe(true);
+    expect(registry.acquire("keep")).toBe(before);
+    expect(adapters.get("keep")?.disposeCalls).toBe(0);
   });
 });

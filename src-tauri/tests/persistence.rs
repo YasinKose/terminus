@@ -360,3 +360,51 @@ fn delete_workspace_missing_is_error() {
     let payload: terminus_lib::ErrorPayload = err.into();
     assert!(payload.message.contains("workspace not found"));
 }
+
+#[test]
+fn resolve_profile_or_default_falls_back_after_deletion() {
+    let dir = TempDir::new().unwrap();
+    let repo = open_repo(&dir);
+
+    assert!(repo
+        .resolve_profile_or_default(None)
+        .expect("empty table")
+        .is_none());
+
+    let default = ProfileRecord {
+        id: "default".into(),
+        name: "Default".into(),
+        executable: None,
+        args_json: "[]".into(),
+        env_json: "{}".into(),
+        cwd_override: None,
+        is_default: true,
+    };
+    let pinned = ProfileRecord {
+        id: "pinned".into(),
+        name: "Pinned".into(),
+        executable: None,
+        args_json: "[]".into(),
+        env_json: "{}".into(),
+        cwd_override: None,
+        is_default: false,
+    };
+    repo.save_profile(&default).expect("default");
+    repo.save_profile(&pinned).expect("pinned");
+
+    assert_eq!(
+        repo.resolve_profile_or_default(Some("pinned"))
+            .expect("pinned")
+            .expect("profile")
+            .id,
+        "pinned"
+    );
+    repo.delete_profile("pinned").expect("delete pinned");
+    assert_eq!(
+        repo.resolve_profile_or_default(Some("pinned"))
+            .expect("fallback")
+            .expect("default")
+            .id,
+        "default"
+    );
+}

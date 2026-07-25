@@ -40,6 +40,7 @@ import {
 } from "@/features/settings/shortcutModel";
 import type { WorkspaceView } from "@/lib/tauri/contracts";
 import { cn } from "@/lib/utils/cn";
+import { WorkspaceContextMenu } from "./WorkspaceContextMenu";
 
 export type WorkspaceTabsProps = {
   workspaces: WorkspaceView[];
@@ -48,6 +49,7 @@ export type WorkspaceTabsProps = {
   onRenameWorkspace?: (workspaceId: string, name: string) => void;
   onCreateWorkspace?: () => void;
   onCloseWorkspace?: (workspaceId: string) => void;
+  onMoveWorkspace?: (workspaceId: string, direction: -1 | 1) => void;
   onNewTerminal?: () => void;
   onSplitHorizontal?: () => void;
   onSplitVertical?: () => void;
@@ -140,6 +142,7 @@ export function WorkspaceTabs({
   onRenameWorkspace,
   onCreateWorkspace,
   onCloseWorkspace,
+  onMoveWorkspace,
   onNewTerminal,
   onSplitHorizontal,
   onSplitVertical,
@@ -293,53 +296,71 @@ export function WorkspaceTabs({
 
           {visibleWorkspaces.map((ws) => {
             const active = ws.id === activeWorkspaceId;
+            const workspaceIndex = workspaces.findIndex(
+              (item) => item.id === ws.id,
+            );
             return (
-              <div
+              <WorkspaceContextMenu
                 key={ws.id}
-                className={cn(
-                  "group/tab inline-flex h-8 max-w-[13rem] shrink-0 items-center gap-0.5 rounded-lg border px-1 text-xs transition-[background-color,border-color,color] duration-150",
-                  active
-                    ? "border-border bg-surface-raised font-medium text-accent-foreground shadow-[0_1px_0_rgb(255_255_255/0.04)_inset]"
-                    : "border-transparent text-muted-foreground hover:border-border/55 hover:bg-accent/45 hover:text-foreground",
-                )}
+                canMoveLeft={workspaceIndex > 0}
+                canMoveRight={
+                  workspaceIndex >= 0 &&
+                  workspaceIndex < workspaces.length - 1
+                }
+                onRename={() => {
+                  if (!onRenameWorkspace) return;
+                  setRenameTarget({ id: ws.id, name: ws.name });
+                  setRenameValue(ws.name);
+                }}
+                onMove={(direction) => onMoveWorkspace?.(ws.id, direction)}
+                onClose={() => onCloseWorkspace?.(ws.id)}
               >
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  data-workspace-tab-id={ws.id}
-                  data-testid={`workspace-tab-${ws.id}`}
-                  className="h-7 max-w-[9.5rem] truncate rounded-md px-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/35"
-                  onClick={() => onSelectWorkspace(ws.id)}
-                  onAuxClick={(event) => {
-                    if (event.button !== 1 || !onCloseWorkspace) return;
-                    event.preventDefault();
-                    event.stopPropagation();
-                    onCloseWorkspace(ws.id);
-                  }}
-                  onDoubleClick={() => {
-                    if (!onRenameWorkspace) return;
-                    setRenameTarget({ id: ws.id, name: ws.name });
-                    setRenameValue(ws.name);
-                  }}
+                <div
+                  className={cn(
+                    "group/tab inline-flex h-8 max-w-[13rem] shrink-0 items-center gap-0.5 rounded-lg border px-1 text-xs transition-[background-color,border-color,color] duration-150",
+                    active
+                      ? "border-border bg-surface-raised font-medium text-accent-foreground shadow-[0_1px_0_rgb(255_255_255/0.04)_inset]"
+                      : "border-transparent text-muted-foreground hover:border-border/55 hover:bg-accent/45 hover:text-foreground",
+                  )}
                 >
-                  {ws.name}
-                </button>
-                {onCloseWorkspace ? (
                   <button
                     type="button"
-                    data-testid={`close-workspace-${ws.id}`}
-                    className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground opacity-0 outline-none transition-[background-color,color,opacity] duration-150 hover:bg-accent hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/35 group-hover/tab:opacity-75"
-                    aria-label={`Close ${ws.name}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
+                    role="tab"
+                    aria-selected={active}
+                    data-workspace-tab-id={ws.id}
+                    data-testid={`workspace-tab-${ws.id}`}
+                    className="h-7 max-w-[9.5rem] truncate rounded-md px-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/35"
+                    onClick={() => onSelectWorkspace(ws.id)}
+                    onAuxClick={(event) => {
+                      if (event.button !== 1 || !onCloseWorkspace) return;
+                      event.preventDefault();
+                      event.stopPropagation();
                       onCloseWorkspace(ws.id);
                     }}
+                    onDoubleClick={() => {
+                      if (!onRenameWorkspace) return;
+                      setRenameTarget({ id: ws.id, name: ws.name });
+                      setRenameValue(ws.name);
+                    }}
                   >
-                    <X aria-hidden className="size-3.5" />
+                    {ws.name}
                   </button>
-                ) : null}
-              </div>
+                  {onCloseWorkspace ? (
+                    <button
+                      type="button"
+                      data-testid={`close-workspace-${ws.id}`}
+                      className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground opacity-0 outline-none transition-[background-color,color,opacity] duration-150 hover:bg-accent hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/35 group-hover/tab:opacity-75"
+                      aria-label={`Close ${ws.name}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onCloseWorkspace(ws.id);
+                      }}
+                    >
+                      <X aria-hidden className="size-3.5" />
+                    </button>
+                  ) : null}
+                </div>
+              </WorkspaceContextMenu>
             );
           })}
           {onCreateWorkspace ? (

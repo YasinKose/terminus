@@ -179,6 +179,23 @@ export function renameTerminal(
   });
 }
 
+export function setTerminalProfile(
+  root: PaneNode,
+  terminalId: string,
+  profileId: string | null,
+): TreeResult<PaneNode> {
+  const terminal = findNode(root, terminalId);
+  if (!terminal) return err(`terminal not found: ${terminalId}`);
+  if (terminal.type !== "terminal") {
+    return err(`node ${terminalId} is not a terminal`);
+  }
+  const normalized = profileId?.trim() || null;
+  return replaceNode(root, terminalId, {
+    ...terminal,
+    profileId: normalized,
+  });
+}
+
 function equalShare(count: number): number[] {
   const base = 100 / count;
   return Array.from({ length: count }, () => base);

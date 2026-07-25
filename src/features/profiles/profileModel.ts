@@ -154,3 +154,10 @@ export function resolvePaneProfile(
   }
   return profiles.find((p) => p.isDefault) ?? null;
 }
+
+export function paneProfileLabel(
+  profileId: string | null | undefined,
+  profiles: ProfileRecord[],
+): string {
+  return resolvePaneProfile(profileId, profiles)?.name ?? "System shell";
+}

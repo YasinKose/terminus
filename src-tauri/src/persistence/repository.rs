@@ -400,6 +400,18 @@ impl Repository {
         })
     }
 
+    pub fn resolve_profile_or_default(
+        &self,
+        profile_id: Option<&str>,
+    ) -> Result<Option<ProfileRecord>, AppError> {
+        if let Some(profile_id) = profile_id {
+            if let Some(profile) = self.get_profile(profile_id)? {
+                return Ok(Some(profile));
+            }
+        }
+        self.get_default_profile()
+    }
+
     pub fn delete_profile(&self, profile_id: &str) -> Result<(), AppError> {
         self.db.with_conn(|conn| {
             let n = conn

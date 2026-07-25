@@ -91,18 +91,9 @@ fn open_session_with_channel(
     })?;
 
     let mut profile = state.with_repository(app, |repo| {
-        if let Some(ref profile_id) = request.profile_id {
-            if let Some(found) = repo.get_profile(profile_id)? {
-                return Ok(found);
-            }
-            return Err(AppError::profile_invalid(format!(
-                "profile not found: {profile_id}"
-            )));
-        }
-        if let Some(default_profile) = repo.get_default_profile()? {
-            return Ok(default_profile);
-        }
-        Ok(synthetic_default_profile())
+        Ok(repo
+            .resolve_profile_or_default(request.profile_id.as_deref())?
+            .unwrap_or_else(synthetic_default_profile))
     })?;
 
     if let Some(cwd) = request.initial_cwd.filter(|s| !s.trim().is_empty()) {

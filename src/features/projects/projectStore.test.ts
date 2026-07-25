@@ -10,6 +10,36 @@ import {
   useProjectStore,
 } from "./projectStore";
 import { useWorkspaceStore } from "@/features/workspaces/workspaceStore";
+import { useRecoveryStore } from "@/features/settings/recoveryStore";
+import type { RecoveryApi } from "@/lib/tauri/recovery";
+
+
+function recoveryFromApi(api: WorkspaceApi): RecoveryApi {
+  return {
+    bootstrapApp: async () => ({
+      status: "ready",
+      state: await api.loadBootstrapState(),
+    }),
+    retryBootstrap: async () => ({
+      status: "ready",
+      state: await api.loadBootstrapState(),
+    }),
+    backupDatabase: async () => ({
+      backupPath: "/tmp/mock.backup",
+      backupAvailable: true,
+    }),
+    resetDatabase: async () => ({
+      status: "ready",
+      state: await api.loadBootstrapState(),
+    }),
+    revealDatabaseDir: async () => {},
+    recoveryStatus: async () => ({
+      error: "",
+      databasePath: "/tmp/terminus.db",
+      backupAvailable: false,
+    }),
+  };
+}
 
 function project(
   partial: Partial<ProjectRecord> & Pick<ProjectRecord, "id" | "canonicalPath">,
@@ -150,6 +180,8 @@ describe("projectStore", () => {
     });
     const api = createMockApi({ projects: [existing] });
     useProjectStore.getState().setApi(api);
+  useRecoveryStore.getState().setApi(recoveryFromApi(api));
+  useRecoveryStore.setState({ status: { kind: "idle" }, busy: false, forceConfirmOpen: false, lastMessage: null });
     useWorkspaceStore.getState().setApi(api);
     useProjectStore.getState().hydrate([existing]);
 
@@ -173,6 +205,8 @@ describe("projectStore", () => {
     const w2 = workspace({ id: "w2", projectId: "p1", name: "Two", position: 1 });
     const api = createMockApi({ projects: [p], workspaces: [w1, w2] });
     useProjectStore.getState().setApi(api);
+  useRecoveryStore.getState().setApi(recoveryFromApi(api));
+  useRecoveryStore.setState({ status: { kind: "idle" }, busy: false, forceConfirmOpen: false, lastMessage: null });
     useWorkspaceStore.getState().setApi(api);
     useProjectStore.getState().hydrate([p]);
     useWorkspaceStore.getState().hydrateFromBootstrap([w1, w2]);
@@ -193,6 +227,8 @@ describe("projectStore", () => {
     const p = project({ id: "p1", canonicalPath: "/tmp/a" });
     const api = createMockApi({ projects: [p], workspaces: [] });
     useProjectStore.getState().setApi(api);
+  useRecoveryStore.getState().setApi(recoveryFromApi(api));
+  useRecoveryStore.setState({ status: { kind: "idle" }, busy: false, forceConfirmOpen: false, lastMessage: null });
     useWorkspaceStore.getState().setApi(api);
     useProjectStore.getState().hydrate([p]);
     setProjectStoreWorkspaceBridge(useWorkspaceStore.getState());
@@ -215,6 +251,8 @@ describe("projectStore", () => {
       if (reject) throw new Error("backend failed");
     });
     useProjectStore.getState().setApi(api);
+  useRecoveryStore.getState().setApi(recoveryFromApi(api));
+  useRecoveryStore.setState({ status: { kind: "idle" }, busy: false, forceConfirmOpen: false, lastMessage: null });
     useWorkspaceStore.getState().setApi(api);
     useProjectStore.getState().hydrate([p]);
     useProjectStore.setState({ activeProjectId: "p1" });

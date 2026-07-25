@@ -15,6 +15,8 @@ import type {
   WorkspaceRecord,
 } from "@/lib/tauri/contracts";
 import type { WorkspaceApi } from "@/lib/tauri/workspaces";
+import { useRecoveryStore } from "@/features/settings/recoveryStore";
+import type { RecoveryApi } from "@/lib/tauri/recovery";
 
 vi.mock("@/features/terminal/TerminalPane", () => ({
   TerminalPane: ({ sessionId }: { sessionId: string }) => (
@@ -128,6 +130,33 @@ function createMockApi(seed?: {
   };
 }
 
+function recoveryFromWorkspaceApi(api: WorkspaceApi): RecoveryApi {
+  return {
+    bootstrapApp: async () => ({
+      status: "ready",
+      state: await api.loadBootstrapState(),
+    }),
+    retryBootstrap: async () => ({
+      status: "ready",
+      state: await api.loadBootstrapState(),
+    }),
+    backupDatabase: async () => ({
+      backupPath: "/tmp/mock.backup",
+      backupAvailable: true,
+    }),
+    resetDatabase: async () => ({
+      status: "ready",
+      state: await api.loadBootstrapState(),
+    }),
+    revealDatabaseDir: async () => {},
+    recoveryStatus: async () => ({
+      error: "",
+      databasePath: "/tmp/terminus.db",
+      backupAvailable: false,
+    }),
+  };
+}
+
 function resetStores(api: WorkspaceApi) {
   useProjectStore.setState({
     projects: [],
@@ -139,8 +168,15 @@ function resetStores(api: WorkspaceApi) {
     activeWorkspaceId: null,
   });
   useUiStore.setState({ sidebarCollapsed: false });
+  useRecoveryStore.setState({
+    status: { kind: "idle" },
+    busy: false,
+    forceConfirmOpen: false,
+    lastMessage: null,
+  });
   useProjectStore.getState().setApi(api);
   useWorkspaceStore.getState().setApi(api);
+  useRecoveryStore.getState().setApi(recoveryFromWorkspaceApi(api));
   setProjectStoreWorkspaceBridge(useWorkspaceStore.getState());
 }
 

@@ -32,6 +32,12 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             health_check,
             commands::load_bootstrap_state,
+            commands::bootstrap_app,
+            commands::retry_bootstrap,
+            commands::backup_database,
+            commands::reset_database,
+            commands::reveal_database_dir,
+            commands::recovery_status,
             commands::add_project,
             commands::remove_project,
             commands::rename_project,

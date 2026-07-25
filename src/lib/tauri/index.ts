@@ -22,3 +22,4 @@ export type {
 } from "./pty";
 export { tauriSettingsApi } from "./settings";
 export type { SettingsApi } from "./settings";
+export * from "./recovery";

@@ -39,3 +39,24 @@ export interface BootstrapState {
 export interface WorkspaceView extends WorkspaceRecord {
   initialized: boolean;
 }
+
+export interface RecoveryInfo {
+  error: string;
+  databasePath: string;
+  backupAvailable: boolean;
+}
+
+export interface BackupResult {
+  backupPath: string;
+  backupAvailable: boolean;
+}
+
+export type BootstrapOutcome =
+  | { status: "ready"; state: BootstrapState }
+  | {
+      status: "recoveryRequired";
+      error: string;
+      databasePath: string;
+      backupAvailable: boolean;
+    };
+

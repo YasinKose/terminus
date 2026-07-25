@@ -11,6 +11,8 @@ import {
 import { useAppearanceStore } from "@/features/appearance/appearanceStore";
 import { useProfileStore } from "@/features/profiles/profileStore";
 import { useSettingsStore } from "@/features/settings/settingsStore";
+import { useRecoveryStore } from "@/features/settings/recoveryStore";
+import type { BootstrapState } from "@/lib/tauri/contracts";
 
 export interface ProjectStoreState {
   projects: ProjectRecord[];
@@ -19,6 +21,7 @@ export interface ProjectStoreState {
   setApi: (api: WorkspaceApi) => void;
   hydrate: (projects: ProjectRecord[]) => void;
   bootstrap: () => Promise<void>;
+  applyReadyState: (state: BootstrapState) => void;
   addProject: (input: {
     path: string;
     displayName?: string;
@@ -56,7 +59,19 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
   },
 
   bootstrap: async () => {
-    const state = await api.loadBootstrapState();
+    const state = await useRecoveryStore.getState().bootstrap();
+    if (!state) {
+      set({ bootstrapped: false });
+      return;
+    }
+    set({ projects: state.projects, bootstrapped: true });
+    workspaceBridge().hydrateFromBootstrap(state.workspaces);
+    useProfileStore.getState().hydrate(state.profiles);
+    useSettingsStore.getState().hydrateFromBootstrap(state.settings);
+    useAppearanceStore.getState().hydrateFromBootstrap(state.settings);
+  },
+
+  applyReadyState: (state: BootstrapState) => {
     set({ projects: state.projects, bootstrapped: true });
     workspaceBridge().hydrateFromBootstrap(state.workspaces);
     useProfileStore.getState().hydrate(state.profiles);

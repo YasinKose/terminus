@@ -5,6 +5,8 @@ import { collectTerminalIds } from "@/features/panes/tree";
 import type { PaneNode } from "@/features/panes/model";
 import { useProjectStore } from "@/features/projects/projectStore";
 import { useWorkspaceStore } from "@/features/workspaces/workspaceStore";
+import { RecoveryScreen } from "@/features/settings/RecoveryScreen";
+import { useRecoveryStore } from "@/features/settings/recoveryStore";
 import type { DialogApi } from "@/lib/tauri/dialog";
 import { tauriDialogApi } from "@/lib/tauri/dialog";
 import { useCloseRequestStore } from "@/stores/closeRequestStore";
@@ -33,12 +35,16 @@ export function App({
   const projects = useProjectStore((s) => s.projects);
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
   const bootstrap = useProjectStore((s) => s.bootstrap);
+  const applyReadyState = useProjectStore((s) => s.applyReadyState);
   const addProject = useProjectStore((s) => s.addProject);
+  const recoveryStatus = useRecoveryStore((s) => s.status);
 
   useEffect(() => {
     if (!autoBootstrap || bootstrapped) return;
+    if (recoveryStatus.kind === "recoveryRequired") return;
+    if (recoveryStatus.kind === "loading") return;
     void bootstrap();
-  }, [autoBootstrap, bootstrapped, bootstrap]);
+  }, [autoBootstrap, bootstrapped, bootstrap, recoveryStatus.kind]);
 
   useEffect(() => {
     if (!interceptWindowClose) return;
@@ -87,7 +93,27 @@ export function App({
     await addProject({ path, displayName: name, color: "#1DB954" });
   };
 
-  if (!bootstrapped && autoBootstrap) {
+  const handleRecoveryReady = (state: import("@/lib/tauri/contracts").BootstrapState) => {
+    applyReadyState(state);
+  };
+
+  if (recoveryStatus.kind === "recoveryRequired") {
+    return (
+      <>
+        <RecoveryScreen onReady={handleRecoveryReady} />
+        <CloseHost
+          destroyWindow={async () => {
+            const { getCurrentWindow } = await import(
+              "@tauri-apps/api/window"
+            );
+            await getCurrentWindow().destroy();
+          }}
+        />
+      </>
+    );
+  }
+
+  if ((!bootstrapped && autoBootstrap) || recoveryStatus.kind === "loading") {
     return (
       <main className="flex h-full items-center justify-center bg-background text-sm text-muted-foreground">
         Loading…

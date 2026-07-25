@@ -8,6 +8,8 @@ import {
   useWorkspaceStore,
   type WorkspaceStoreApi,
 } from "@/features/workspaces/workspaceStore";
+import { useProfileStore } from "@/features/profiles/profileStore";
+import { useSettingsStore } from "@/features/settings/settingsStore";
 
 export interface ProjectStoreState {
   projects: ProjectRecord[];
@@ -56,6 +58,8 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     const state = await api.loadBootstrapState();
     set({ projects: state.projects, bootstrapped: true });
     workspaceBridge().hydrateFromBootstrap(state.workspaces);
+    useProfileStore.getState().hydrate(state.profiles);
+    useSettingsStore.getState().hydrateFromBootstrap(state.settings);
   },
 
   addProject: async (input) => {

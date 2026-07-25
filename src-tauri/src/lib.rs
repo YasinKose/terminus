@@ -48,6 +48,9 @@ pub fn run() {
             commands::restart_pty,
             commands::list_pty_states,
             commands::validate_cwd,
+            commands::save_profile,
+            commands::delete_profile,
+            commands::save_setting,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Terminus");

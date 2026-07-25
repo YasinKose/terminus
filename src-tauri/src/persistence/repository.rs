@@ -389,6 +389,20 @@ impl Repository {
         })
     }
 
+    pub fn delete_profile(&self, profile_id: &str) -> Result<(), AppError> {
+        self.db.with_conn(|conn| {
+            let n = conn
+                .execute("DELETE FROM profiles WHERE id = ?1", params![profile_id])
+                .map_err(sql_err)?;
+            if n == 0 {
+                return Err(AppError::Message(format!(
+                    "profile not found: {profile_id}"
+                )));
+            }
+            Ok(())
+        })
+    }
+
     pub fn save_setting(&self, key: &str, value: &SettingValue) -> Result<(), AppError> {
         let value_json = value
             .to_json_string()

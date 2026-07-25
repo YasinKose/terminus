@@ -20,3 +20,5 @@ export type {
   PtySessionState,
   SessionLifecycle,
 } from "./pty";
+export { tauriSettingsApi } from "./settings";
+export type { SettingsApi } from "./settings";

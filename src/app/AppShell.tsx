@@ -1,7 +1,12 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { Titlebar } from "@/app/Titlebar";
+import { CommandPalette } from "@/features/command-palette/CommandPalette";
+import { useCommandActions } from "@/features/command-palette/useCommandActions";
 import { ProjectSidebar } from "@/features/projects/ProjectSidebar";
 import { useProjectStore } from "@/features/projects/projectStore";
+import { SettingsSheet } from "@/features/settings/SettingsSheet";
+import { ShortcutHost } from "@/features/settings/ShortcutHost";
+import { useSettingsStore } from "@/features/settings/settingsStore";
 import { useUiStore } from "@/features/ui/uiStore";
 import { collectTerminalIds } from "@/features/panes/tree";
 import type { PaneNode } from "@/features/panes/model";
@@ -49,6 +54,9 @@ export function AppShell({
   const listForProject = useWorkspaceStore((s) => s.listForProject);
 
   const sidebarCollapsed = useUiStore((s) => s.sidebarCollapsed);
+  const focusMode = useSettingsStore((s) => s.focusMode);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const commandContext = useCommandActions({ setPaletteOpen });
 
   const projectWorkspaces = activeProjectId
     ? listForProject(activeProjectId)
@@ -181,35 +189,39 @@ export function AppShell({
     <div className="flex h-full min-h-0 flex-col bg-background text-foreground">
       <Titlebar />
       <div className="flex min-h-0 flex-1">
-        <ProjectSidebar
-          projects={projects}
-          activeProjectId={activeProjectId}
-          collapsed={sidebarCollapsed}
-          onOpenProject={() => {
-            void handleOpenProject();
-          }}
-          onSelectProject={(id) => {
-            void selectProject(id);
-          }}
-          onCloseProject={handleCloseProject}
-        />
+        {!focusMode && (
+          <ProjectSidebar
+            projects={projects}
+            activeProjectId={activeProjectId}
+            collapsed={sidebarCollapsed}
+            onOpenProject={() => {
+              void handleOpenProject();
+            }}
+            onSelectProject={(id) => {
+              void selectProject(id);
+            }}
+            onCloseProject={handleCloseProject}
+          />
+        )}
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           {activeProjectId ? (
             <>
-              <WorkspaceTabs
-                workspaces={projectWorkspaces}
-                activeWorkspaceId={activeWorkspaceId}
-                onSelectWorkspace={(id) => {
-                  void handleSelectWorkspace(id);
-                }}
-                onRenameWorkspace={(id, name) => {
-                  void handleRenameWorkspace(id, name);
-                }}
-                onCreateWorkspace={() => {
-                  void handleCreateWorkspace();
-                }}
-                onCloseWorkspace={handleCloseWorkspace}
-              />
+              {!focusMode && (
+                <WorkspaceTabs
+                  workspaces={projectWorkspaces}
+                  activeWorkspaceId={activeWorkspaceId}
+                  onSelectWorkspace={(id) => {
+                    void handleSelectWorkspace(id);
+                  }}
+                  onRenameWorkspace={(id, name) => {
+                    void handleRenameWorkspace(id, name);
+                  }}
+                  onCreateWorkspace={() => {
+                    void handleCreateWorkspace();
+                  }}
+                  onCloseWorkspace={handleCloseWorkspace}
+                />
+              )}
               <div className="min-h-0 flex-1">
                 <WorkspaceArea
                   projectId={activeProjectId}
@@ -236,6 +248,13 @@ export function AppShell({
           )}
         </div>
       </div>
+      <SettingsSheet />
+      <CommandPalette
+        open={paletteOpen}
+        onOpenChange={setPaletteOpen}
+        context={commandContext}
+      />
+      <ShortcutHost context={commandContext} />
     </div>
   );
 }

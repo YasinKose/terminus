@@ -8,6 +8,8 @@ import {
 } from "@/features/panes/PaneDragController";
 import { usePaneDragStore } from "@/features/panes/paneDragStore";
 import { useWorkspaceStore } from "@/features/workspaces/workspaceStore";
+import { Button } from "@/components/ui/button";
+import { SquareTerminal } from "lucide-react";
 
 function parseRoot(rootJson: string | null): PaneNode | null {
   if (!rootJson) return null;
@@ -145,14 +147,25 @@ export function WorkspaceArea({
 
   if (initialized.length === 0) {
     return (
-      <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-        Select a workspace to start a terminal.
+      <div className="flex h-full items-center justify-center bg-surface-sunken p-8">
+        <div className="text-center">
+          <SquareTerminal
+            aria-hidden
+            className="mx-auto mb-3 size-6 text-muted-foreground"
+          />
+          <p className="text-sm font-medium text-foreground">
+            Select a workspace
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Your terminal will start when the workspace becomes active.
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="relative h-full min-h-0 w-full min-w-0">
+    <div className="relative h-full min-h-0 w-full min-w-0 bg-background">
       {initialized.map((ws) => {
         const visible = ws.id === activeWorkspaceId;
         const root = parseRoot(ws.rootJson);
@@ -162,21 +175,28 @@ export function WorkspaceArea({
             key={ws.id}
             className={
               visible
-                ? "absolute inset-0 flex min-h-0 flex-col"
-                : "absolute inset-0 hidden"
+                ? "absolute inset-1.5 flex min-h-0 flex-col"
+                : "absolute inset-1.5 hidden"
             }
             aria-hidden={!visible}
             data-workspace-id={ws.id}
             data-visible={visible ? "true" : "false"}
           >
             {!root ? (
-              <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
-                <p className="text-sm text-muted-foreground">
-                  This workspace has no terminal yet.
+              <div className="flex h-full flex-col items-center justify-center p-6 text-center">
+                <div className="mb-4 inline-flex size-11 items-center justify-center rounded-2xl border border-border bg-surface-raised text-primary">
+                  <SquareTerminal aria-hidden className="size-5" />
+                </div>
+                <p className="text-sm font-medium text-foreground">
+                  Start a terminal
                 </p>
-                <button
+                <p className="mt-1 max-w-xs text-xs leading-5 text-muted-foreground">
+                  This workspace is ready. Open a local shell to begin.
+                </p>
+                <Button
                   type="button"
-                  className="inline-flex h-8 items-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90"
+                  size="sm"
+                  className="mt-4"
                   onClick={() => {
                     const leafId = crypto.randomUUID();
                     const leaf = createTerminalLeaf(leafId);
@@ -187,8 +207,9 @@ export function WorkspaceArea({
                     });
                   }}
                 >
+                  <SquareTerminal aria-hidden className="size-3.5" />
                   New terminal
-                </button>
+                </Button>
               </div>
             ) : (
               <PaneTree

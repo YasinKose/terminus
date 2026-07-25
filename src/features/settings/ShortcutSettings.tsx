@@ -8,6 +8,7 @@ import {
   type ShortcutCommandId,
 } from "./shortcutModel";
 import { useSettingsStore } from "./settingsStore";
+import { Keyboard, RotateCcw } from "lucide-react";
 
 export function ShortcutSettings() {
   const shortcuts = useSettingsStore((s) => s.shortcuts);
@@ -48,7 +49,12 @@ export function ShortcutSettings() {
   return (
     <div className="flex h-full min-h-0 flex-col gap-4">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-sm font-medium">Shortcuts</h2>
+        <div>
+          <h2 className="text-sm font-semibold">Keyboard shortcuts</h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Click a key chord, then press a new combination.
+          </p>
+        </div>
         <Button
           type="button"
           size="sm"
@@ -57,20 +63,32 @@ export function ShortcutSettings() {
             void resetAllShortcuts().then(() => setMessage(null));
           }}
         >
+          <RotateCcw aria-hidden className="size-3.5" />
           Reset defaults
         </Button>
       </div>
 
-      <ul className="min-h-0 flex-1 space-y-1 overflow-auto">
+      <ul className="min-h-0 flex-1 space-y-1.5 overflow-auto pr-1">
         {SHORTCUT_COMMANDS.map((cmd) => (
           <li
             key={cmd.id}
-            className="flex items-center justify-between gap-2 rounded-md border border-border px-2 py-1.5"
+            className="flex min-h-12 items-center justify-between gap-4 rounded-xl border border-border bg-surface-sunken/45 px-3 py-2"
           >
-            <span className="text-xs">{cmd.label}</span>
+            <span className="flex min-w-0 items-center gap-2.5">
+              <Keyboard
+                aria-hidden
+                className="size-3.5 shrink-0 text-muted-foreground"
+              />
+              <span className="truncate text-xs font-medium">{cmd.label}</span>
+            </span>
             <button
               type="button"
-              className="min-w-24 rounded border border-input bg-muted/40 px-2 py-1 font-mono text-xs"
+              aria-label={`Change shortcut for ${cmd.label}`}
+              className={`min-w-24 rounded-lg border px-2.5 py-1.5 font-mono text-[11px] tabular-nums outline-none transition-[background-color,border-color,color,box-shadow] duration-150 focus-visible:ring-2 focus-visible:ring-ring/35 ${
+                recording === cmd.id
+                  ? "border-ring bg-primary/10 text-primary shadow-[0_0_0_1px_color-mix(in_oklab,var(--ring)_15%,transparent)]"
+                  : "border-input bg-surface-raised text-foreground hover:border-muted-foreground/50 hover:bg-accent"
+              }`}
               onClick={() => {
                 setRecording(cmd.id);
                 setMessage(null);
@@ -88,7 +106,10 @@ export function ShortcutSettings() {
       </ul>
 
       {message && (
-        <p className="text-xs text-destructive" role="alert">
+        <p
+          className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+          role="alert"
+        >
           {message}
         </p>
       )}

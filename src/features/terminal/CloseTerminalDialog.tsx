@@ -6,9 +6,11 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
+  AlertDialogMedia,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { CloseRequest } from "@/stores/closeRequestStore";
+import { SquareTerminal } from "lucide-react";
 
 export type CloseTerminalDialogProps = {
   request: Extract<CloseRequest, { kind: "terminal" }>;
@@ -30,6 +32,9 @@ export function CloseTerminalDialog({
     >
       <AlertDialogContent data-testid="close-terminal-dialog">
         <AlertDialogHeader>
+          <AlertDialogMedia className="border-destructive/25 bg-destructive/10 text-destructive">
+            <SquareTerminal aria-hidden />
+          </AlertDialogMedia>
           <AlertDialogTitle>Close terminal?</AlertDialogTitle>
           <AlertDialogDescription>
             Close “{request.title}”? The shell process will be terminated.

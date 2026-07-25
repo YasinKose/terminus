@@ -1,4 +1,5 @@
 import { FolderOpen, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import type { ProjectRecord } from "@/lib/tauri/contracts";
 
 export type ProjectSidebarProps = {
@@ -24,46 +25,54 @@ export function ProjectSidebar({
 
   return (
     <aside
-      className="flex w-56 shrink-0 flex-col border-r border-border bg-card"
+      className="flex w-60 shrink-0 flex-col border-r border-border/90 bg-chrome"
       aria-label="Projects"
     >
-      <div className="flex h-9 items-center justify-between border-b border-border px-2">
-        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Projects
-        </span>
-        <button
+      <div className="flex h-11 items-center justify-between border-b border-border/80 px-3">
+        <div className="flex min-w-0 items-baseline gap-2">
+          <span className="text-xs font-semibold text-foreground">
+            Projects
+          </span>
+          <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
+            {projects.length}
+          </span>
+        </div>
+        <Button
           type="button"
-          className="inline-flex h-7 items-center gap-1 rounded-md bg-primary px-2 text-xs font-medium text-primary-foreground outline-none hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring/50"
+          variant="outline"
+          size="sm"
+          className="h-7 gap-1.5 px-2 text-xs"
           onClick={onOpenProject}
           aria-label="Open project"
         >
           <FolderOpen aria-hidden className="size-3.5" />
           Open
-        </button>
+        </Button>
       </div>
-      <ul className="min-h-0 flex-1 overflow-y-auto p-1">
+      <ul className="min-h-0 flex-1 space-y-0.5 overflow-y-auto p-2">
         {projects.length === 0 ? (
-          <li className="px-2 py-3 text-xs text-muted-foreground">
-            No projects yet.
+          <li className="rounded-lg border border-dashed border-border px-3 py-5 text-center text-xs leading-5 text-muted-foreground">
+            Open a folder to create your first project.
           </li>
         ) : (
           projects.map((project) => {
             const active = project.id === activeProjectId;
             return (
-              <li key={project.id} className="group flex items-center gap-0.5">
+              <li key={project.id} className="group flex min-w-0 items-center gap-0.5">
                 <button
                   type="button"
                   className={
                     active
-                      ? "flex min-w-0 flex-1 items-center gap-2 rounded-md bg-accent px-2 py-1.5 text-left text-sm text-accent-foreground"
-                      : "flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-foreground hover:bg-accent/60"
+                      ? "relative flex h-9 min-w-0 flex-1 items-center gap-2.5 rounded-lg border border-border/80 bg-surface-raised px-2.5 text-left text-sm font-medium text-accent-foreground shadow-[0_1px_0_rgb(255_255_255/0.04)_inset] before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-r-full before:bg-primary"
+                      : "flex h-9 min-w-0 flex-1 items-center gap-2.5 rounded-lg border border-transparent px-2.5 text-left text-sm text-muted-foreground transition-[background-color,color,border-color] duration-150 hover:border-border/50 hover:bg-accent/55 hover:text-foreground"
                   }
-                  aria-current={active ? "true" : undefined}
+                  aria-current={active ? "page" : undefined}
+                  title={project.canonicalPath}
                   onClick={() => onSelectProject(project.id)}
                 >
                   <span
-                    className="h-2.5 w-2.5 shrink-0 rounded-full"
-                    style={{ backgroundColor: project.color || "#1DB954" }}
+                    className="size-2 shrink-0 rounded-full ring-2 ring-background/70"
+                    style={{ backgroundColor: project.color || "var(--primary)" }}
                     aria-hidden
                   />
                   <span className="truncate">{project.displayName}</span>
@@ -72,7 +81,7 @@ export function ProjectSidebar({
                   <button
                     type="button"
                     data-testid={`close-project-${project.id}`}
-                    className="mr-1 inline-flex size-7 shrink-0 items-center justify-center rounded text-muted-foreground opacity-70 outline-none hover:bg-accent hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/50 group-hover:opacity-100 group-focus-within:opacity-100"
+                    className="mr-0.5 inline-flex size-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground opacity-0 outline-none transition-[background-color,color,opacity] duration-150 hover:bg-accent hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/35 group-hover:opacity-100 group-focus-within:opacity-100"
                     aria-label={`Close ${project.displayName}`}
                     onClick={(e) => {
                       e.stopPropagation();

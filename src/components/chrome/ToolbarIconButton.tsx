@@ -40,7 +40,7 @@ export function ToolbarIconButton({
           variant="ghost"
           size="icon-sm"
           className={cn(
-            "text-muted-foreground hover:text-foreground",
+            "text-muted-foreground aria-pressed:bg-accent aria-pressed:text-foreground hover:text-foreground",
             className,
           )}
           aria-label={tip}

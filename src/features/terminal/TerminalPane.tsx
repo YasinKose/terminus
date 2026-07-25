@@ -3,6 +3,7 @@ import type { TerminalRuntimeRegistry } from "@/features/terminal/runtime";
 import { TerminalHost } from "./TerminalHost";
 import { TerminalStatus } from "./TerminalStatus";
 import { useTerminalStore } from "./terminalStore";
+import { cn } from "@/lib/utils/cn";
 
 export type TerminalPaneProps = {
   sessionId: string;
@@ -81,9 +82,14 @@ export function TerminalPane({
   };
 
   return (
-    <div className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden border border-border bg-background">
+    <div
+      className={cn(
+        "flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden bg-surface-sunken",
+        showChrome && "border border-border",
+      )}
+    >
       {showChrome ? (
-        <div className="flex h-7 shrink-0 items-center justify-between gap-2 border-b border-border px-2 text-xs text-muted-foreground">
+        <div className="flex h-8 shrink-0 items-center justify-between gap-2 border-b border-border bg-chrome px-2 text-xs text-muted-foreground">
           <TerminalStatus
             status={status}
             activity={activity}
@@ -98,7 +104,7 @@ export function TerminalPane({
               <button
                 type="button"
                 data-testid={`close-terminal-${sessionId}`}
-                className="inline-flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"
+                className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors duration-150 hover:bg-destructive/15 hover:text-destructive"
                 aria-label="Close terminal"
                 onClick={(e) => {
                   e.stopPropagation();

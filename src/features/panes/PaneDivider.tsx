@@ -23,8 +23,8 @@ export function PaneDivider({
       data-divider-index={index}
       className={
         isRow
-          ? "z-10 w-1 shrink-0 cursor-col-resize bg-border hover:bg-ring/60 active:bg-ring"
-          : "z-10 h-1 shrink-0 cursor-row-resize bg-border hover:bg-ring/60 active:bg-ring"
+          ? "z-10 w-1.5 shrink-0 cursor-col-resize bg-background transition-colors duration-150 hover:bg-ring/40 active:bg-ring/70"
+          : "z-10 h-1.5 shrink-0 cursor-row-resize bg-background transition-colors duration-150 hover:bg-ring/40 active:bg-ring/70"
       }
       onPointerDown={onPointerDown}
     />

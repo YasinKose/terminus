@@ -317,7 +317,7 @@ describe("App shell", () => {
     expect(within(container).getByLabelText("Projects")).toBeVisible();
   });
 
-  it("renames a workspace on double-click", async () => {
+  it("opens an accessible dialog to rename a workspace", async () => {
     const p1 = project("p1", "/a", "w1");
     const w1 = workspace("w1", "p1", "Main", 0);
     const api = createMockApi({ projects: [p1], workspaces: [w1] });
@@ -325,7 +325,6 @@ describe("App shell", () => {
     await useProjectStore.getState().bootstrap();
     await useProjectStore.getState().selectProject("p1");
 
-    vi.spyOn(window, "prompt").mockReturnValue("Renamed");
     const user = userEvent.setup();
     const { container } = render(
       <AppShell
@@ -336,6 +335,15 @@ describe("App shell", () => {
 
     await user.dblClick(
       within(container).getByRole("tab", { name: "Main" }),
+    );
+
+    const dialog = screen.getByRole("dialog", { name: "Rename workspace" });
+    const nameInput = within(dialog).getByLabelText("Workspace name");
+    expect(nameInput).toHaveValue("Main");
+    await user.clear(nameInput);
+    await user.type(nameInput, "Renamed");
+    await user.click(
+      within(dialog).getByRole("button", { name: "Rename workspace" }),
     );
 
     await waitFor(() => {

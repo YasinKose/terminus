@@ -2,6 +2,7 @@ import {
   Command,
   PanelLeft,
   Settings,
+  SquareTerminal,
 } from "lucide-react";
 import { ToolbarIconButton } from "@/components/chrome/ToolbarIconButton";
 import { useSettingsStore } from "@/features/settings/settingsStore";
@@ -36,7 +37,7 @@ export function Titlebar({ onOpenSettings, onOpenPalette }: TitlebarProps) {
 
   return (
     <header
-      className="flex h-10 shrink-0 items-center border-b border-border bg-card text-sm"
+      className="flex h-11 shrink-0 items-center border-b border-border/90 bg-chrome text-sm shadow-[0_1px_0_rgb(255_255_255/0.025)_inset]"
       data-tauri-drag-region
     >
       <div
@@ -56,8 +57,22 @@ export function Titlebar({ onOpenSettings, onOpenPalette }: TitlebarProps) {
           <PanelLeft aria-hidden className="size-4" />
         </ToolbarIconButton>
       </div>
+      <div
+        className="mx-2 h-4 w-px bg-border/80"
+        aria-hidden
+        data-tauri-drag-region
+      />
+      <div
+        className="flex items-center gap-1.5 text-muted-foreground"
+        data-tauri-drag-region
+      >
+        <SquareTerminal aria-hidden className="size-3.5 text-primary" />
+        <span className="text-[10px] font-semibold tracking-[0.16em]">
+          TERMINUS
+        </span>
+      </div>
       <div className="flex-1" data-tauri-drag-region />
-      <div className="flex items-center gap-0.5 pr-2" data-no-drag>
+      <div className="flex items-center gap-1 pr-2" data-no-drag>
         <ToolbarIconButton
           label="Command palette"
           shortcut={chordLabel(shortcuts, "commandPalette")}

@@ -6,9 +6,11 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
+  AlertDialogMedia,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { CloseRequest } from "@/stores/closeRequestStore";
+import { FolderX } from "lucide-react";
 
 export type CloseProjectDialogProps = {
   request: Extract<CloseRequest, { kind: "project" }>;
@@ -30,6 +32,9 @@ export function CloseProjectDialog({
     >
       <AlertDialogContent data-testid="close-project-dialog">
         <AlertDialogHeader>
+          <AlertDialogMedia className="border-destructive/25 bg-destructive/10 text-destructive">
+            <FolderX aria-hidden />
+          </AlertDialogMedia>
           <AlertDialogTitle>Close project?</AlertDialogTitle>
           <AlertDialogDescription>
             Remove “{request.name}” from Terminus? This closes{" "}
@@ -39,8 +44,8 @@ export function CloseProjectDialog({
             and terminates{" "}
             {request.terminalCount === 1
               ? "1 terminal"
-              : `${request.terminalCount} terminals`}
-            . The project folder on disk is not deleted.
+              : `${request.terminalCount} terminals`}. The project folder on
+            disk is not deleted.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

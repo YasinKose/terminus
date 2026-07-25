@@ -1,5 +1,16 @@
-import { useCallback, useRef } from "react";
-import { GripVertical, X } from "lucide-react";
+import { useCallback, useId, useRef, useState } from "react";
+import { GripVertical, Pencil, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { TerminalPane } from "@/features/terminal/TerminalPane";
 import { TerminalStatus } from "@/features/terminal/TerminalStatus";
 import { useTerminalStore } from "@/features/terminal/terminalStore";
@@ -12,6 +23,7 @@ import {
 import type { PaneNode, TerminalLeaf } from "./model";
 import { usePaneDragStore } from "./paneDragStore";
 import { SplitContainerView } from "./SplitContainer";
+import { renameTerminal } from "./tree";
 
 export type PaneTreeProps = {
   root: PaneNode;
@@ -30,6 +42,7 @@ function TerminalLeafView({
   activePaneId,
   onActivate,
   onDragCommit,
+  onRename,
 }: {
   leaf: TerminalLeaf;
   projectId: string;
@@ -37,14 +50,20 @@ function TerminalLeafView({
   activePaneId?: string | null;
   onActivate?: (paneId: string) => void;
   onDragCommit?: () => void;
+  onRename: (terminalId: string, title: string) => void;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
+  const renameInputId = useId();
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
   const drag = usePaneDragStore((s) => s.drag);
   const beginDrag = usePaneDragStore((s) => s.beginDrag);
   const setOver = usePaneDragStore((s) => s.setOver);
   const endDrag = usePaneDragStore((s) => s.endDrag);
   const session = useTerminalStore((s) => s.sessions[leaf.id]);
   const focused = activePaneId === leaf.id;
+  const displayTitle =
+    leaf.titleOverride?.trim() || session?.title?.trim() || "Terminal";
 
   const isDragging = drag.status === "dragging";
   const isSource =
@@ -117,75 +136,153 @@ function TerminalLeafView({
     endDrag();
   };
 
+  const openRenameDialog = () => {
+    setRenameValue(displayTitle);
+    setRenameOpen(true);
+  };
+
+  const submitRename = () => {
+    const nextTitle = renameValue.trim();
+    if (!nextTitle) return;
+    onRename(leaf.id, nextTitle);
+    setRenameOpen(false);
+  };
+
   return (
-    <div
-      ref={hostRef}
-      data-testid={`pane-leaf-${leaf.id}`}
-      data-pane-id={leaf.id}
-      data-active-pane={focused ? "true" : "false"}
-      className="terminus-pane relative h-full min-h-0 w-full min-w-0"
-      onMouseDown={() => onActivate?.(leaf.id)}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerCancel}
-    >
-      <div className="flex h-full min-h-0 flex-col overflow-hidden">
-        <div className="flex h-6 shrink-0 items-center gap-1 border-b border-border px-1">
-          <button
-            type="button"
-            data-testid={`pane-drag-handle-${leaf.id}`}
-            className="inline-flex size-6 cursor-grab items-center justify-center rounded text-muted-foreground outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring/50 active:cursor-grabbing"
-            onPointerDown={onPointerDownHandle}
-            aria-label="Drag pane"
+    <>
+      <div
+        ref={hostRef}
+        data-testid={`pane-leaf-${leaf.id}`}
+        data-pane-id={leaf.id}
+        data-active-pane={focused ? "true" : "false"}
+        className="terminus-pane relative h-full min-h-0 w-full min-w-0"
+        onMouseDown={() => onActivate?.(leaf.id)}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerCancel}
+      >
+        <div className="flex h-full min-h-0 flex-col overflow-hidden">
+          <div
+            className={
+              focused
+                ? "flex h-8 shrink-0 items-center gap-1 border-b border-border/90 bg-surface-raised px-1.5"
+                : "flex h-8 shrink-0 items-center gap-1 border-b border-border/70 bg-chrome/75 px-1.5"
+            }
           >
-            <GripVertical aria-hidden className="size-3.5" />
-          </button>
-          <TerminalStatus
-            status={session?.status ?? "starting"}
-            activity={session?.activity ?? "quiet"}
-            unread={session?.unread ?? false}
-            attention={session?.attention ?? false}
-            title={session?.title || leaf.titleOverride || "Terminal"}
-            className="min-w-0 flex-1"
-          />
-          <button
-            type="button"
-            data-testid={`close-pane-${leaf.id}`}
-            className="inline-flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
-            aria-label="Close terminal"
-            onClick={(e) => {
-              e.stopPropagation();
-              useCloseRequestStore.getState().requestClose({
-                kind: "terminal",
-                sessionId: leaf.id,
-                workspaceId,
-                projectId,
-                title:
-                  session?.title || leaf.titleOverride || "Terminal",
-                terminalCount: 1,
-              });
+            <button
+              type="button"
+              data-testid={`pane-drag-handle-${leaf.id}`}
+              className="inline-flex size-6 cursor-grab items-center justify-center rounded-md text-muted-foreground outline-none transition-colors duration-150 hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/35 active:cursor-grabbing"
+              onPointerDown={onPointerDownHandle}
+              aria-label="Drag pane"
+            >
+              <GripVertical aria-hidden className="size-3.5" />
+            </button>
+            <button
+              type="button"
+              className="group/title flex min-w-0 flex-1 items-center gap-1 rounded-md px-1 py-0.5 text-left outline-none transition-colors duration-150 hover:bg-accent/65 focus-visible:ring-2 focus-visible:ring-ring/35"
+              aria-label={`Rename terminal: ${displayTitle}`}
+              title="Rename terminal"
+              onClick={(event) => {
+                event.stopPropagation();
+                openRenameDialog();
+              }}
+            >
+              <TerminalStatus
+                status={session?.status ?? "starting"}
+                activity={session?.activity ?? "quiet"}
+                unread={session?.unread ?? false}
+                attention={session?.attention ?? false}
+                title={displayTitle}
+                className="min-w-0 flex-1"
+              />
+              <Pencil
+                aria-hidden
+                className="size-3 shrink-0 text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/title:opacity-80 group-focus-visible/title:opacity-80"
+              />
+            </button>
+            <button
+              type="button"
+              data-testid={`close-pane-${leaf.id}`}
+              className="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors duration-150 hover:bg-destructive/15 hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring/35"
+              aria-label="Close terminal"
+              onClick={(e) => {
+                e.stopPropagation();
+                useCloseRequestStore.getState().requestClose({
+                  kind: "terminal",
+                  sessionId: leaf.id,
+                  workspaceId,
+                  projectId,
+                  title: displayTitle,
+                  terminalCount: 1,
+                });
+              }}
+            >
+              <X aria-hidden className="size-3.5" />
+            </button>
+          </div>
+          <div className="min-h-0 flex-1">
+            <TerminalPane
+              sessionId={leaf.id}
+              projectId={projectId}
+              profileId={leaf.profileId}
+              initialCwd={leaf.initialCwd || null}
+              title={leaf.titleOverride ?? "Terminal"}
+              focused={focused}
+              showChrome={false}
+            />
+          </div>
+        </div>
+        <DropZoneOverlay
+          visible={isDragging && !isSource}
+          activeZone={activeZone}
+        />
+      </div>
+
+      <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Rename terminal</DialogTitle>
+            <DialogDescription>
+              This name stays with the workspace and takes priority over titles
+              set by the shell.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            className="space-y-5"
+            onSubmit={(event) => {
+              event.preventDefault();
+              submitRename();
             }}
           >
-            <X aria-hidden className="size-3.5" />
-          </button>
-        </div>
-        <div className="min-h-0 flex-1">
-          <TerminalPane
-            sessionId={leaf.id}
-            projectId={projectId}
-            profileId={leaf.profileId}
-            initialCwd={leaf.initialCwd || null}
-            title={leaf.titleOverride ?? "Terminal"}
-            focused={focused}
-            showChrome={false}
-          />
-        </div>
-      </div>
-      <DropZoneOverlay
-        visible={isDragging && !isSource}
-        activeZone={activeZone}
-      />
-    </div>
+            <div className="space-y-1.5">
+              <Label htmlFor={renameInputId}>Terminal name</Label>
+              <Input
+                id={renameInputId}
+                name="terminal-name"
+                autoComplete="off"
+                autoFocus
+                maxLength={80}
+                value={renameValue}
+                onChange={(event) => setRenameValue(event.target.value)}
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setRenameOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={!renameValue.trim()}>
+                Rename terminal
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -198,6 +295,14 @@ export function PaneTree({
   onActivatePane,
   onDragCommit,
 }: PaneTreeProps) {
+  const handleRenameTerminal = useCallback(
+    (terminalId: string, title: string) => {
+      const renamed = renameTerminal(root, terminalId, title);
+      if (renamed.ok) onTreeChange(renamed.value);
+    },
+    [onTreeChange, root],
+  );
+
   const renderNode = useCallback(
     (node: PaneNode): React.ReactNode => {
       if (node.type === "terminal") {
@@ -209,6 +314,7 @@ export function PaneTree({
             activePaneId={activePaneId}
             onActivate={onActivatePane}
             onDragCommit={onDragCommit}
+            onRename={handleRenameTerminal}
           />
         );
       }
@@ -224,6 +330,7 @@ export function PaneTree({
     },
     [
       activePaneId,
+      handleRenameTerminal,
       onActivatePane,
       onDragCommit,
       onTreeChange,

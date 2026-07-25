@@ -1,3 +1,10 @@
+import {
+  Activity,
+  BellDot,
+  CircleAlert,
+  CircleDot,
+  type LucideIcon,
+} from "lucide-react";
 import type { ActivityLevel } from "./activity";
 import type { TerminalSessionStatus } from "./terminalStore";
 
@@ -34,17 +41,35 @@ export function TerminalStatus({
   className,
 }: TerminalStatusProps) {
   const running = status === "running";
-  const dotClass = attention
-    ? "bg-amber-400"
+  const indicator: {
+    Icon: LucideIcon;
+    label: string;
+    className: string;
+  } | null = attention
+    ? {
+        Icon: BellDot,
+        label: "Terminal needs attention",
+        className: "text-amber-400",
+      }
     : unread
-      ? "bg-sky-400"
+      ? {
+          Icon: CircleDot,
+          label: "Terminal has unread output",
+          className: "text-sky-400",
+        }
       : running && activity === "active"
-        ? "bg-emerald-400 animate-pulse"
-        : running
-          ? "bg-emerald-700/80"
-          : status === "error"
-            ? "bg-destructive"
-            : "bg-muted-foreground/50";
+        ? {
+            Icon: Activity,
+            label: "Terminal is producing output",
+            className: "text-emerald-400",
+          }
+        : status === "error"
+          ? {
+              Icon: CircleAlert,
+              label: "Terminal encountered an error",
+              className: "text-destructive",
+            }
+          : null;
 
   return (
     <span
@@ -59,23 +84,19 @@ export function TerminalStatus({
       }
       title={`${title} · ${statusLabel(status)}`}
     >
-      <span
-        aria-hidden
-        className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${dotClass}`}
-      />
+      {indicator ? (
+        <span
+          data-terminal-indicator
+          aria-label={indicator.label}
+          title={indicator.label}
+          className={`inline-flex shrink-0 ${indicator.className}`}
+        >
+          <indicator.Icon aria-hidden className="size-3" />
+        </span>
+      ) : null}
       <span className="min-w-0 truncate font-medium text-foreground">
         {title}
       </span>
-      {attention ? (
-        <span className="shrink-0 text-amber-400" aria-label="attention">
-          !
-        </span>
-      ) : null}
-      {unread && !attention ? (
-        <span className="shrink-0 text-sky-400" aria-label="unread">
-          •
-        </span>
-      ) : null}
     </span>
   );
 }

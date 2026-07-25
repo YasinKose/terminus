@@ -6,9 +6,11 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
+  AlertDialogMedia,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { CloseRequest } from "@/stores/closeRequestStore";
+import { PanelsTopLeft } from "lucide-react";
 
 export type CloseWorkspaceDialogProps = {
   request: Extract<CloseRequest, { kind: "workspace" }>;
@@ -30,6 +32,9 @@ export function CloseWorkspaceDialog({
     >
       <AlertDialogContent data-testid="close-workspace-dialog">
         <AlertDialogHeader>
+          <AlertDialogMedia className="border-destructive/25 bg-destructive/10 text-destructive">
+            <PanelsTopLeft aria-hidden />
+          </AlertDialogMedia>
           <AlertDialogTitle>Close workspace?</AlertDialogTitle>
           <AlertDialogDescription>
             Close “{request.name}”? This will terminate{" "}

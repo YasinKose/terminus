@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { PaneTree } from "./PaneTree";
 import {
@@ -40,6 +41,41 @@ describe("PaneTree", () => {
     );
     expect(screen.getByTestId("terminal-t-only")).toBeTruthy();
     expect(screen.getByTestId("pane-leaf-t-only")).toBeTruthy();
+  });
+
+  it("renames a terminal from its pane header", async () => {
+    const user = userEvent.setup();
+    const onTreeChange = vi.fn();
+    const root = createTerminalLeaf("terminal-1", {
+      titleOverride: "Logs",
+    });
+
+    render(
+      <PaneTree
+        root={root}
+        projectId="p1"
+        workspaceId="ws-1"
+        onTreeChange={onTreeChange}
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Rename terminal: Logs" }),
+    );
+
+    const nameInput = screen.getByRole("textbox", { name: "Terminal name" });
+    expect(nameInput).toHaveValue("Logs");
+
+    await user.clear(nameInput);
+    await user.type(nameInput, "Build");
+    await user.click(screen.getByRole("button", { name: "Rename terminal" }));
+
+    expect(onTreeChange).toHaveBeenCalledOnce();
+    expect(onTreeChange.mock.calls[0]?.[0]).toMatchObject({
+      type: "terminal",
+      id: "terminal-1",
+      titleOverride: "Build",
+    });
   });
 
   it("recursively renders nested horizontal and vertical splits", () => {

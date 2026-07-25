@@ -4,7 +4,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { CommandPalette } from "@/features/command-palette/CommandPalette";
 import { useCommandActions } from "@/features/command-palette/useCommandActions";
 import { ProjectSidebar } from "@/features/projects/ProjectSidebar";
-import { useProjectStore } from "@/features/projects/projectStore";
+import {
+  DEFAULT_PROJECT_COLOR,
+  useProjectStore,
+} from "@/features/projects/projectStore";
 import { SettingsSheet } from "@/features/settings/SettingsSheet";
 import { ShortcutHost } from "@/features/settings/ShortcutHost";
 import { useSettingsStore } from "@/features/settings/settingsStore";
@@ -20,6 +23,8 @@ import { tauriDialogApi } from "@/lib/tauri/dialog";
 import type { WorkspaceApi } from "@/lib/tauri/workspaces";
 import { tauriWorkspaceApi } from "@/lib/tauri/workspaces";
 import { useCloseRequestStore } from "@/stores/closeRequestStore";
+import { FolderOpen, Layers3 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 function parseRoot(rootJson: string | null): PaneNode | null {
   if (!rootJson) return null;
@@ -69,7 +74,7 @@ export function AppShell({
     });
     if (!path) return;
     const name = path.split(/[/\\]/).filter(Boolean).pop() ?? path;
-    await addProject({ path, displayName: name, color: "#1DB954" });
+    await addProject({ path, displayName: name, color: DEFAULT_PROJECT_COLOR });
   }, [addProject, dialogApi]);
 
   const handleSelectWorkspace = useCallback(
@@ -188,7 +193,7 @@ export function AppShell({
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="flex h-full min-h-0 flex-col bg-background text-foreground">
+      <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background text-foreground">
         <Titlebar
           onOpenSettings={() => commandContext.openSettings()}
           onOpenPalette={() => commandContext.openPalette()}
@@ -246,19 +251,29 @@ export function AppShell({
                 </div>
               </>
             ) : (
-              <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
-                <p className="text-sm text-muted-foreground">
-                  Select a project or open a folder.
-                </p>
-                <button
+              <div className="flex h-full flex-col items-center justify-center p-8 text-center">
+                <div className="flex max-w-sm flex-col items-center">
+                  <div className="mb-5 inline-flex size-12 items-center justify-center rounded-2xl border border-border bg-surface-raised text-primary shadow-panel">
+                    <Layers3 aria-hidden className="size-5" />
+                  </div>
+                  <h1 className="text-lg font-semibold tracking-[-0.015em]">
+                    Choose a project
+                  </h1>
+                  <p className="mt-1.5 text-sm leading-6 text-muted-foreground text-pretty">
+                    Select a project from the sidebar or open a local folder to
+                    create a new workspace.
+                  </p>
+                </div>
+                <Button
                   type="button"
-                  className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground outline-none hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring/50"
+                  className="mt-5"
                   onClick={() => {
                     void handleOpenProject();
                   }}
                 >
+                  <FolderOpen aria-hidden className="size-4" />
                   Open project
-                </button>
+                </Button>
               </div>
             )}
           </div>

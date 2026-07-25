@@ -14,6 +14,8 @@ import { useSettingsStore } from "@/features/settings/settingsStore";
 import { useRecoveryStore } from "@/features/settings/recoveryStore";
 import type { BootstrapState } from "@/lib/tauri/contracts";
 
+export const DEFAULT_PROJECT_COLOR = "#2DD4BF";
+
 export interface ProjectStoreState {
   projects: ProjectRecord[];
   activeProjectId: string | null;

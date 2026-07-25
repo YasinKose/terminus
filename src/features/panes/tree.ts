@@ -159,6 +159,26 @@ function replaceNode(
   });
 }
 
+export function renameTerminal(
+  root: PaneNode,
+  terminalId: string,
+  title: string,
+): TreeResult<PaneNode> {
+  const terminal = findNode(root, terminalId);
+  if (!terminal) return err(`terminal not found: ${terminalId}`);
+  if (terminal.type !== "terminal") {
+    return err(`node ${terminalId} is not a terminal`);
+  }
+
+  const nextTitle = title.trim();
+  if (!nextTitle) return err("terminal title must not be empty");
+
+  return replaceNode(root, terminalId, {
+    ...terminal,
+    titleOverride: nextTitle,
+  });
+}
+
 function equalShare(count: number): number[] {
   const base = 100 / count;
   return Array.from({ length: count }, () => base);

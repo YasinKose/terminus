@@ -6,9 +6,11 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
+  AlertDialogMedia,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { CloseRequest } from "@/stores/closeRequestStore";
+import { Power } from "lucide-react";
 
 export type CloseApplicationDialogProps = {
   request: Extract<CloseRequest, { kind: "application" }>;
@@ -30,6 +32,9 @@ export function CloseApplicationDialog({
     >
       <AlertDialogContent data-testid="close-application-dialog">
         <AlertDialogHeader>
+          <AlertDialogMedia className="border-destructive/25 bg-destructive/10 text-destructive">
+            <Power aria-hidden />
+          </AlertDialogMedia>
           <AlertDialogTitle>Quit Terminus?</AlertDialogTitle>
           <AlertDialogDescription>
             Quit and terminate{" "}

@@ -16,6 +16,8 @@
         "title": "Terminus",
         "width": 1200,
         "height": 800,
+        "minWidth": 720,
+        "minHeight": 520,
         "resizable": true,
         "fullscreen": false,
         "decorations": true,

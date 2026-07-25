@@ -17,6 +17,8 @@ pub enum AppError {
     PersistenceCorrupt(String),
     #[error("{0}")]
     ProfileInvalid(String),
+    #[error("{0}")]
+    SessionNotFound(String),
 }
 
 impl AppError {
@@ -26,6 +28,10 @@ impl AppError {
 
     pub fn profile_invalid(message: impl Into<String>) -> Self {
         AppError::ProfileInvalid(message.into())
+    }
+
+    pub fn session_not_found(message: impl Into<String>) -> Self {
+        AppError::SessionNotFound(message.into())
     }
 
     pub fn into_payload(self) -> ErrorPayload {
@@ -44,6 +50,12 @@ impl AppError {
             },
             AppError::ProfileInvalid(message) => ErrorPayload {
                 code: "PROFILE_INVALID",
+                message,
+                details: None,
+                recoverable: true,
+            },
+            AppError::SessionNotFound(message) => ErrorPayload {
+                code: "SESSION_NOT_FOUND",
                 message,
                 details: None,
                 recoverable: true,
@@ -67,6 +79,12 @@ impl AppError {
             },
             AppError::ProfileInvalid(message) => ErrorPayload {
                 code: "PROFILE_INVALID",
+                message: message.clone(),
+                details: None,
+                recoverable: true,
+            },
+            AppError::SessionNotFound(message) => ErrorPayload {
+                code: "SESSION_NOT_FOUND",
                 message: message.clone(),
                 details: None,
                 recoverable: true,
@@ -127,6 +145,13 @@ mod tests {
     fn profile_invalid_is_recoverable() {
         let payload = AppError::profile_invalid("bad exe").into_payload();
         assert_eq!(payload.code, "PROFILE_INVALID");
+        assert!(payload.recoverable);
+    }
+
+    #[test]
+    fn session_not_found_is_recoverable() {
+        let payload = AppError::session_not_found("gone").into_payload();
+        assert_eq!(payload.code, "SESSION_NOT_FOUND");
         assert!(payload.recoverable);
     }
 }

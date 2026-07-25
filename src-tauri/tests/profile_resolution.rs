@@ -64,7 +64,7 @@ fn empty_profile_uses_shell_from_login_environment_without_override() {
 }
 
 #[test]
-fn missing_shell_falls_back_to_zsh() {
+fn missing_shell_falls_back_to_platform_default() {
     let root = project_root();
     let resolved = resolve_profile(ResolveProfileInput {
         profile: &empty_profile(),
@@ -74,8 +74,12 @@ fn missing_shell_falls_back_to_zsh() {
     })
     .expect("resolve");
 
-    assert_eq!(resolved.executable, "/bin/zsh");
-    assert_eq!(resolved.args, vec!["-l".to_string()]);
+    let expected = terminus_lib::platform::default_shell_executable();
+    assert_eq!(resolved.executable, expected);
+    assert_eq!(
+        resolved.args,
+        terminus_lib::platform::default_shell_login_args()
+    );
 }
 
 #[test]

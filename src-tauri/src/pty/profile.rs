@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 use crate::persistence::ProfileRecord;
 use crate::AppError;
@@ -45,21 +44,7 @@ pub struct ResolveProfileInput<'a> {
 }
 
 pub fn capture_login_environment() -> LoginEnvironment {
-    let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/zsh".to_string());
-    let mut vars = HashMap::new();
-
-    if let Ok(output) = Command::new(&shell).args(["-l", "-c", "env"]).output() {
-        if output.status.success() {
-            let env_str = String::from_utf8_lossy(&output.stdout);
-            for line in env_str.lines() {
-                if let Some((key, value)) = line.split_once('=') {
-                    vars.insert(key.to_string(), value.to_string());
-                }
-            }
-        }
-    }
-
-    LoginEnvironment::from_map(vars)
+    LoginEnvironment::from_map(crate::platform::capture_login_environment_raw())
 }
 
 pub fn resolve_profile(input: ResolveProfileInput<'_>) -> Result<ResolvedProfile, AppError> {
@@ -104,7 +89,7 @@ fn resolve_executable(
                 .filter(|value| !value.is_empty())
                 .map(str::to_string)
         })
-        .unwrap_or_else(|| "/bin/zsh".to_string());
+        .unwrap_or_else(crate::platform::default_shell_executable);
 
     validate_executable(&candidate)?;
     Ok(candidate)
@@ -175,7 +160,7 @@ fn resolve_args(profile: &ProfileRecord) -> Result<Vec<String>, AppError> {
         .is_none()
         && args.is_empty()
     {
-        return Ok(vec!["-l".to_string()]);
+        return Ok(crate::platform::default_shell_login_args());
     }
 
     Ok(args)

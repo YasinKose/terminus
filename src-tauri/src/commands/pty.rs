@@ -68,11 +68,13 @@ impl From<SessionInfo> for PtySessionState {
 }
 
 fn synthetic_default_profile() -> ProfileRecord {
+    let args = crate::platform::default_shell_login_args();
+    let args_json = serde_json::to_string(&args).unwrap_or_else(|_| "[]".into());
     ProfileRecord {
         id: "default".into(),
         name: "Default".into(),
-        executable: None,
-        args_json: "[]".into(),
+        executable: Some(crate::platform::default_shell_executable()),
+        args_json,
         env_json: "{}".into(),
         cwd_override: None,
         is_default: true,

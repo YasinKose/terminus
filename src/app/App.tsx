@@ -48,7 +48,9 @@ export function App({
     if (!autoBootstrap || bootstrapped) return;
     if (recoveryStatus.kind === "recoveryRequired") return;
     if (recoveryStatus.kind === "loading") return;
-    void bootstrap();
+    void bootstrap().catch((error) => {
+      useRecoveryStore.getState().reportHydrationFailure(error);
+    });
   }, [autoBootstrap, bootstrapped, bootstrap, recoveryStatus.kind]);
 
   useEffect(() => {

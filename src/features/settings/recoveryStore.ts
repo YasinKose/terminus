@@ -24,6 +24,8 @@ export interface RecoveryStoreState {
   setApi: (api: RecoveryApi) => void;
   setForceConfirmOpen: (open: boolean) => void;
   applyOutcome: (outcome: BootstrapOutcome) => BootstrapState | null;
+  completeHydration: () => void;
+  reportHydrationFailure: (error: unknown) => void;
   bootstrap: () => Promise<BootstrapState | null>;
   retry: () => Promise<BootstrapState | null>;
   backup: () => Promise<void>;
@@ -48,12 +50,6 @@ export const useRecoveryStore = create<RecoveryStoreState>((set, get) => ({
 
   applyOutcome: (outcome) => {
     if (outcome.status === "ready") {
-      set({
-        status: { kind: "ready" },
-        busy: false,
-        forceConfirmOpen: false,
-        lastMessage: null,
-      });
       return outcome.state;
     }
     set({
@@ -66,6 +62,33 @@ export const useRecoveryStore = create<RecoveryStoreState>((set, get) => ({
       busy: false,
     });
     return null;
+  },
+
+  completeHydration: () => {
+    set({
+      status: { kind: "ready" },
+      busy: false,
+      forceConfirmOpen: false,
+      lastMessage: null,
+    });
+  },
+
+  reportHydrationFailure: (error) => {
+    const message = error instanceof Error ? error.message : String(error);
+    set((s) => ({
+      status:
+        s.status.kind === "recoveryRequired"
+          ? { ...s.status, error: message }
+          : {
+              kind: "recoveryRequired",
+              error: message,
+              databasePath: "",
+              backupAvailable: false,
+            },
+      busy: false,
+      forceConfirmOpen: false,
+      lastMessage: message,
+    }));
   },
 
   bootstrap: async () => {

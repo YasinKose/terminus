@@ -40,7 +40,7 @@ describe("recoveryStore", () => {
     expect(useRecoveryStore.getState().status.kind).toBe("recoveryRequired");
   });
 
-  it("bootstrap ready returns state", async () => {
+  it("keeps bootstrap loading until returned state is hydrated", async () => {
     const api: RecoveryApi = {
       bootstrapApp: vi.fn().mockResolvedValue({
         status: "ready",
@@ -55,6 +55,7 @@ describe("recoveryStore", () => {
     useRecoveryStore.getState().setApi(api);
     const state = await useRecoveryStore.getState().bootstrap();
     expect(state).toEqual(emptyState);
-    expect(useRecoveryStore.getState().status.kind).toBe("ready");
+    expect(useRecoveryStore.getState().status.kind).toBe("loading");
+    expect(useRecoveryStore.getState().busy).toBe(true);
   });
 });

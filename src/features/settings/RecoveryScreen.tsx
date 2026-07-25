@@ -31,6 +31,10 @@ export function RecoveryScreen({ onReady }: RecoveryScreenProps) {
   const lastMessage = useRecoveryStore((s) => s.lastMessage);
   const forceConfirmOpen = useRecoveryStore((s) => s.forceConfirmOpen);
   const setForceConfirmOpen = useRecoveryStore((s) => s.setForceConfirmOpen);
+  const completeHydration = useRecoveryStore((s) => s.completeHydration);
+  const reportHydrationFailure = useRecoveryStore(
+    (s) => s.reportHydrationFailure,
+  );
   const retry = useRecoveryStore((s) => s.retry);
   const backup = useRecoveryStore((s) => s.backup);
   const reset = useRecoveryStore((s) => s.reset);
@@ -41,9 +45,18 @@ export function RecoveryScreen({ onReady }: RecoveryScreenProps) {
     return null;
   }
 
+  const hydrateReadyState = async (state: BootstrapState) => {
+    try {
+      await onReady(state);
+      completeHydration();
+    } catch (error) {
+      reportHydrationFailure(error);
+    }
+  };
+
   const handleRetry = async () => {
     const state = await retry();
-    if (state) await onReady(state);
+    if (state) await hydrateReadyState(state);
   };
 
   const handleBackup = async () => {
@@ -60,12 +73,12 @@ export function RecoveryScreen({ onReady }: RecoveryScreenProps) {
       return;
     }
     const state = await reset(false);
-    if (state) await onReady(state);
+    if (state) await hydrateReadyState(state);
   };
 
   const handleForceReset = async () => {
     const state = await reset(true);
-    if (state) await onReady(state);
+    if (state) await hydrateReadyState(state);
   };
 
   return (

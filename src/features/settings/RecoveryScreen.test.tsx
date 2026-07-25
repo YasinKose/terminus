@@ -73,6 +73,33 @@ describe("RecoveryScreen", () => {
     expect(api.retryBootstrap).toHaveBeenCalled();
   });
 
+  it("retains retryable recovery state when ready hydration rejects", async () => {
+    const api = mockApi({
+      retryBootstrap: vi.fn().mockResolvedValue({
+        status: "ready",
+        state: emptyState,
+      }),
+    });
+    useRecoveryStore.getState().setApi(api);
+    const onReady = vi.fn().mockRejectedValue(
+      new Error("workspace hydration failed"),
+    );
+    render(<RecoveryScreen onReady={onReady} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /^Retry$/i }));
+
+    await waitFor(() =>
+      expect(
+        screen.getAllByText("workspace hydration failed"),
+      ).not.toHaveLength(0),
+    );
+    expect(useRecoveryStore.getState().status).toMatchObject({
+      kind: "recoveryRequired",
+      error: "workspace hydration failed",
+    });
+    expect(useRecoveryStore.getState().busy).toBe(false);
+  });
+
   it("backup enables normal reset path", async () => {
     const api = mockApi({
       backupDatabase: vi.fn().mockResolvedValue({

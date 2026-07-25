@@ -62,11 +62,20 @@ const applyBootstrapState = async (
   setState({
     projects: state.projects,
     activeProjectId,
-    bootstrapped: true,
+    bootstrapped: false,
   });
-  if (activeProjectId) {
-    await getState().selectProject(activeProjectId);
+  try {
+    if (activeProjectId) {
+      await getState().selectProject(activeProjectId);
+    }
+  } catch (error) {
+    setState({
+      activeProjectId: null,
+      bootstrapped: false,
+    });
+    throw error;
   }
+  setState({ bootstrapped: true });
 };
 
 export const useProjectStore = create<ProjectStoreState>((set, get) => ({
@@ -83,12 +92,19 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
   },
 
   bootstrap: async () => {
-    const state = await useRecoveryStore.getState().bootstrap();
+    const recovery = useRecoveryStore.getState();
+    const state = await recovery.bootstrap();
     if (!state) {
       set({ bootstrapped: false });
       return;
     }
-    await applyBootstrapState(state, set, get);
+    try {
+      await applyBootstrapState(state, set, get);
+      recovery.completeHydration();
+    } catch (error) {
+      set({ activeProjectId: null, bootstrapped: false });
+      recovery.reportHydrationFailure(error);
+    }
   },
 
   applyReadyState: (state: BootstrapState) => {

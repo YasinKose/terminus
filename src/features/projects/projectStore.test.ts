@@ -221,6 +221,38 @@ describe("projectStore", () => {
     ).toBe(false);
   });
 
+  it("keeps bootstrap retryable when workspace hydration fails", async () => {
+    const p = project({
+      id: "p1",
+      canonicalPath: "/tmp/one",
+    });
+    const api = createMockApi({ projects: [p] });
+    api.ensureDefaultWorkspace = vi.fn().mockRejectedValue(
+      new Error("workspace hydration failed"),
+    );
+    useProjectStore.getState().setApi(api);
+    useRecoveryStore.getState().setApi(recoveryFromApi(api));
+    useRecoveryStore.setState({
+      status: { kind: "idle" },
+      busy: false,
+      forceConfirmOpen: false,
+      lastMessage: null,
+    });
+    useWorkspaceStore.getState().setApi(api);
+
+    await expect(
+      useProjectStore.getState().bootstrap(),
+    ).resolves.toBeUndefined();
+
+    expect(useProjectStore.getState().bootstrapped).toBe(false);
+    expect(useProjectStore.getState().activeProjectId).toBeNull();
+    expect(useRecoveryStore.getState().status).toMatchObject({
+      kind: "recoveryRequired",
+      error: "workspace hydration failed",
+    });
+    expect(useRecoveryStore.getState().busy).toBe(false);
+  });
+
   it("duplicate canonical project selects the existing project", async () => {
     const existing = project({
       id: "p1",

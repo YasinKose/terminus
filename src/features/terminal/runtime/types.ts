@@ -6,6 +6,8 @@ export type TerminalAdapter = {
   dispose: () => void;
   attachWebgl?: () => boolean;
   detachWebgl?: () => void;
+  setOnData?: (handler: (data: string) => void) => void;
+  getProposedSize?: () => { cols: number; rows: number };
 };
 
 export type TerminalAdapterFactory = (sessionId: string) => TerminalAdapter;
@@ -23,6 +25,8 @@ export type TerminalRuntimeHandle = {
   detach: () => void;
   dispose: () => void;
   handleWebglContextLoss: () => void;
+  setOnData: (handler: (data: string) => void) => void;
+  getProposedSize: () => { cols: number; rows: number };
   readonly usingWebgl: boolean;
   readonly openCount: number;
 };

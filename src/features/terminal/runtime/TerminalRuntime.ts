@@ -95,6 +95,20 @@ export class TerminalRuntime implements TerminalRuntimeHandle {
     this.adapter.fit();
   }
 
+  setOnData(handler: (data: string) => void): void {
+    if (this.disposed) {
+      return;
+    }
+    this.adapter.setOnData?.(handler);
+  }
+
+  getProposedSize(): { cols: number; rows: number } {
+    if (this.disposed) {
+      return { cols: 80, rows: 24 };
+    }
+    return this.adapter.getProposedSize?.() ?? { cols: 80, rows: 24 };
+  }
+
   handleWebglContextLoss(): void {
     if (this.disposed) {
       return;

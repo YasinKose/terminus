@@ -13,6 +13,7 @@
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
     "verify:v01": "./scripts/verify-v01.sh",
+    "verify:v02": "./scripts/verify-v02.sh",
     "audit:rust": "./scripts/audit-rust.sh"
   },
   "dependencies": {

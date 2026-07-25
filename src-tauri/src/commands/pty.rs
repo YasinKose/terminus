@@ -22,6 +22,8 @@ pub struct OpenPtyRequest {
     pub cols: u16,
     pub rows: u16,
     pub initial_cwd: Option<String>,
+    #[serde(default)]
+    pub tmux_session: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -92,17 +94,26 @@ fn open_session_with_channel(
             .ok_or_else(|| AppError::Message(format!("project not found: {}", request.project_id)))
     })?;
 
-    let mut profile = state.with_repository(app, |repo| {
-        Ok(repo
-            .resolve_profile_or_default(request.profile_id.as_deref())?
-            .unwrap_or_else(synthetic_default_profile))
-    })?;
-
-    if let Some(cwd) = request.initial_cwd.filter(|s| !s.trim().is_empty()) {
-        profile.cwd_override = Some(cwd);
-    }
-
     let project_root = PathBuf::from(&project.canonical_path);
+
+    let profile = if let Some(session_name) = request
+        .tmux_session
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        crate::tmux::tmux_profile(session_name, &project_root)?
+    } else {
+        let mut profile = state.with_repository(app, |repo| {
+            Ok(repo
+                .resolve_profile_or_default(request.profile_id.as_deref())?
+                .unwrap_or_else(synthetic_default_profile))
+        })?;
+        if let Some(cwd) = request.initial_cwd.filter(|s| !s.trim().is_empty()) {
+            profile.cwd_override = Some(cwd);
+        }
+        profile
+    };
     let login_env = state.login_environment();
     let resolved = resolve_profile(ResolveProfileInput {
         profile: &profile,

@@ -8,6 +8,7 @@ export interface TerminalLeaf {
   profileId: string | null;
   initialCwd: string;
   titleOverride: string | null;
+  tmuxSession: string | null;
 }
 
 export interface SplitContainer {
@@ -40,5 +41,6 @@ export function createTerminalLeaf(
     profileId: partial?.profileId ?? null,
     initialCwd: partial?.initialCwd ?? "",
     titleOverride: partial?.titleOverride ?? null,
+    tmuxSession: partial?.tmuxSession ?? null,
   };
 }

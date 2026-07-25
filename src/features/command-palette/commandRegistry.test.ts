@@ -20,6 +20,7 @@ const ctx = {
   toggleGitPanel: vi.fn(),
   toggleSnippetsPanel: vi.fn(),
   toggleTasksPanel: vi.fn(),
+  toggleTmuxPanel: vi.fn(),
   openPalette: vi.fn(),
   newWorkspace: vi.fn(),
   newTerminal: vi.fn(),

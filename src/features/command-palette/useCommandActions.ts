@@ -37,6 +37,7 @@ export function useCommandActions(options: {
   const toggleGitPanel = useUiStore((s) => s.toggleGitPanel);
   const toggleSnippetsPanel = useUiStore((s) => s.toggleSnippetsPanel);
   const toggleTasksPanel = useUiStore((s) => s.toggleTasksPanel);
+  const toggleTmuxPanel = useUiStore((s) => s.toggleTmuxPanel);
   const setSettingsOpen = useSettingsStore((s) => s.setSettingsOpen);
   const toggleFocusMode = useSettingsStore((s) => s.toggleFocusMode);
 
@@ -164,6 +165,7 @@ export function useCommandActions(options: {
       toggleGitPanel,
       toggleSnippetsPanel,
       toggleTasksPanel,
+      toggleTmuxPanel,
       openPalette: () => setPaletteOpen(true),
       newWorkspace,
       newTerminal,
@@ -205,6 +207,7 @@ export function useCommandActions(options: {
       toggleGitPanel,
       toggleSnippetsPanel,
       toggleTasksPanel,
+      toggleTmuxPanel,
       toggleSidebar,
       workspaces,
     ],

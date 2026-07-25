@@ -24,6 +24,7 @@ export type TerminalHostProps = {
   projectId: string;
   profileId?: string | null;
   initialCwd?: string | null;
+  tmuxSession?: string | null;
   cols?: number;
   rows?: number;
   focused?: boolean;
@@ -43,6 +44,7 @@ export function TerminalHost({
   projectId,
   profileId = null,
   initialCwd = null,
+  tmuxSession = null,
   cols = DEFAULT_COLS,
   rows = DEFAULT_ROWS,
   focused = false,
@@ -180,6 +182,7 @@ export function TerminalHost({
             cols: lastSizeRef.current.cols,
             rows: lastSizeRef.current.rows,
             initialCwd,
+            tmuxSession,
           },
           handleEvent,
         );
@@ -272,6 +275,7 @@ export function TerminalHost({
     projectId,
     profileId,
     initialCwd,
+    tmuxSession,
     ensureSession,
     markStarting,
     markRunning,

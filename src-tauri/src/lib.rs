@@ -6,6 +6,7 @@ pub mod platform;
 pub mod pty;
 pub mod snippets;
 pub mod tasks;
+pub mod tmux;
 mod state;
 
 pub use app_error::{AppError, ErrorPayload};
@@ -80,6 +81,8 @@ pub fn run() {
             commands::snippets_import_makefile,
             commands::tasks_load_board,
             commands::tasks_save_board,
+            commands::tmux_detect,
+            commands::tmux_list_sessions,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Terminus");

@@ -14,6 +14,7 @@ export type CommandContext = {
   toggleGitPanel: () => void;
   toggleSnippetsPanel: () => void;
   toggleTasksPanel: () => void;
+  toggleTmuxPanel: () => void;
   openPalette: () => void;
   newWorkspace: () => void | Promise<void>;
   newTerminal: () => void | Promise<void>;
@@ -69,6 +70,12 @@ export function buildCommands(ctx: CommandContext): CommandDefinition[] {
       label: "Toggle tasks panel",
       keywords: ["board", "todo", "kanban"],
       run: () => ctx.toggleTasksPanel(),
+    },
+    {
+      id: "toggleTmuxPanel",
+      label: "Toggle tmux panel",
+      keywords: ["attach", "session", "mux"],
+      run: () => ctx.toggleTmuxPanel(),
     },
     {
       id: "newWorkspace",

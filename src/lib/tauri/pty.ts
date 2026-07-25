@@ -38,6 +38,7 @@ export interface OpenPtyRequest {
   cols: number;
   rows: number;
   initialCwd?: string | null;
+  tmuxSession?: string | null;
 }
 
 export type PtyEventHandler = (event: PtyEvent) => void;

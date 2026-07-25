@@ -3,6 +3,7 @@ import {
   Command,
   FileCode2,
   GitBranch,
+  Layers,
   PanelLeft,
   Settings,
   SquareTerminal,
@@ -31,6 +32,7 @@ export function Titlebar({ onOpenSettings, onOpenPalette }: TitlebarProps) {
   const toggleGitPanel = useUiStore((s) => s.toggleGitPanel);
   const toggleSnippetsPanel = useUiStore((s) => s.toggleSnippetsPanel);
   const toggleTasksPanel = useUiStore((s) => s.toggleTasksPanel);
+  const toggleTmuxPanel = useUiStore((s) => s.toggleTmuxPanel);
   const setSettingsOpen = useSettingsStore((s) => s.setSettingsOpen);
   const shortcuts = useSettingsStore((s) => s.shortcuts);
 
@@ -105,6 +107,14 @@ export function Titlebar({ onOpenSettings, onOpenPalette }: TitlebarProps) {
           data-testid="titlebar-tasks-panel"
         >
           <CheckSquare aria-hidden className="size-4" />
+        </ToolbarIconButton>
+        <ToolbarIconButton
+          label={sidePanel === "tmux" ? "Hide tmux" : "Show tmux"}
+          pressed={sidePanel === "tmux"}
+          onClick={toggleTmuxPanel}
+          data-testid="titlebar-tmux-panel"
+        >
+          <Layers aria-hidden className="size-4" />
         </ToolbarIconButton>
         <ToolbarIconButton
           label="Command palette"

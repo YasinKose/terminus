@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type SidePanelId = "git" | "snippets" | "tasks" | null;
+export type SidePanelId = "git" | "snippets" | "tasks" | "tmux" | null;
 
 export interface UiStoreState {
   sidebarCollapsed: boolean;
@@ -14,6 +14,7 @@ export interface UiStoreState {
   toggleGitPanel: () => void;
   toggleSnippetsPanel: () => void;
   toggleTasksPanel: () => void;
+  toggleTmuxPanel: () => void;
 }
 
 export const useUiStore = create<UiStoreState>((set, get) => ({
@@ -37,4 +38,5 @@ export const useUiStore = create<UiStoreState>((set, get) => ({
   toggleGitPanel: () => get().toggleSidePanel("git"),
   toggleSnippetsPanel: () => get().toggleSidePanel("snippets"),
   toggleTasksPanel: () => get().toggleSidePanel("tasks"),
+  toggleTmuxPanel: () => get().toggleSidePanel("tmux"),
 }));

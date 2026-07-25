@@ -262,7 +262,11 @@ function TerminalLeafView({
                 projectId={projectId}
                 profileId={leaf.profileId}
                 initialCwd={leaf.initialCwd || null}
-                title={leaf.titleOverride ?? "Terminal"}
+                tmuxSession={leaf.tmuxSession}
+                title={
+                  leaf.titleOverride ??
+                  (leaf.tmuxSession ? `tmux: ${leaf.tmuxSession}` : "Terminal")
+                }
                 focused={focused}
                 showChrome={false}
               />

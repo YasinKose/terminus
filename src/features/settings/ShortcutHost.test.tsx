@@ -16,6 +16,7 @@ function ShortcutHarness() {
       toggleGitPanel: () => undefined,
       toggleSnippetsPanel: () => undefined,
       toggleTasksPanel: () => undefined,
+      toggleTmuxPanel: () => undefined,
       openPalette: () => undefined,
       newWorkspace: () => undefined,
       newTerminal: () => undefined,

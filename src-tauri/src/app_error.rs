@@ -25,6 +25,10 @@ pub enum AppError {
     GitOpFailed(String),
     #[error("{0}")]
     GitPathDenied(String),
+    #[error("{0}")]
+    TmuxUnavailable(String),
+    #[error("{0}")]
+    TmuxOpFailed(String),
 }
 
 impl AppError {
@@ -50,6 +54,14 @@ impl AppError {
 
     pub fn git_path_denied(message: impl Into<String>) -> Self {
         AppError::GitPathDenied(message.into())
+    }
+
+    pub fn tmux_unavailable(message: impl Into<String>) -> Self {
+        AppError::TmuxUnavailable(message.into())
+    }
+
+    pub fn tmux_op_failed(message: impl Into<String>) -> Self {
+        AppError::TmuxOpFailed(message.into())
     }
 
     pub fn into_payload(self) -> ErrorPayload {
@@ -92,6 +104,18 @@ impl AppError {
             },
             AppError::GitPathDenied(message) => ErrorPayload {
                 code: "GIT_PATH_DENIED",
+                message,
+                details: None,
+                recoverable: true,
+            },
+            AppError::TmuxUnavailable(message) => ErrorPayload {
+                code: "TMUX_UNAVAILABLE",
+                message,
+                details: None,
+                recoverable: true,
+            },
+            AppError::TmuxOpFailed(message) => ErrorPayload {
+                code: "TMUX_OP_FAILED",
                 message,
                 details: None,
                 recoverable: true,
@@ -139,6 +163,18 @@ impl AppError {
             },
             AppError::GitPathDenied(message) => ErrorPayload {
                 code: "GIT_PATH_DENIED",
+                message: message.clone(),
+                details: None,
+                recoverable: true,
+            },
+            AppError::TmuxUnavailable(message) => ErrorPayload {
+                code: "TMUX_UNAVAILABLE",
+                message: message.clone(),
+                details: None,
+                recoverable: true,
+            },
+            AppError::TmuxOpFailed(message) => ErrorPayload {
+                code: "TMUX_OP_FAILED",
                 message: message.clone(),
                 details: None,
                 recoverable: true,
@@ -222,6 +258,18 @@ mod tests {
         assert_eq!(
             AppError::git_path_denied("x").into_payload().code,
             "GIT_PATH_DENIED"
+        );
+    }
+
+    #[test]
+    fn tmux_error_codes() {
+        assert_eq!(
+            AppError::tmux_unavailable("x").into_payload().code,
+            "TMUX_UNAVAILABLE"
+        );
+        assert_eq!(
+            AppError::tmux_op_failed("x").into_payload().code,
+            "TMUX_OP_FAILED"
         );
     }
 }

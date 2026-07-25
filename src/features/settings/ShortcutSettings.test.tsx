@@ -21,6 +21,7 @@ function SettingsWithShortcutHost() {
       toggleGitPanel: () => undefined,
       toggleSnippetsPanel: () => undefined,
       toggleTasksPanel: () => undefined,
+      toggleTmuxPanel: () => undefined,
       openPalette: () => setLastCommand("palette"),
       newWorkspace: () => undefined,
       newTerminal: () => undefined,

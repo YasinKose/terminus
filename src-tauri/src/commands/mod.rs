@@ -4,6 +4,7 @@ pub mod recovery;
 pub mod settings;
 pub mod snippets;
 pub mod tasks;
+pub mod tmux;
 pub mod workspaces;
 
 pub use git::*;
@@ -12,4 +13,5 @@ pub use recovery::*;
 pub use settings::*;
 pub use snippets::*;
 pub use tasks::*;
+pub use tmux::*;
 pub use workspaces::*;

@@ -80,6 +80,8 @@ pub enum PaneNode {
         initial_cwd: String,
         #[serde(default)]
         title_override: Option<String>,
+        #[serde(default, rename = "tmuxSession", alias = "tmux_session")]
+        tmux_session: Option<String>,
     },
     #[serde(rename = "split")]
     Split {

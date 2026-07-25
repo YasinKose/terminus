@@ -11,6 +11,7 @@ export type TerminalPaneProps = {
   title?: string;
   profileId?: string | null;
   initialCwd?: string | null;
+  tmuxSession?: string | null;
   cols?: number;
   rows?: number;
   focused?: boolean;
@@ -26,6 +27,7 @@ export function TerminalPane({
   title = "Terminal",
   profileId = null,
   initialCwd = null,
+  tmuxSession = null,
   cols,
   rows,
   focused = false,
@@ -58,6 +60,7 @@ export function TerminalPane({
         cols: cols ?? 80,
         rows: rows ?? 24,
         initialCwd: restartCwd,
+        tmuxSession,
       },
       (event) => {
         const store = useTerminalStore.getState();
@@ -123,6 +126,7 @@ export function TerminalPane({
           projectId={projectId}
           profileId={profileId}
           initialCwd={initialCwd}
+          tmuxSession={tmuxSession}
           cols={cols}
           rows={rows}
           focused={focused}

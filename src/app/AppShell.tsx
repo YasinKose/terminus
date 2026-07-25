@@ -19,6 +19,7 @@ import type { PaneNode } from "@/features/panes/model";
 import { GitPanel } from "@/features/git/GitPanel";
 import { SnippetsPanel } from "@/features/snippets/SnippetsPanel";
 import { TasksPanel } from "@/features/tasks/TasksPanel";
+import { TmuxPanel } from "@/features/tmux/TmuxPanel";
 import { WorkspaceArea } from "@/features/workspaces/WorkspaceArea";
 import { WorkspaceTabs } from "@/features/workspaces/WorkspaceTabs";
 import { useWorkspaceStore } from "@/features/workspaces/workspaceStore";
@@ -281,6 +282,11 @@ export function AppShell({
                   <TasksPanel
                     projectId={activeProjectId}
                     open={sidePanel === "tasks"}
+                    onClose={() => setSidePanel(null)}
+                  />
+                  <TmuxPanel
+                    projectId={activeProjectId}
+                    open={sidePanel === "tmux"}
                     onClose={() => setSidePanel(null)}
                   />
                 </div>

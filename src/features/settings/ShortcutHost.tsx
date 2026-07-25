@@ -8,6 +8,24 @@ import {
 } from "./shortcutModel";
 import { useSettingsStore } from "./settingsStore";
 
+function isEditableTarget(target: HTMLElement | null): boolean {
+  if (!target) return false;
+  return (
+    target.tagName === "INPUT" ||
+    target.tagName === "TEXTAREA" ||
+    target.tagName === "SELECT" ||
+    target.isContentEditable
+  );
+}
+
+function isTerminalInputTarget(target: HTMLElement | null): boolean {
+  if (!target) return false;
+  return (
+    target.classList.contains("xterm-helper-textarea") ||
+    target.closest(".xterm") !== null
+  );
+}
+
 function runCommand(id: ShortcutCommandId, ctx: CommandContext): void {
   switch (id) {
     case "commandPalette":
@@ -52,12 +70,7 @@ export function ShortcutHost({ context }: { context: CommandContext }) {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
-      if (
-        target &&
-        (target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.isContentEditable)
-      ) {
+      if (isEditableTarget(target) && !isTerminalInputTarget(target)) {
         return;
       }
 

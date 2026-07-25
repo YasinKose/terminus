@@ -19,6 +19,12 @@ pub enum AppError {
     ProfileInvalid(String),
     #[error("{0}")]
     SessionNotFound(String),
+    #[error("{0}")]
+    GitNotRepo(String),
+    #[error("{0}")]
+    GitOpFailed(String),
+    #[error("{0}")]
+    GitPathDenied(String),
 }
 
 impl AppError {
@@ -32,6 +38,18 @@ impl AppError {
 
     pub fn session_not_found(message: impl Into<String>) -> Self {
         AppError::SessionNotFound(message.into())
+    }
+
+    pub fn git_not_repo(message: impl Into<String>) -> Self {
+        AppError::GitNotRepo(message.into())
+    }
+
+    pub fn git_op_failed(message: impl Into<String>) -> Self {
+        AppError::GitOpFailed(message.into())
+    }
+
+    pub fn git_path_denied(message: impl Into<String>) -> Self {
+        AppError::GitPathDenied(message.into())
     }
 
     pub fn into_payload(self) -> ErrorPayload {
@@ -56,6 +74,24 @@ impl AppError {
             },
             AppError::SessionNotFound(message) => ErrorPayload {
                 code: "SESSION_NOT_FOUND",
+                message,
+                details: None,
+                recoverable: true,
+            },
+            AppError::GitNotRepo(message) => ErrorPayload {
+                code: "GIT_NOT_REPO",
+                message,
+                details: None,
+                recoverable: true,
+            },
+            AppError::GitOpFailed(message) => ErrorPayload {
+                code: "GIT_OP_FAILED",
+                message,
+                details: None,
+                recoverable: true,
+            },
+            AppError::GitPathDenied(message) => ErrorPayload {
+                code: "GIT_PATH_DENIED",
                 message,
                 details: None,
                 recoverable: true,
@@ -85,6 +121,24 @@ impl AppError {
             },
             AppError::SessionNotFound(message) => ErrorPayload {
                 code: "SESSION_NOT_FOUND",
+                message: message.clone(),
+                details: None,
+                recoverable: true,
+            },
+            AppError::GitNotRepo(message) => ErrorPayload {
+                code: "GIT_NOT_REPO",
+                message: message.clone(),
+                details: None,
+                recoverable: true,
+            },
+            AppError::GitOpFailed(message) => ErrorPayload {
+                code: "GIT_OP_FAILED",
+                message: message.clone(),
+                details: None,
+                recoverable: true,
+            },
+            AppError::GitPathDenied(message) => ErrorPayload {
+                code: "GIT_PATH_DENIED",
                 message: message.clone(),
                 details: None,
                 recoverable: true,
@@ -153,5 +207,21 @@ mod tests {
         let payload = AppError::session_not_found("gone").into_payload();
         assert_eq!(payload.code, "SESSION_NOT_FOUND");
         assert!(payload.recoverable);
+    }
+
+    #[test]
+    fn git_error_codes() {
+        assert_eq!(
+            AppError::git_not_repo("x").into_payload().code,
+            "GIT_NOT_REPO"
+        );
+        assert_eq!(
+            AppError::git_op_failed("x").into_payload().code,
+            "GIT_OP_FAILED"
+        );
+        assert_eq!(
+            AppError::git_path_denied("x").into_payload().code,
+            "GIT_PATH_DENIED"
+        );
     }
 }

@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 
 export type RecoveryScreenProps = {
-  onReady: (state: BootstrapState) => void;
+  onReady: (state: BootstrapState) => void | Promise<void>;
 };
 
 export function RecoveryScreen({ onReady }: RecoveryScreenProps) {
@@ -43,7 +43,7 @@ export function RecoveryScreen({ onReady }: RecoveryScreenProps) {
 
   const handleRetry = async () => {
     const state = await retry();
-    if (state) onReady(state);
+    if (state) await onReady(state);
   };
 
   const handleBackup = async () => {
@@ -60,12 +60,12 @@ export function RecoveryScreen({ onReady }: RecoveryScreenProps) {
       return;
     }
     const state = await reset(false);
-    if (state) onReady(state);
+    if (state) await onReady(state);
   };
 
   const handleForceReset = async () => {
     const state = await reset(true);
-    if (state) onReady(state);
+    if (state) await onReady(state);
   };
 
   return (

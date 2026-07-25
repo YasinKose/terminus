@@ -98,8 +98,10 @@ export function App({
     await addProject({ path, displayName: name, color: DEFAULT_PROJECT_COLOR });
   };
 
-  const handleRecoveryReady = (state: import("@/lib/tauri/contracts").BootstrapState) => {
-    applyReadyState(state);
+  const handleRecoveryReady = async (
+    state: import("@/lib/tauri/contracts").BootstrapState,
+  ): Promise<void> => {
+    await applyReadyState(state);
   };
 
   if (recoveryStatus.kind === "recoveryRequired") {

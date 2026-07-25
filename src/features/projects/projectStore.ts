@@ -13,6 +13,7 @@ import { useProfileStore } from "@/features/profiles/profileStore";
 import { useSettingsStore } from "@/features/settings/settingsStore";
 import { useRecoveryStore } from "@/features/settings/recoveryStore";
 import type { BootstrapState } from "@/lib/tauri/contracts";
+import { chooseRestoredProjectId } from "@/features/projects/selection";
 
 export const DEFAULT_PROJECT_COLOR = "#2DD4BF";
 
@@ -23,7 +24,7 @@ export interface ProjectStoreState {
   setApi: (api: WorkspaceApi) => void;
   hydrate: (projects: ProjectRecord[]) => void;
   bootstrap: () => Promise<void>;
-  applyReadyState: (state: BootstrapState) => void;
+  applyReadyState: (state: BootstrapState) => Promise<void>;
   addProject: (input: {
     path: string;
     displayName?: string;
@@ -47,6 +48,27 @@ export function setProjectStoreWorkspaceBridge(
   workspaceApiOverride = bridge;
 }
 
+const applyBootstrapState = async (
+  state: BootstrapState,
+  setState: (partial: Partial<ProjectStoreState>) => void,
+  getState: () => ProjectStoreState,
+): Promise<void> => {
+  workspaceBridge().hydrateFromBootstrap(state.workspaces);
+  useProfileStore.getState().hydrate(state.profiles);
+  useSettingsStore.getState().hydrateFromBootstrap(state.settings);
+  useAppearanceStore.getState().hydrateFromBootstrap(state.settings);
+
+  const activeProjectId = chooseRestoredProjectId(state);
+  setState({
+    projects: state.projects,
+    activeProjectId,
+    bootstrapped: true,
+  });
+  if (activeProjectId) {
+    await getState().selectProject(activeProjectId);
+  }
+};
+
 export const useProjectStore = create<ProjectStoreState>((set, get) => ({
   projects: [],
   activeProjectId: null,
@@ -66,19 +88,11 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       set({ bootstrapped: false });
       return;
     }
-    set({ projects: state.projects, bootstrapped: true });
-    workspaceBridge().hydrateFromBootstrap(state.workspaces);
-    useProfileStore.getState().hydrate(state.profiles);
-    useSettingsStore.getState().hydrateFromBootstrap(state.settings);
-    useAppearanceStore.getState().hydrateFromBootstrap(state.settings);
+    await applyBootstrapState(state, set, get);
   },
 
   applyReadyState: (state: BootstrapState) => {
-    set({ projects: state.projects, bootstrapped: true });
-    workspaceBridge().hydrateFromBootstrap(state.workspaces);
-    useProfileStore.getState().hydrate(state.profiles);
-    useSettingsStore.getState().hydrateFromBootstrap(state.settings);
-    useAppearanceStore.getState().hydrateFromBootstrap(state.settings);
+    return applyBootstrapState(state, set, get);
   },
 
   addProject: async (input) => {

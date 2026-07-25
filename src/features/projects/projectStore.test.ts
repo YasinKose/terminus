@@ -71,6 +71,7 @@ function workspace(
 function createMockApi(seed?: {
   projects?: ProjectRecord[];
   workspaces?: WorkspaceRecord[];
+  settings?: Record<string, unknown>;
 }): WorkspaceApi & {
   projects: ProjectRecord[];
   workspaces: WorkspaceRecord[];
@@ -88,7 +89,7 @@ function createMockApi(seed?: {
       projects: [...projects],
       workspaces: [...workspaces],
       profiles: [],
-      settings: {},
+      settings: { ...(seed?.settings ?? {}) },
     })),
     addProject: vi.fn(async ({ path, displayName, color }) => {
       const canonical = path;
@@ -170,6 +171,54 @@ describe("projectStore", () => {
       activeWorkspaceId: null,
     });
     setProjectStoreWorkspaceBridge(useWorkspaceStore.getState());
+  });
+
+  it("restores the persisted active project and its last workspace", async () => {
+    const p1 = project({
+      id: "p1",
+      canonicalPath: "/tmp/one",
+      lastActiveWorkspaceId: "w1",
+    });
+    const p2 = project({
+      id: "p2",
+      canonicalPath: "/tmp/two",
+      lastActiveWorkspaceId: "w2",
+    });
+    const w1 = workspace({
+      id: "w1",
+      projectId: "p1",
+      name: "One",
+    });
+    const w2 = workspace({
+      id: "w2",
+      projectId: "p2",
+      name: "Two",
+    });
+    const api = createMockApi({
+      projects: [p1, p2],
+      workspaces: [w1, w2],
+      settings: { "selection.activeProjectId": "p2" },
+    });
+    useProjectStore.getState().setApi(api);
+    useRecoveryStore.getState().setApi(recoveryFromApi(api));
+    useRecoveryStore.setState({
+      status: { kind: "idle" },
+      busy: false,
+      forceConfirmOpen: false,
+      lastMessage: null,
+    });
+    useWorkspaceStore.getState().setApi(api);
+
+    await useProjectStore.getState().bootstrap();
+
+    expect(useProjectStore.getState().activeProjectId).toBe("p2");
+    expect(useWorkspaceStore.getState().activeWorkspaceId).toBe("w2");
+    expect(
+      useWorkspaceStore.getState().getWorkspace("w2")?.initialized,
+    ).toBe(true);
+    expect(
+      useWorkspaceStore.getState().getWorkspace("w1")?.initialized,
+    ).toBe(false);
   });
 
   it("duplicate canonical project selects the existing project", async () => {

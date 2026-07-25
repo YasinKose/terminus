@@ -24,6 +24,16 @@ function mockApi(overrides: Partial<RecoveryApi> = {}): RecoveryApi {
   };
 }
 
+function asyncReadySpy() {
+  const then = vi.fn(
+    (resolve: (value?: void | PromiseLike<void>) => void) => resolve(),
+  );
+  const onReady = vi.fn(
+    () => ({ then }) as unknown as Promise<void>,
+  );
+  return { onReady, then };
+}
+
 describe("RecoveryScreen", () => {
   beforeEach(() => {
     useRecoveryStore.setState({
@@ -48,7 +58,7 @@ describe("RecoveryScreen", () => {
   });
 
   it("retry calls API and onReady when ready", async () => {
-    const onReady = vi.fn();
+    const { onReady, then } = asyncReadySpy();
     const api = mockApi({
       retryBootstrap: vi.fn().mockResolvedValue({
         status: "ready",
@@ -59,6 +69,7 @@ describe("RecoveryScreen", () => {
     render(<RecoveryScreen onReady={onReady} />);
     fireEvent.click(screen.getByRole("button", { name: /^Retry$/i }));
     await waitFor(() => expect(onReady).toHaveBeenCalled());
+    await waitFor(() => expect(then).toHaveBeenCalled());
     expect(api.retryBootstrap).toHaveBeenCalled();
   });
 
@@ -74,7 +85,7 @@ describe("RecoveryScreen", () => {
       }),
     });
     useRecoveryStore.getState().setApi(api);
-    const onReady = vi.fn();
+    const { onReady, then } = asyncReadySpy();
     render(<RecoveryScreen onReady={onReady} />);
     fireEvent.click(screen.getByRole("button", { name: /Create backup/i }));
     await waitFor(() =>
@@ -82,6 +93,7 @@ describe("RecoveryScreen", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: /^Reset database$/i }));
     await waitFor(() => expect(onReady).toHaveBeenCalled());
+    await waitFor(() => expect(then).toHaveBeenCalled());
     expect(api.resetDatabase).toHaveBeenCalledWith(false);
   });
 
@@ -93,12 +105,13 @@ describe("RecoveryScreen", () => {
       }),
     });
     useRecoveryStore.getState().setApi(api);
-    const onReady = vi.fn();
+    const { onReady, then } = asyncReadySpy();
     render(<RecoveryScreen onReady={onReady} />);
     fireEvent.click(screen.getByRole("button", { name: /Reset without backup/i }));
     expect(await screen.findByText(/Reset without backup\?/i)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Force reset/i }));
     await waitFor(() => expect(onReady).toHaveBeenCalled());
+    await waitFor(() => expect(then).toHaveBeenCalled());
     expect(api.resetDatabase).toHaveBeenCalledWith(true);
   });
 });

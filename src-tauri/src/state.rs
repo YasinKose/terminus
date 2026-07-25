@@ -1,15 +1,20 @@
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use parking_lot::Mutex;
 use tauri::{AppHandle, Manager};
 
 use crate::persistence::Repository;
+use crate::pty::{
+    capture_login_environment, LoginEnvironment, SessionManager,
+};
 use crate::AppError;
 
 pub struct AppState {
     repo: Mutex<Option<Repository>>,
     db_path: Mutex<Option<PathBuf>>,
+    sessions: SessionManager,
+    login_env: OnceLock<LoginEnvironment>,
 }
 
 impl AppState {
@@ -17,7 +22,18 @@ impl AppState {
         Self {
             repo: Mutex::new(None),
             db_path: Mutex::new(None),
+            sessions: SessionManager::new(),
+            login_env: OnceLock::new(),
         }
+    }
+
+    pub fn sessions(&self) -> &SessionManager {
+        &self.sessions
+    }
+
+    pub fn login_environment(&self) -> &LoginEnvironment {
+        self.login_env
+            .get_or_init(capture_login_environment)
     }
 
     pub fn with_repository<T>(

@@ -9,3 +9,12 @@ export type {
 } from "./contracts";
 export { tauriWorkspaceApi } from "./workspaces";
 export type { WorkspaceApi } from "./workspaces";
+export { parsePtyEvent, tauriPtyApi } from "./pty";
+export type {
+  OpenPtyRequest,
+  PtyApi,
+  PtyEvent,
+  PtyEventHandler,
+  PtySessionState,
+  SessionLifecycle,
+} from "./pty";

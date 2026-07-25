@@ -311,6 +311,57 @@ impl Repository {
         })
     }
 
+    pub fn get_profile(&self, profile_id: &str) -> Result<Option<ProfileRecord>, AppError> {
+        self.db.with_conn(|conn| {
+            let mut stmt = conn
+                .prepare(
+                    "SELECT id, name, executable, args_json, env_json, cwd_override, is_default
+                     FROM profiles
+                     WHERE id = ?1",
+                )
+                .map_err(sql_err)?;
+            stmt.query_row(params![profile_id], |row| {
+                Ok(ProfileRecord {
+                    id: row.get(0)?,
+                    name: row.get(1)?,
+                    executable: row.get(2)?,
+                    args_json: row.get(3)?,
+                    env_json: row.get(4)?,
+                    cwd_override: row.get(5)?,
+                    is_default: row.get::<_, i64>(6)? != 0,
+                })
+            })
+            .optional()
+            .map_err(sql_err)
+        })
+    }
+
+    pub fn get_default_profile(&self) -> Result<Option<ProfileRecord>, AppError> {
+        self.db.with_conn(|conn| {
+            let mut stmt = conn
+                .prepare(
+                    "SELECT id, name, executable, args_json, env_json, cwd_override, is_default
+                     FROM profiles
+                     WHERE is_default = 1
+                     LIMIT 1",
+                )
+                .map_err(sql_err)?;
+            stmt.query_row([], |row| {
+                Ok(ProfileRecord {
+                    id: row.get(0)?,
+                    name: row.get(1)?,
+                    executable: row.get(2)?,
+                    args_json: row.get(3)?,
+                    env_json: row.get(4)?,
+                    cwd_override: row.get(5)?,
+                    is_default: row.get::<_, i64>(6)? != 0,
+                })
+            })
+            .optional()
+            .map_err(sql_err)
+        })
+    }
+
     pub fn save_setting(&self, key: &str, value: &SettingValue) -> Result<(), AppError> {
         let value_json = value
             .to_json_string()

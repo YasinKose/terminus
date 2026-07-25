@@ -8,6 +8,8 @@ use std::time::{Duration, Instant};
 use parking_lot::RwLock;
 use portable_pty::{Child, MasterPty, PtySize};
 
+use serde::Serialize;
+
 use super::events::PtyEvent;
 use crate::AppError;
 
@@ -17,7 +19,8 @@ const CLOSE_WAIT: Duration = Duration::from_millis(500);
 
 pub type EventSink = Arc<dyn Fn(PtyEvent) + Send + Sync>;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub enum SessionLifecycle {
     Starting,
     Running,
@@ -26,7 +29,8 @@ pub enum SessionLifecycle {
     Closing,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SessionInfo {
     pub session_id: String,
     pub lifecycle: SessionLifecycle,

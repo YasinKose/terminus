@@ -38,6 +38,12 @@ pub fn run() {
             commands::set_last_active_workspace,
             commands::save_workspace,
             commands::default_workspace_label,
+            commands::open_pty,
+            commands::write_pty,
+            commands::resize_pty,
+            commands::close_pty,
+            commands::restart_pty,
+            commands::list_pty_states,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Terminus");

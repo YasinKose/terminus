@@ -246,6 +246,32 @@ fn repository_roundtrip_bootstrap_and_settings() {
 }
 
 #[test]
+fn active_workspace_update_persists_active_project_setting() {
+    let dir = TempDir::new().expect("tempdir");
+    let repo = open_repo(&dir);
+    let project_path = project_dir(&dir, "selection-project");
+    let project = repo
+        .add_project(&project_path, "Selection", "#112233")
+        .expect("project");
+    let workspace = repo
+        .ensure_default_workspace(&project.id)
+        .expect("workspace");
+
+    repo.set_last_active_workspace(&project.id, &workspace.id)
+        .expect("persist selection");
+
+    let state = repo.load_bootstrap_state().expect("bootstrap");
+    assert_eq!(
+        state.settings.get("selection.activeProjectId"),
+        Some(&serde_json::json!(project.id))
+    );
+    assert_eq!(
+        state.projects[0].last_active_workspace_id.as_deref(),
+        Some(workspace.id.as_str())
+    );
+}
+
+#[test]
 fn save_workspace_updates_existing() {
     let dir = TempDir::new().unwrap();
     let repo = open_repo(&dir);

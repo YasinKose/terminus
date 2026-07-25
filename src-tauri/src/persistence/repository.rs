@@ -11,6 +11,8 @@ use super::models::{
 };
 use crate::AppError;
 
+pub const ACTIVE_PROJECT_SETTING_KEY: &str = "selection.activeProjectId";
+
 pub struct Repository {
     db: Database,
 }
@@ -132,30 +134,41 @@ impl Repository {
         project_id: &str,
         workspace_id: &str,
     ) -> Result<ProjectRecord, AppError> {
-        self.db.with_conn(|conn| {
-            let workspace = load_workspace_by_id(conn, workspace_id)?.ok_or_else(|| {
-                AppError::Message(format!("workspace not found: {workspace_id}"))
+        let value_json = serde_json::to_string(project_id)
+            .map_err(|e| AppError::Message(format!("failed to serialize active project: {e}")))?;
+
+        self.db.with_conn_mut(|conn| {
+            let tx = conn.transaction().map_err(|e| {
+                AppError::Message(format!("failed to begin selection transaction: {e}"))
             })?;
+            let workspace = load_workspace_by_id(&tx, workspace_id)?
+                .ok_or_else(|| AppError::Message(format!("workspace not found: {workspace_id}")))?;
             if workspace.project_id != project_id {
                 return Err(AppError::Message(
                     "workspace does not belong to project".into(),
                 ));
             }
 
-            let n = conn
+            let changed = tx
                 .execute(
-                    "UPDATE projects SET last_active_workspace_id = ?1, updated_at = ?2 WHERE id = ?3",
+                    "UPDATE projects
+                     SET last_active_workspace_id = ?1, updated_at = ?2
+                     WHERE id = ?3",
                     params![workspace_id, now_ms(), project_id],
                 )
                 .map_err(sql_err)?;
-            if n == 0 {
+            if changed == 0 {
                 return Err(AppError::Message(format!(
                     "project not found: {project_id}"
                 )));
             }
-
+            upsert_setting_json(&tx, ACTIVE_PROJECT_SETTING_KEY, &value_json)?;
+            tx.commit()
+                .map_err(|e| AppError::Message(format!("failed to commit selection: {e}")))?;
             load_project_by_id(conn, project_id)?.ok_or_else(|| {
-                AppError::Message(format!("project not found after update: {project_id}"))
+                AppError::Message(format!(
+                    "project not found after selection update: {project_id}"
+                ))
             })
         })
     }
@@ -405,15 +418,8 @@ impl Repository {
         let value_json = value
             .to_json_string()
             .map_err(|e| AppError::Message(format!("failed to serialize setting: {e}")))?;
-        self.db.with_conn(|conn| {
-            conn.execute(
-                "INSERT INTO settings (key, value_json) VALUES (?1, ?2)
-                 ON CONFLICT(key) DO UPDATE SET value_json = excluded.value_json",
-                params![key, value_json],
-            )
-            .map_err(sql_err)?;
-            Ok(())
-        })
+        self.db
+            .with_conn(|conn| upsert_setting_json(conn, key, &value_json))
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -570,6 +576,16 @@ fn load_settings(conn: &Connection) -> Result<HashMap<String, serde_json::Value>
         settings.insert(key, value);
     }
     Ok(settings)
+}
+
+fn upsert_setting_json(conn: &Connection, key: &str, value_json: &str) -> Result<(), AppError> {
+    conn.execute(
+        "INSERT INTO settings (key, value_json) VALUES (?1, ?2)
+         ON CONFLICT(key) DO UPDATE SET value_json = excluded.value_json",
+        params![key, value_json],
+    )
+    .map_err(sql_err)?;
+    Ok(())
 }
 
 fn find_project_by_path(

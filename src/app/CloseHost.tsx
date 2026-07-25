@@ -4,6 +4,7 @@ import { CloseProjectDialog } from "@/features/projects/CloseProjectDialog";
 import { useSettingsStore } from "@/features/settings/settingsStore";
 import { CloseTerminalDialog } from "@/features/terminal/CloseTerminalDialog";
 import { CloseWorkspaceDialog } from "@/features/workspaces/CloseWorkspaceDialog";
+import { reportError } from "@/lib/errors";
 import { executeClose } from "@/stores/executeClose";
 import { useCloseRequestStore } from "@/stores/closeRequestStore";
 
@@ -30,8 +31,8 @@ export function CloseHost({ destroyWindow }: CloseHostProps) {
 
   const runClose = useCallback(
     (current: NonNullable<typeof request>) => {
-      void executeClose(current, { destroyWindow }).catch(() => {
-        useCloseRequestStore.getState().clear();
+      void executeClose(current, { destroyWindow }).catch((error) => {
+        reportError("Could not close the requested item", error);
       });
     },
     [destroyWindow],
@@ -53,7 +54,8 @@ export function CloseHost({ destroyWindow }: CloseHostProps) {
           } else if (current.kind === "workspace") {
             await setConfirmWorkspaceClose(false);
           }
-        } catch {
+        } catch (error) {
+          reportError("Could not update close confirmation preference", error);
         }
         runClose(current);
       })();

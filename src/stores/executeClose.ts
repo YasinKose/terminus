@@ -4,6 +4,7 @@ import { getDefaultTerminalRuntimeRegistry } from "@/features/terminal/runtime";
 import { useTerminalStore } from "@/features/terminal/terminalStore";
 import { useProjectStore } from "@/features/projects/projectStore";
 import { useWorkspaceStore } from "@/features/workspaces/workspaceStore";
+import { errorCode, errorMessage } from "@/lib/errors";
 import type { WorkspaceRecord, WorkspaceView } from "@/lib/tauri/contracts";
 import { tauriPtyApi, type PtyApi } from "@/lib/tauri/pty";
 import type { CloseRequest } from "./closeRequestStore";
@@ -49,7 +50,15 @@ async function closeSession(
   useTerminalStore.getState().markClosing(sessionId);
   try {
     await ptyApi.closePty(sessionId);
-  } catch {
+  } catch (error) {
+    if (errorCode(error) !== "SESSION_NOT_FOUND") {
+      useTerminalStore.getState().markError(sessionId, {
+        code: errorCode(error) ?? "PTY_CLOSE_FAILED",
+        message: errorMessage(error),
+        recoverable: true,
+      });
+      throw error;
+    }
   }
   registry.delete(sessionId);
   useTerminalStore.getState().removeSession(sessionId);

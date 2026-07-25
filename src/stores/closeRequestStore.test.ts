@@ -200,4 +200,74 @@ describe("closeRequestStore", () => {
     expect(useCloseRequestStore.getState().allowExit).toBe(true);
     expect(destroyWindow).toHaveBeenCalled();
   });
+
+  it("keeps runtime and metadata when close fails", async () => {
+    const ptyApi = mockPtyApi();
+    vi.mocked(ptyApi.closePty).mockRejectedValue({
+      code: "PTY_CLOSE_FAILED",
+      message: "close failed",
+      recoverable: true,
+    });
+    const registry = { delete: vi.fn() };
+    const request = seedTerminalCloseFixture();
+
+    await expect(
+      executeClose(request, { ptyApi, registry }),
+    ).rejects.toMatchObject({ code: "PTY_CLOSE_FAILED" });
+
+    expect(registry.delete).not.toHaveBeenCalled();
+    expect(useTerminalStore.getState().sessions.t1).toBeDefined();
+  });
+
+  it("treats an already missing backend session as completed teardown", async () => {
+    const ptyApi = mockPtyApi();
+    vi.mocked(ptyApi.closePty).mockRejectedValue({
+      code: "SESSION_NOT_FOUND",
+      message: "missing",
+      recoverable: true,
+    });
+    const registry = { delete: vi.fn() };
+    const request = seedTerminalCloseFixture();
+
+    await executeClose(request, { ptyApi, registry });
+
+    expect(registry.delete).toHaveBeenCalledWith("t1");
+  });
 });
+
+function seedTerminalCloseFixture(): Extract<
+  import("./closeRequestStore").CloseRequest,
+  { kind: "terminal" }
+> {
+  useWorkspaceStore.setState({
+    workspaces: [
+      {
+        id: "w1",
+        projectId: "p1",
+        name: "W1",
+        rootJson: JSON.stringify({
+          type: "terminal",
+          id: "t1",
+          profileId: null,
+          initialCwd: "",
+          titleOverride: null,
+        }),
+        activePaneId: "t1",
+        position: 0,
+        createdAt: 1,
+        updatedAt: 1,
+        initialized: true,
+      },
+    ],
+    activeWorkspaceId: "w1",
+  });
+  useTerminalStore.getState().ensureSession("t1", "p1");
+  return {
+    kind: "terminal",
+    sessionId: "t1",
+    workspaceId: "w1",
+    projectId: "p1",
+    title: "Terminal",
+    terminalCount: 1,
+  };
+}

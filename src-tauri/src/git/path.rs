@@ -6,9 +6,9 @@ use crate::AppError;
 
 pub fn resolve_project_path(canonical_path: &str) -> Result<PathBuf, AppError> {
     let root = PathBuf::from(canonical_path);
-    let canonical = root.canonicalize().map_err(|err| {
-        AppError::git_op_failed(format!("cannot resolve project root: {err}"))
-    })?;
+    let canonical = root
+        .canonicalize()
+        .map_err(|err| AppError::git_op_failed(format!("cannot resolve project root: {err}")))?;
     if !canonical.is_dir() {
         return Err(AppError::git_op_failed("project root is not a directory"));
     }
@@ -18,10 +18,7 @@ pub fn resolve_project_path(canonical_path: &str) -> Result<PathBuf, AppError> {
 pub fn open_repo_at(project_root: &Path) -> Result<Repository, AppError> {
     Repository::discover(project_root).map_err(|err| {
         if err.code() == git2::ErrorCode::NotFound {
-            AppError::git_not_repo(format!(
-                "not a git repository: {}",
-                project_root.display()
-            ))
+            AppError::git_not_repo(format!("not a git repository: {}", project_root.display()))
         } else {
             AppError::git_op_failed(err.message())
         }

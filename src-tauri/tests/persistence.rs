@@ -33,6 +33,7 @@ fn leaf_json(id: &str, cwd: &str) -> String {
         profile_id: None,
         initial_cwd: cwd.into(),
         title_override: None,
+        tmux_session: None,
     })
     .expect("serialize leaf")
 }

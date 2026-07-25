@@ -6,9 +6,7 @@ use git2::{
 };
 
 use super::path::{open_repo_at, safe_rel_path};
-use super::types::{
-    GitBranchInfo, GitDiffResult, GitFileEntry, GitStashInfo, GitStatusSnapshot,
-};
+use super::types::{GitBranchInfo, GitDiffResult, GitFileEntry, GitStashInfo, GitStatusSnapshot};
 use crate::AppError;
 
 fn map_git(err: git2::Error) -> AppError {
@@ -69,21 +67,15 @@ pub fn status(project_root: &Path) -> Result<GitStatusSnapshot, AppError> {
     let head = repo.head().ok();
     let branch = head
         .as_ref()
-        .and_then(|h| h.shorthand().map(str::to_string));
+        .and_then(|h| h.shorthand().ok().map(str::to_string));
 
     let mut upstream = None;
     let mut ahead = 0u32;
     let mut behind = 0u32;
-    if let Ok(local) = repo.find_branch(
-        branch.as_deref().unwrap_or(""),
-        BranchType::Local,
-    ) {
+    if let Ok(local) = repo.find_branch(branch.as_deref().unwrap_or(""), BranchType::Local) {
         if let Ok(up) = local.upstream() {
             upstream = up.name().ok().flatten().map(str::to_string);
-            if let (Some(local_oid), Some(up_oid)) = (
-                local.get().target(),
-                up.get().target(),
-            ) {
+            if let (Some(local_oid), Some(up_oid)) = (local.get().target(), up.get().target()) {
                 if let Ok((a, b)) = repo.graph_ahead_behind(local_oid, up_oid) {
                     ahead = a as u32;
                     behind = b as u32;
@@ -103,10 +95,7 @@ pub fn status(project_root: &Path) -> Result<GitStatusSnapshot, AppError> {
     let mut has_conflicts = false;
 
     for entry in statuses.iter() {
-        let path = entry
-            .path()
-            .unwrap_or("")
-            .replace('\\', "/");
+        let path = entry.path().unwrap_or("").replace('\\', "/");
         if path.is_empty() {
             continue;
         }
@@ -167,10 +156,7 @@ pub fn diff_file(
     opts.context_lines(3);
 
     let diff = if staged {
-        let head_tree = repo
-            .head()
-            .ok()
-            .and_then(|h| h.peel_to_tree().ok());
+        let head_tree = repo.head().ok().and_then(|h| h.peel_to_tree().ok());
         repo.diff_tree_to_index(head_tree.as_ref(), None, Some(&mut opts))
             .map_err(map_git)?
     } else {
@@ -224,7 +210,7 @@ pub fn unstage_paths(project_root: &Path, paths: &[String]) -> Result<(), AppErr
         match &head_tree {
             Some(tree) => match tree.get_path(&rel) {
                 Ok(entry) => {
-                    let mut entry_index = git2::IndexEntry {
+                    let entry_index = git2::IndexEntry {
                         ctime: git2::IndexTime::new(0, 0),
                         mtime: git2::IndexTime::new(0, 0),
                         dev: 0,
@@ -238,7 +224,7 @@ pub fn unstage_paths(project_root: &Path, paths: &[String]) -> Result<(), AppErr
                         flags_extended: 0,
                         path: rel_str.into_bytes(),
                     };
-                    index.add(&mut entry_index).map_err(map_git)?;
+                    index.add(&entry_index).map_err(map_git)?;
                 }
                 Err(_) => {
                     let _ = index.remove_path(&rel);
@@ -277,15 +263,8 @@ pub fn commit(project_root: &Path, message: &str) -> Result<String, AppError> {
         repo.commit(Some("HEAD"), &sig, &sig, message, &tree, &[])
             .map_err(map_git)?
     } else {
-        repo.commit(
-            Some("HEAD"),
-            &sig,
-            &sig,
-            message,
-            &tree,
-            &parent_refs,
-        )
-        .map_err(map_git)?
+        repo.commit(Some("HEAD"), &sig, &sig, message, &tree, &parent_refs)
+            .map_err(map_git)?
     };
 
     Ok(oid.to_string())
@@ -296,7 +275,7 @@ pub fn list_branches(project_root: &Path) -> Result<Vec<GitBranchInfo>, AppError
     let current = repo
         .head()
         .ok()
-        .and_then(|h| h.shorthand().map(str::to_string));
+        .and_then(|h| h.shorthand().ok().map(str::to_string));
 
     let mut out = Vec::new();
     let branches = repo.branches(None).map_err(map_git)?;
@@ -329,9 +308,7 @@ pub fn checkout_branch(project_root: &Path, name: &str) -> Result<(), AppError> 
         .map_err(map_git)?;
     match reference {
         Some(reference) => {
-            let refname = reference
-                .name()
-                .ok_or_else(|| AppError::git_op_failed("invalid branch ref"))?;
+            let refname = reference.name().map_err(map_git)?;
             repo.set_head(refname).map_err(map_git)?;
         }
         None => {
@@ -341,11 +318,7 @@ pub fn checkout_branch(project_root: &Path, name: &str) -> Result<(), AppError> 
     Ok(())
 }
 
-pub fn create_branch(
-    project_root: &Path,
-    name: &str,
-    checkout: bool,
-) -> Result<(), AppError> {
+pub fn create_branch(project_root: &Path, name: &str, checkout: bool) -> Result<(), AppError> {
     let name = name.trim();
     if name.is_empty() {
         return Err(AppError::git_op_failed("branch name is required"));
@@ -408,7 +381,9 @@ mod tests {
         {
             let mut config = repo.config().expect("config");
             config.set_str("user.name", "Test").expect("name");
-            config.set_str("user.email", "test@example.com").expect("email");
+            config
+                .set_str("user.email", "test@example.com")
+                .expect("email");
         }
         let file = path.join("README.md");
         fs::write(&file, "hello\n").expect("write");
@@ -431,8 +406,14 @@ mod tests {
         fs::write(path.join("README.md"), "changed\n").expect("write");
         let snap = status(&path).expect("status");
         assert!(snap.is_repo);
-        assert_eq!(snap.branch.as_deref(), Some("master").or(Some("main")).or(snap.branch.as_deref()));
-        assert!(snap.files.iter().any(|f| f.path == "README.md" && f.unstaged));
+        assert_eq!(
+            snap.branch.as_deref(),
+            Some("master").or(Some("main")).or(snap.branch.as_deref())
+        );
+        assert!(snap
+            .files
+            .iter()
+            .any(|f| f.path == "README.md" && f.unstaged));
     }
 
     #[test]

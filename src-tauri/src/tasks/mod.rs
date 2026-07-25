@@ -68,13 +68,14 @@ pub fn load_board(project_root: &Path) -> Result<TaskBoard, AppError> {
     }
     let raw = fs::read_to_string(&path)
         .map_err(|err| AppError::Message(format!("read tasks board: {err}")))?;
-    serde_json::from_str(&raw)
-        .map_err(|err| AppError::Message(format!("parse tasks board: {err}")))
+    serde_json::from_str(&raw).map_err(|err| AppError::Message(format!("parse tasks board: {err}")))
 }
 
 pub fn save_board(project_root: &Path, board: &TaskBoard) -> Result<(), AppError> {
     if board.columns.is_empty() {
-        return Err(AppError::Message("board must have at least one column".into()));
+        return Err(AppError::Message(
+            "board must have at least one column".into(),
+        ));
     }
     for col in &board.columns {
         if col.id.trim().is_empty() || col.title.trim().is_empty() {

@@ -5,9 +5,9 @@ pub mod persistence;
 pub mod platform;
 pub mod pty;
 pub mod snippets;
+mod state;
 pub mod tasks;
 pub mod tmux;
-mod state;
 
 pub use app_error::{AppError, ErrorPayload};
 

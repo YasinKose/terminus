@@ -81,21 +81,17 @@ fn find_on_path(name: &str) -> Option<PathBuf> {
 pub fn detect() -> TmuxDetect {
     match which_tmux() {
         Ok(path) => {
-            let version = Command::new(&path)
-                .arg("-V")
-                .output()
-                .ok()
-                .and_then(|out| {
-                    if !out.status.success() {
-                        return None;
-                    }
-                    let s = String::from_utf8_lossy(&out.stdout).trim().to_string();
-                    if s.is_empty() {
-                        None
-                    } else {
-                        Some(s)
-                    }
-                });
+            let version = Command::new(&path).arg("-V").output().ok().and_then(|out| {
+                if !out.status.success() {
+                    return None;
+                }
+                let s = String::from_utf8_lossy(&out.stdout).trim().to_string();
+                if s.is_empty() {
+                    None
+                } else {
+                    Some(s)
+                }
+            });
             TmuxDetect {
                 available: true,
                 path: Some(path.to_string_lossy().to_string()),
@@ -187,7 +183,10 @@ pub fn attach_args(session_name: &str) -> Result<(PathBuf, Vec<String>), AppErro
     ))
 }
 
-pub fn tmux_profile(session_name: &str, project_root: &Path) -> Result<crate::persistence::ProfileRecord, AppError> {
+pub fn tmux_profile(
+    session_name: &str,
+    project_root: &Path,
+) -> Result<crate::persistence::ProfileRecord, AppError> {
     let (executable, args) = attach_args(session_name)?;
     let args_json = serde_json::to_string(&args)
         .map_err(|e| AppError::tmux_op_failed(format!("serialize args: {e}")))?;
@@ -220,9 +219,7 @@ mod tests {
 
     #[test]
     fn parses_list_sessions() {
-        let rows = parse_list_sessions_output(
-            "main|2|1\ndev|1|0\nbad name|1|0\n\nwork:1|3|2\n",
-        );
+        let rows = parse_list_sessions_output("main|2|1\ndev|1|0\nbad name|1|0\n\nwork:1|3|2\n");
         assert_eq!(rows.len(), 3);
         assert_eq!(
             rows[0],

@@ -57,8 +57,7 @@ fn read_file(project_root: &Path) -> Result<SnippetFile, AppError> {
     }
     let raw = fs::read_to_string(&path)
         .map_err(|err| AppError::Message(format!("read snippets: {err}")))?;
-    serde_json::from_str(&raw)
-        .map_err(|err| AppError::Message(format!("parse snippets: {err}")))
+    serde_json::from_str(&raw).map_err(|err| AppError::Message(format!("parse snippets: {err}")))
 }
 
 fn write_file(project_root: &Path, file: &SnippetFile) -> Result<(), AppError> {
@@ -200,9 +199,7 @@ pub fn scan_makefile(project_root: &Path) -> Result<Vec<MakefileTarget>, AppErro
     Ok(Vec::new())
 }
 
-pub fn import_makefile_as_snippets(
-    project_root: &Path,
-) -> Result<Vec<Snippet>, AppError> {
+pub fn import_makefile_as_snippets(project_root: &Path) -> Result<Vec<Snippet>, AppError> {
     let targets = scan_makefile(project_root)?;
     let mut created = Vec::new();
     for target in targets {
@@ -229,8 +226,14 @@ mod tests {
         let root = dir.path();
         let a = create_snippet(root, "build", "cargo build\n", None).expect("create");
         assert_eq!(list_snippets(root).expect("list").len(), 1);
-        let b = update_snippet(root, &a.id, "build-all", "cargo build --all\n", Some("x".into()))
-            .expect("update");
+        let b = update_snippet(
+            root,
+            &a.id,
+            "build-all",
+            "cargo build --all\n",
+            Some("x".into()),
+        )
+        .expect("update");
         assert_eq!(b.name, "build-all");
         delete_snippet(root, &a.id).expect("delete");
         assert!(list_snippets(root).expect("list").is_empty());

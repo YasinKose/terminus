@@ -10,8 +10,6 @@ pub fn tmux_detect() -> Result<TmuxDetect, AppError> {
 }
 
 #[tauri::command]
-pub fn tmux_list_sessions(
-    _state: State<'_, SharedAppState>,
-) -> Result<Vec<TmuxSession>, AppError> {
+pub fn tmux_list_sessions(_state: State<'_, SharedAppState>) -> Result<Vec<TmuxSession>, AppError> {
     list_sessions()
 }

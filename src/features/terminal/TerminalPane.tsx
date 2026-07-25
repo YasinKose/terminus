@@ -1,6 +1,7 @@
 import type { PtyApi } from "@/lib/tauri/pty";
 import type { TerminalRuntimeRegistry } from "@/features/terminal/runtime";
 import { TerminalHost } from "./TerminalHost";
+import { TerminalStatus } from "./TerminalStatus";
 import { useTerminalStore } from "./terminalStore";
 
 export type TerminalPaneProps = {
@@ -11,6 +12,7 @@ export type TerminalPaneProps = {
   initialCwd?: string | null;
   cols?: number;
   rows?: number;
+  focused?: boolean;
   registry?: TerminalRuntimeRegistry;
   ptyApi?: PtyApi;
   onRequestClose?: () => void;
@@ -25,6 +27,7 @@ export function TerminalPane({
   initialCwd = null,
   cols,
   rows,
+  focused = false,
   registry,
   ptyApi,
   onRequestClose,
@@ -32,14 +35,20 @@ export function TerminalPane({
 }: TerminalPaneProps) {
   const session = useTerminalStore((s) => s.sessions[sessionId]);
   const markStarting = useTerminalStore((s) => s.markStarting);
+  const resetActivity = useTerminalStore((s) => s.resetActivity);
   const status = session?.status ?? "starting";
   const displayTitle = session?.title || title;
   const exitCode = session?.exitCode ?? null;
   const errorMessage = session?.error?.message ?? null;
+  const activity = session?.activity ?? "quiet";
+  const unread = session?.unread ?? false;
+  const attention = session?.attention ?? false;
+  const restartCwd = session?.cwd ?? initialCwd;
 
   const handleRestart = () => {
     if (!ptyApi) return;
     markStarting(sessionId);
+    resetActivity(sessionId);
     void ptyApi.restartPty(
       {
         sessionId,
@@ -47,7 +56,7 @@ export function TerminalPane({
         profileId,
         cols: cols ?? 80,
         rows: rows ?? 24,
-        initialCwd,
+        initialCwd: restartCwd,
       },
       (event) => {
         const store = useTerminalStore.getState();
@@ -75,9 +84,14 @@ export function TerminalPane({
     <div className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden border border-border bg-background">
       {showChrome ? (
         <div className="flex h-7 shrink-0 items-center justify-between gap-2 border-b border-border px-2 text-xs text-muted-foreground">
-          <span className="truncate font-medium text-foreground">
-            {displayTitle}
-          </span>
+          <TerminalStatus
+            status={status}
+            activity={activity}
+            unread={unread}
+            attention={attention}
+            title={displayTitle}
+            className="min-w-0 flex-1"
+          />
           <div className="flex shrink-0 items-center gap-2">
             <span className="tabular-nums opacity-70">{status}</span>
             {onRequestClose ? (
@@ -105,6 +119,7 @@ export function TerminalPane({
           initialCwd={initialCwd}
           cols={cols}
           rows={rows}
+          focused={focused}
           registry={registry}
           ptyApi={ptyApi}
         />

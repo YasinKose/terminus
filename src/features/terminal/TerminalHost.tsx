@@ -5,7 +5,14 @@ import {
   getDefaultTerminalRuntimeRegistry,
   type TerminalRuntimeRegistry,
 } from "@/features/terminal/runtime";
+import {
+  createActivityTracker,
+  createThrottledProjector,
+  type ActivityTracker,
+  type TerminalActivitySnapshot,
+} from "./activity";
 import { createLiveXtermAdapter } from "./createXtermAdapter";
+import { sanitizeTitle } from "./osc";
 import { useTerminalStore } from "./terminalStore";
 
 const RESIZE_DEBOUNCE_MS = 80;
@@ -19,6 +26,7 @@ export type TerminalHostProps = {
   initialCwd?: string | null;
   cols?: number;
   rows?: number;
+  focused?: boolean;
   registry?: TerminalRuntimeRegistry;
   ptyApi?: PtyApi;
   className?: string;
@@ -37,6 +45,7 @@ export function TerminalHost({
   initialCwd = null,
   cols = DEFAULT_COLS,
   rows = DEFAULT_ROWS,
+  focused = false,
   registry: registryProp,
   ptyApi = tauriPtyApi,
   className,
@@ -47,6 +56,8 @@ export function TerminalHost({
   const openedRef = useRef(false);
   const resizeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSizeRef = useRef({ cols, rows });
+  const activityRef = useRef<ActivityTracker | null>(null);
+  const focusedRef = useRef(focused);
 
   const ensureSession = useTerminalStore((s) => s.ensureSession);
   const markStarting = useTerminalStore((s) => s.markStarting);
@@ -55,6 +66,7 @@ export function TerminalHost({
   const markError = useTerminalStore((s) => s.markError);
   const setTitle = useTerminalStore((s) => s.setTitle);
   const setCwd = useTerminalStore((s) => s.setCwd);
+  const applyActivity = useTerminalStore((s) => s.applyActivity);
 
   useEffect(() => {
     ptyRef.current = ptyApi;
@@ -67,12 +79,32 @@ export function TerminalHost({
   }, [registryProp]);
 
   useEffect(() => {
+    focusedRef.current = focused;
+    activityRef.current?.setFocused(focused);
+    useTerminalStore.getState().setFocused(sessionId, focused);
+  }, [focused, sessionId]);
+
+  useEffect(() => {
     ensureSession(sessionId, projectId);
     markStarting(sessionId);
 
     const registry = registryRef.current;
     const host = hostRef.current;
     if (!host) return;
+
+    const tracker = createActivityTracker();
+    activityRef.current = tracker;
+    tracker.setFocused(focusedRef.current);
+
+    const projector = createThrottledProjector<TerminalActivitySnapshot>(
+      (snap) => {
+        applyActivity(sessionId, snap);
+      },
+    );
+
+    const unsubActivity = tracker.subscribe((snap) => {
+      projector.push(snap);
+    });
 
     const runtime = registry.acquire(sessionId);
     runtime.attach(host);
@@ -81,19 +113,50 @@ export function TerminalHost({
       void ptyRef.current.writePty(sessionId, data);
     });
 
+    runtime.setOnTitleChange((title) => {
+      setTitle(sessionId, sanitizeTitle(title));
+    });
+
+    runtime.setOnBell(() => {
+      tracker.noteBell();
+    });
+
+    runtime.setOnCwdChange((cwd) => {
+      void (async () => {
+        try {
+          if (!ptyRef.current.validateCwd) {
+            if (cwd.startsWith("/")) setCwd(sessionId, cwd);
+            return;
+          }
+          const validated = await ptyRef.current.validateCwd(cwd);
+          if (validated) {
+            setCwd(sessionId, validated);
+          }
+        } catch {
+        }
+      })();
+    });
+
     const handleEvent = (event: PtyEvent) => {
       switch (event.event) {
         case "started":
           markRunning(sessionId);
+          tracker.reset();
+          tracker.setFocused(focusedRef.current);
           break;
         case "output":
           runtime.write(event.data.data);
+          tracker.noteOutput();
           break;
         case "exited":
           markExited(sessionId, event.data.code);
+          tracker.markExited();
+          projector.flush();
           break;
         case "error":
           markError(sessionId, event.data.error);
+          tracker.markExited();
+          projector.flush();
           break;
       }
     };
@@ -193,6 +256,10 @@ export function TerminalHost({
       host.removeEventListener("visibilitychange", onHostResizeRequest);
       document.removeEventListener("visibilitychange", onVisibility);
       ro?.disconnect();
+      unsubActivity();
+      projector.dispose();
+      tracker.dispose();
+      activityRef.current = null;
       registry.release(sessionId);
     };
   }, [
@@ -207,6 +274,7 @@ export function TerminalHost({
     markError,
     setTitle,
     setCwd,
+    applyActivity,
   ]);
 
   return (

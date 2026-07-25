@@ -59,6 +59,7 @@ export interface PtyApi {
     onEvent: PtyEventHandler,
   ) => Promise<PtySessionState>;
   listPtyStates: () => Promise<PtySessionState[]>;
+  validateCwd: (path: string) => Promise<string | null>;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -164,4 +165,6 @@ export const tauriPtyApi: PtyApi = {
       onEvent: channelFor(onEvent),
     }),
   listPtyStates: () => invoke<PtySessionState[]>("list_pty_states"),
+  validateCwd: (path) =>
+    invoke<string | null>("validate_cwd", { path }),
 };

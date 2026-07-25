@@ -195,3 +195,59 @@ pub fn list_pty_states(
         .map(PtySessionState::from)
         .collect())
 }
+
+#[tauri::command]
+pub fn validate_cwd(path: String) -> Result<Option<String>, AppError> {
+    Ok(validate_cwd_path(&path))
+}
+
+pub fn validate_cwd_path(path: &str) -> Option<String> {
+    let trimmed = path.trim();
+    if trimmed.is_empty() || trimmed.contains('\0') {
+        return None;
+    }
+    if trimmed.chars().any(|c| c.is_control()) {
+        return None;
+    }
+    let candidate = PathBuf::from(trimmed);
+    if !candidate.is_absolute() {
+        return None;
+    }
+    let meta = std::fs::metadata(&candidate).ok()?;
+    if !meta.is_dir() {
+        return None;
+    }
+    let canonical = std::fs::canonicalize(&candidate).ok()?;
+    Some(canonical.to_string_lossy().to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::validate_cwd_path;
+    use std::fs;
+    use tempfile::tempdir;
+
+    #[test]
+    fn validate_cwd_accepts_existing_directory() {
+        let dir = tempdir().expect("tempdir");
+        let path = dir.path().to_string_lossy().to_string();
+        let validated = validate_cwd_path(&path).expect("valid");
+        assert!(validated.ends_with(dir.path().file_name().unwrap().to_str().unwrap()) || validated == path || std::path::Path::new(&validated).exists());
+    }
+
+    #[test]
+    fn validate_cwd_rejects_missing_and_relative() {
+        assert!(validate_cwd_path("relative/path").is_none());
+        assert!(validate_cwd_path("/definitely/not/a/real/terminus/path/xyz").is_none());
+        assert!(validate_cwd_path("").is_none());
+        assert!(validate_cwd_path("/tmp\0evil").is_none());
+    }
+
+    #[test]
+    fn validate_cwd_rejects_file() {
+        let dir = tempdir().expect("tempdir");
+        let file = dir.path().join("file.txt");
+        fs::write(&file, b"x").expect("write");
+        assert!(validate_cwd_path(&file.to_string_lossy()).is_none());
+    }
+}

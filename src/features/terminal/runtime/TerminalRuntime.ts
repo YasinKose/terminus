@@ -102,6 +102,27 @@ export class TerminalRuntime implements TerminalRuntimeHandle {
     this.adapter.setOnData?.(handler);
   }
 
+  setOnTitleChange(handler: (title: string) => void): void {
+    if (this.disposed) {
+      return;
+    }
+    this.adapter.setOnTitleChange?.(handler);
+  }
+
+  setOnBell(handler: () => void): void {
+    if (this.disposed) {
+      return;
+    }
+    this.adapter.setOnBell?.(handler);
+  }
+
+  setOnCwdChange(handler: (cwd: string) => void): void {
+    if (this.disposed) {
+      return;
+    }
+    this.adapter.setOnCwdChange?.(handler);
+  }
+
   getProposedSize(): { cols: number; rows: number } {
     if (this.disposed) {
       return { cols: 80, rows: 24 };

@@ -1,5 +1,7 @@
 import { useCallback, useRef } from "react";
 import { TerminalPane } from "@/features/terminal/TerminalPane";
+import { TerminalStatus } from "@/features/terminal/TerminalStatus";
+import { useTerminalStore } from "@/features/terminal/terminalStore";
 import { useCloseRequestStore } from "@/stores/closeRequestStore";
 import { DropZoneOverlay } from "./DropZoneOverlay";
 import {
@@ -14,6 +16,7 @@ export type PaneTreeProps = {
   root: PaneNode;
   projectId: string;
   workspaceId: string;
+  activePaneId?: string | null;
   onTreeChange: (next: PaneNode) => void;
   onActivatePane?: (paneId: string) => void;
   onDragCommit?: () => void;
@@ -23,12 +26,14 @@ function TerminalLeafView({
   leaf,
   projectId,
   workspaceId,
+  activePaneId,
   onActivate,
   onDragCommit,
 }: {
   leaf: TerminalLeaf;
   projectId: string;
   workspaceId: string;
+  activePaneId?: string | null;
   onActivate?: (paneId: string) => void;
   onDragCommit?: () => void;
 }) {
@@ -37,6 +42,8 @@ function TerminalLeafView({
   const beginDrag = usePaneDragStore((s) => s.beginDrag);
   const setOver = usePaneDragStore((s) => s.setOver);
   const endDrag = usePaneDragStore((s) => s.endDrag);
+  const session = useTerminalStore((s) => s.sessions[leaf.id]);
+  const focused = activePaneId === leaf.id;
 
   const isDragging = drag.status === "dragging";
   const isSource =
@@ -131,9 +138,14 @@ function TerminalLeafView({
           >
             ⋮⋮
           </button>
-          <span className="min-w-0 flex-1 truncate text-[10px] text-muted-foreground">
-            {leaf.titleOverride ?? "Terminal"}
-          </span>
+          <TerminalStatus
+            status={session?.status ?? "starting"}
+            activity={session?.activity ?? "quiet"}
+            unread={session?.unread ?? false}
+            attention={session?.attention ?? false}
+            title={session?.title || leaf.titleOverride || "Terminal"}
+            className="min-w-0 flex-1"
+          />
           <button
             type="button"
             data-testid={`close-pane-${leaf.id}`}
@@ -146,7 +158,8 @@ function TerminalLeafView({
                 sessionId: leaf.id,
                 workspaceId,
                 projectId,
-                title: leaf.titleOverride ?? "Terminal",
+                title:
+                  session?.title || leaf.titleOverride || "Terminal",
                 terminalCount: 1,
               });
             }}
@@ -161,6 +174,7 @@ function TerminalLeafView({
             profileId={leaf.profileId}
             initialCwd={leaf.initialCwd || null}
             title={leaf.titleOverride ?? "Terminal"}
+            focused={focused}
             showChrome={false}
           />
         </div>
@@ -177,6 +191,7 @@ export function PaneTree({
   root,
   projectId,
   workspaceId,
+  activePaneId = null,
   onTreeChange,
   onActivatePane,
   onDragCommit,
@@ -189,6 +204,7 @@ export function PaneTree({
             leaf={node}
             projectId={projectId}
             workspaceId={workspaceId}
+            activePaneId={activePaneId}
             onActivate={onActivatePane}
             onDragCommit={onDragCommit}
           />
@@ -204,7 +220,15 @@ export function PaneTree({
         />
       );
     },
-    [onActivatePane, onDragCommit, onTreeChange, projectId, root, workspaceId],
+    [
+      activePaneId,
+      onActivatePane,
+      onDragCommit,
+      onTreeChange,
+      projectId,
+      root,
+      workspaceId,
+    ],
   );
 
   return (

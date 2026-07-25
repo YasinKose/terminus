@@ -1,16 +1,21 @@
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import type { TerminalAdapter } from "@/features/terminal/runtime";
+import { parseOsc7Cwd } from "./osc";
 
 export type XtermAdapterHooks = {
   onData?: (data: string) => void;
   onTitleChange?: (title: string) => void;
   onBell?: () => void;
+  onCwdChange?: (cwd: string) => void;
 };
 
 export type LiveXtermHandle = TerminalAdapter & {
   getProposedSize: () => { cols: number; rows: number };
   setOnData: (handler: (data: string) => void) => void;
+  setOnTitleChange: (handler: (title: string) => void) => void;
+  setOnBell: (handler: () => void) => void;
+  setOnCwdChange: (handler: (cwd: string) => void) => void;
 };
 
 const MONO_STACK =
@@ -31,6 +36,11 @@ export function createLiveXtermAdapter(
   let webglAddon: { dispose: () => void } | null = null;
   let disposed = false;
   let onDataHandler: ((data: string) => void) | null = options.onData ?? null;
+  let onTitleHandler: ((title: string) => void) | null =
+    options.onTitleChange ?? null;
+  let onBellHandler: (() => void) | null = options.onBell ?? null;
+  let onCwdHandler: ((cwd: string) => void) | null =
+    options.onCwdChange ?? null;
   const disposables: Array<{ dispose: () => void }> = [];
 
   const ensure = (): Terminal => {
@@ -52,12 +62,25 @@ export function createLiveXtermAdapter(
           onDataHandler?.(data);
         }),
       );
-      if (options.onTitleChange) {
-        disposables.push(term.onTitleChange(options.onTitleChange));
-      }
-      if (options.onBell) {
-        disposables.push(term.onBell(options.onBell));
-      }
+      disposables.push(
+        term.onTitleChange((title) => {
+          onTitleHandler?.(title);
+        }),
+      );
+      disposables.push(
+        term.onBell(() => {
+          onBellHandler?.();
+        }),
+      );
+
+      const oscDisposable = term.parser.registerOscHandler(7, (data) => {
+        const cwd = parseOsc7Cwd(data);
+        if (cwd) {
+          onCwdHandler?.(cwd);
+        }
+        return true;
+      });
+      disposables.push(oscDisposable);
     }
     return term;
   };
@@ -143,6 +166,15 @@ export function createLiveXtermAdapter(
     },
     setOnData(handler: (data: string) => void) {
       onDataHandler = handler;
+    },
+    setOnTitleChange(handler: (title: string) => void) {
+      onTitleHandler = handler;
+    },
+    setOnBell(handler: () => void) {
+      onBellHandler = handler;
+    },
+    setOnCwdChange(handler: (cwd: string) => void) {
+      onCwdHandler = handler;
     },
   };
 }

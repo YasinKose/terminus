@@ -195,6 +195,7 @@ export function WorkspaceArea({
                 root={root}
                 projectId={projectId}
                 workspaceId={ws.id}
+                activePaneId={ws.activePaneId}
                 onTreeChange={(next) => handleTreeChange(ws, next)}
                 onActivatePane={(paneId) => handleActivatePane(ws, paneId)}
                 onDragCommit={handleDragCommit}

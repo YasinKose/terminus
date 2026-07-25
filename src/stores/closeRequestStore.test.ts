@@ -34,6 +34,7 @@ function mockPtyApi(): PtyApi {
     closePty: vi.fn(async () => {}),
     restartPty: vi.fn(),
     listPtyStates: vi.fn(),
+    validateCwd: vi.fn(async (path: string) => path),
   };
 }
 

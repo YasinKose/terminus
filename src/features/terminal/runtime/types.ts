@@ -7,6 +7,9 @@ export type TerminalAdapter = {
   attachWebgl?: () => boolean;
   detachWebgl?: () => void;
   setOnData?: (handler: (data: string) => void) => void;
+  setOnTitleChange?: (handler: (title: string) => void) => void;
+  setOnBell?: (handler: () => void) => void;
+  setOnCwdChange?: (handler: (cwd: string) => void) => void;
   getProposedSize?: () => { cols: number; rows: number };
 };
 
@@ -26,6 +29,9 @@ export type TerminalRuntimeHandle = {
   dispose: () => void;
   handleWebglContextLoss: () => void;
   setOnData: (handler: (data: string) => void) => void;
+  setOnTitleChange: (handler: (title: string) => void) => void;
+  setOnBell: (handler: () => void) => void;
+  setOnCwdChange: (handler: (cwd: string) => void) => void;
   getProposedSize: () => { cols: number; rows: number };
   readonly usingWebgl: boolean;
   readonly openCount: number;

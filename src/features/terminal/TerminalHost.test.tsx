@@ -65,6 +65,9 @@ function createFakeAdapterFactory() {
       setOnData(handler: (data: string) => void) {
         this.onDataHandler = handler;
       },
+      setOnTitleChange() {},
+      setOnBell() {},
+      setOnCwdChange() {},
       getProposedSize() {
         return { cols: this.proposedCols, rows: this.proposedRows };
       },
@@ -121,6 +124,7 @@ function createMockPtyApi() {
       };
     },
     listPtyStates: async () => [],
+    validateCwd: async (path) => (path.startsWith("/") ? path : null),
   };
 
   return {

@@ -42,6 +42,13 @@ pub struct SaveWorkspaceInput {
     pub workspace: WorkspaceRecord,
 }
 
+#[derive(Debug, Clone, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SaveTwoWorkspacesInput {
+    pub first: WorkspaceRecord,
+    pub second: WorkspaceRecord,
+}
+
 #[tauri::command]
 pub fn load_bootstrap_state(
     app: AppHandle,
@@ -148,6 +155,30 @@ pub fn save_workspace(
                 input.workspace.id
             ))
         })
+    })
+}
+
+#[tauri::command]
+pub fn save_two_workspaces(
+    app: AppHandle,
+    state: State<'_, SharedAppState>,
+    input: SaveTwoWorkspacesInput,
+) -> Result<(WorkspaceRecord, WorkspaceRecord), AppError> {
+    state.with_repository(&app, |repo| {
+        repo.save_two_workspaces_atomically(&input.first, &input.second)?;
+        let first = repo.get_workspace(&input.first.id)?.ok_or_else(|| {
+            AppError::Message(format!(
+                "workspace not found after save: {}",
+                input.first.id
+            ))
+        })?;
+        let second = repo.get_workspace(&input.second.id)?.ok_or_else(|| {
+            AppError::Message(format!(
+                "workspace not found after save: {}",
+                input.second.id
+            ))
+        })?;
+        Ok((first, second))
     })
 }
 

@@ -22,6 +22,10 @@ export interface WorkspaceStoreState extends WorkspaceStoreApi {
   activeWorkspaceId: string | null;
   setApi: (api: WorkspaceApi) => void;
   saveWorkspace: (workspace: WorkspaceRecord) => Promise<WorkspaceView>;
+  saveTwoWorkspaces: (
+    first: WorkspaceRecord,
+    second: WorkspaceRecord,
+  ) => Promise<[WorkspaceView, WorkspaceView]>;
 }
 
 let api: WorkspaceApi = tauriWorkspaceApi;
@@ -99,5 +103,12 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
     const saved = await api.saveWorkspace(workspace);
     get().upsertWorkspace(saved);
     return get().getWorkspace(saved.id)!;
+  },
+
+  saveTwoWorkspaces: async (first, second) => {
+    const [a, b] = await api.saveTwoWorkspaces(first, second);
+    get().upsertWorkspace(a);
+    get().upsertWorkspace(b);
+    return [get().getWorkspace(a.id)!, get().getWorkspace(b.id)!];
   },
 }));

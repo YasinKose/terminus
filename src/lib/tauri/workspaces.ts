@@ -23,6 +23,10 @@ export interface WorkspaceApi {
     workspaceId: string,
   ) => Promise<ProjectRecord>;
   saveWorkspace: (workspace: WorkspaceRecord) => Promise<WorkspaceRecord>;
+  saveTwoWorkspaces: (
+    first: WorkspaceRecord,
+    second: WorkspaceRecord,
+  ) => Promise<[WorkspaceRecord, WorkspaceRecord]>;
 }
 
 export const tauriWorkspaceApi: WorkspaceApi = {
@@ -44,4 +48,8 @@ export const tauriWorkspaceApi: WorkspaceApi = {
     }),
   saveWorkspace: (workspace) =>
     invoke<WorkspaceRecord>("save_workspace", { input: { workspace } }),
+  saveTwoWorkspaces: (first, second) =>
+    invoke<[WorkspaceRecord, WorkspaceRecord]>("save_two_workspaces", {
+      input: { first, second },
+    }),
 };

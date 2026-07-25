@@ -67,6 +67,9 @@ describe("workspaceStore", () => {
       ensureDefaultWorkspace: vi.fn(),
       setLastActiveWorkspace: vi.fn(),
       saveWorkspace: vi.fn(async (ws) => ({ ...ws, name: "Saved" })),
+      saveTwoWorkspaces: vi.fn(
+        async (a, b): Promise<[typeof a, typeof b]> => [a, b],
+      ),
     };
     useWorkspaceStore.getState().setApi(api);
     useWorkspaceStore.getState().hydrateFromBootstrap([w1]);

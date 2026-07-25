@@ -36,7 +36,7 @@ describe("PaneTree", () => {
   it("renders a single terminal leaf with stable key/id", () => {
     const root = createTerminalLeaf("t-only");
     render(
-      <PaneTree root={root} projectId="p1" onTreeChange={() => undefined} />,
+      <PaneTree root={root} projectId="p1" workspaceId="ws-1" onTreeChange={() => undefined} />,
     );
     expect(screen.getByTestId("terminal-t-only")).toBeTruthy();
     expect(screen.getByTestId("pane-leaf-t-only")).toBeTruthy();
@@ -59,7 +59,7 @@ describe("PaneTree", () => {
     );
 
     render(
-      <PaneTree root={root} projectId="p1" onTreeChange={() => undefined} />,
+      <PaneTree root={root} projectId="p1" workspaceId="ws-1" onTreeChange={() => undefined} />,
     );
 
     expect(screen.getByTestId("terminal-t-a")).toBeTruthy();
@@ -86,7 +86,7 @@ describe("PaneTree", () => {
     const { rerender } = render(
       <PaneTree
         root={withSibling}
-        projectId="p1"
+        projectId="p1" workspaceId="ws-1"
         onTreeChange={onTreeChange}
       />,
     );
@@ -94,7 +94,7 @@ describe("PaneTree", () => {
     expect(screen.getByTestId("terminal-t-gone")).toBeTruthy();
 
     rerender(
-      <PaneTree root={onlyKeep} projectId="p1" onTreeChange={onTreeChange} />,
+      <PaneTree root={onlyKeep} projectId="p1" workspaceId="ws-1" onTreeChange={onTreeChange} />,
     );
     expect(screen.getByTestId("terminal-t-keep")).toBeTruthy();
     expect(screen.queryByTestId("terminal-t-gone")).toBeNull();
@@ -103,7 +103,7 @@ describe("PaneTree", () => {
   it("does not collapse a one-child split container", () => {
     const root = split("s-one", "row", [createTerminalLeaf("t-solo")], [100]);
     render(
-      <PaneTree root={root} projectId="p1" onTreeChange={() => undefined} />,
+      <PaneTree root={root} projectId="p1" workspaceId="ws-1" onTreeChange={() => undefined} />,
     );
     expect(screen.getByTestId("pane-split-s-one")).toBeTruthy();
     expect(screen.getByTestId("terminal-t-solo")).toBeTruthy();
@@ -120,7 +120,7 @@ describe("PaneTree", () => {
 
     render(
       <div style={{ width: 400, height: 200 }}>
-        <PaneTree root={root} projectId="p1" onTreeChange={onTreeChange} />
+        <PaneTree root={root} projectId="p1" workspaceId="ws-1" onTreeChange={onTreeChange} />
       </div>,
     );
 
@@ -182,7 +182,7 @@ describe("PaneTree", () => {
 
     render(
       <div style={{ width: 400, height: 200 }}>
-        <PaneTree root={root} projectId="p1" onTreeChange={onTreeChange} />
+        <PaneTree root={root} projectId="p1" workspaceId="ws-1" onTreeChange={onTreeChange} />
       </div>,
     );
 
@@ -236,7 +236,7 @@ describe("PaneTree", () => {
 
     render(
       <div style={{ width: 200, height: 400 }}>
-        <PaneTree root={root} projectId="p1" onTreeChange={onTreeChange} />
+        <PaneTree root={root} projectId="p1" workspaceId="ws-1" onTreeChange={onTreeChange} />
       </div>,
     );
 

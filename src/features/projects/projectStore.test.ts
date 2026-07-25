@@ -112,6 +112,14 @@ function createMockApi(seed?: {
       else workspaces.push(ws);
       return ws;
     }),
+    saveTwoWorkspaces: vi.fn(async (first, second) => {
+      for (const ws of [first, second]) {
+        const idx = workspaces.findIndex((w) => w.id === ws.id);
+        if (idx >= 0) workspaces[idx] = ws;
+        else workspaces.push(ws);
+      }
+      return [first, second] as [typeof first, typeof second];
+    }),
   };
   return api;
 }

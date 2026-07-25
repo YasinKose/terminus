@@ -29,6 +29,8 @@ export function WorkspaceTabs({
             type="button"
             role="tab"
             aria-selected={active}
+            data-workspace-tab-id={ws.id}
+            data-testid={`workspace-tab-${ws.id}`}
             className={
               active
                 ? "inline-flex h-7 max-w-[10rem] items-center truncate rounded-md bg-accent px-2 text-xs font-medium text-accent-foreground"

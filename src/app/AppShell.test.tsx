@@ -113,6 +113,15 @@ function createMockApi(seed?: {
         : [...workspaces, ws];
       return ws;
     },
+    saveTwoWorkspaces: async (first, second) => {
+      for (const ws of [first, second]) {
+        const exists = workspaces.some((w) => w.id === ws.id);
+        workspaces = exists
+          ? workspaces.map((w) => (w.id === ws.id ? ws : w))
+          : [...workspaces, ws];
+      }
+      return [first, second];
+    },
   };
 }
 

@@ -13,13 +13,25 @@ pub struct ErrorPayload {
 pub enum AppError {
     #[error("{0}")]
     Message(String),
+    #[error("{0}")]
+    PersistenceCorrupt(String),
 }
 
 impl AppError {
+    pub fn persistence_corrupt(message: impl Into<String>) -> Self {
+        AppError::PersistenceCorrupt(message.into())
+    }
+
     pub fn into_payload(self) -> ErrorPayload {
         match self {
             AppError::Message(message) => ErrorPayload {
                 code: "APP_ERROR",
+                message,
+                details: None,
+                recoverable: true,
+            },
+            AppError::PersistenceCorrupt(message) => ErrorPayload {
+                code: "PERSISTENCE_CORRUPT",
                 message,
                 details: None,
                 recoverable: true,
@@ -31,6 +43,12 @@ impl AppError {
         match self {
             AppError::Message(message) => ErrorPayload {
                 code: "APP_ERROR",
+                message: message.clone(),
+                details: None,
+                recoverable: true,
+            },
+            AppError::PersistenceCorrupt(message) => ErrorPayload {
+                code: "PERSISTENCE_CORRUPT",
                 message: message.clone(),
                 details: None,
                 recoverable: true,
@@ -78,5 +96,12 @@ mod tests {
         assert!(json.contains("\"code\":\"APP_ERROR\""));
         assert!(json.contains("\"message\":\"boom\""));
         assert!(json.contains("\"recoverable\":true"));
+    }
+
+    #[test]
+    fn persistence_corrupt_is_recoverable() {
+        let payload = AppError::persistence_corrupt("bad json").into_payload();
+        assert_eq!(payload.code, "PERSISTENCE_CORRUPT");
+        assert!(payload.recoverable);
     }
 }

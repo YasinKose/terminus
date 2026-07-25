@@ -1,4 +1,5 @@
 mod app_error;
+pub mod persistence;
 
 pub use app_error::{AppError, ErrorPayload};
 

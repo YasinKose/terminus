@@ -1,9 +1,10 @@
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use crate::project_files::safe_project_data_file;
 use crate::AppError;
 
 const TASKS_DIR: &str = ".terminus";
@@ -57,12 +58,8 @@ impl Default for TaskBoard {
     }
 }
 
-fn board_path(project_root: &Path) -> PathBuf {
-    project_root.join(TASKS_DIR).join(TASKS_FILE)
-}
-
 pub fn load_board(project_root: &Path) -> Result<TaskBoard, AppError> {
-    let path = board_path(project_root);
+    let path = safe_project_data_file(project_root, TASKS_DIR, TASKS_FILE, false)?;
     if !path.exists() {
         return Ok(TaskBoard::default());
     }
@@ -88,10 +85,7 @@ pub fn save_board(project_root: &Path, board: &TaskBoard) -> Result<(), AppError
         }
     }
 
-    let dir = project_root.join(TASKS_DIR);
-    fs::create_dir_all(&dir)
-        .map_err(|err| AppError::Message(format!("create .terminus: {err}")))?;
-    let path = dir.join(TASKS_FILE);
+    let path = safe_project_data_file(project_root, TASKS_DIR, TASKS_FILE, true)?;
     let raw = serde_json::to_string_pretty(board)
         .map_err(|err| AppError::Message(format!("serialize tasks board: {err}")))?;
     fs::write(&path, raw).map_err(|err| AppError::Message(format!("write tasks board: {err}")))
@@ -128,5 +122,21 @@ mod tests {
         let loaded = load_board(dir.path()).expect("load");
         assert_eq!(loaded.columns[0].tasks.len(), 1);
         assert_eq!(loaded.columns[0].tasks[0].title, "Ship v0.2");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn save_rejects_symlinked_project_data_directory() {
+        use std::os::unix::fs::symlink;
+
+        let project = tempdir().expect("project");
+        let outside = tempdir().expect("outside");
+        symlink(outside.path(), project.path().join(TASKS_DIR)).expect("symlink");
+
+        let error = save_board(project.path(), &TaskBoard::default())
+            .expect_err("symlinked .terminus must be rejected");
+
+        assert!(error.to_string().contains("symlink"));
+        assert!(!outside.path().join(TASKS_FILE).exists());
     }
 }

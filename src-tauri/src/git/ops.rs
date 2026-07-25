@@ -1,13 +1,20 @@
+use std::fs;
+use std::io::ErrorKind;
 use std::path::Path;
 
 use git2::{
-    build::CheckoutBuilder, BranchType, DiffOptions, Repository, Signature, StashApplyOptions,
-    StashFlags, Status, StatusOptions,
+    build::CheckoutBuilder, BranchType, DiffOptions, ObjectType, Repository, Signature,
+    StashApplyOptions, StashFlags, Status, StatusOptions,
 };
 
 use super::path::{open_repo_at, safe_rel_path};
-use super::types::{GitBranchInfo, GitDiffResult, GitFileEntry, GitStashInfo, GitStatusSnapshot};
+use super::types::{
+    GitBranchInfo, GitDiffResult, GitFileDocument, GitFileEntry, GitFileSource, GitStashInfo,
+    GitStatusSnapshot,
+};
 use crate::AppError;
+
+const MAX_SOURCE_FILE_BYTES: u64 = 2 * 1024 * 1024;
 
 fn map_git(err: git2::Error) -> AppError {
     AppError::git_op_failed(err.message())
@@ -37,14 +44,15 @@ fn status_label(status: Status) -> String {
 }
 
 fn signature(repo: &Repository) -> Result<Signature<'static>, AppError> {
-    match repo.signature() {
-        Ok(sig) => {
-            let name = sig.name().unwrap_or("Terminus").to_string();
-            let email = sig.email().unwrap_or("terminus@local").to_string();
-            Signature::now(&name, &email).map_err(map_git)
-        }
-        Err(_) => Signature::now("Terminus", "terminus@local").map_err(map_git),
+    let config = repo.config().map_err(map_git)?;
+    let name = config.get_string("user.name").unwrap_or_default();
+    let email = config.get_string("user.email").unwrap_or_default();
+    if name.trim().is_empty() || email.trim().is_empty() {
+        return Err(AppError::git_op_failed(
+            "configure git user.name and user.email before committing or stashing",
+        ));
     }
+    Signature::now(name.trim(), email.trim()).map_err(map_git)
 }
 
 pub fn status(project_root: &Path) -> Result<GitStatusSnapshot, AppError> {
@@ -152,8 +160,12 @@ pub fn diff_file(
     let rel_str = rel.to_string_lossy().replace('\\', "/");
 
     let mut opts = DiffOptions::new();
-    opts.pathspec(&rel_str);
+    opts.pathspec(&rel_str).disable_pathspec_match(true);
     opts.context_lines(3);
+    if !staged {
+        opts.show_untracked_content(true)
+            .recurse_untracked_dirs(true);
+    }
 
     let diff = if staged {
         let head_tree = repo.head().ok().and_then(|h| h.peel_to_tree().ok());
@@ -180,6 +192,77 @@ pub fn diff_file(
         staged,
         patch,
     })
+}
+
+fn decode_source(
+    path: &str,
+    bytes: Vec<u8>,
+    source: GitFileSource,
+) -> Result<GitFileDocument, AppError> {
+    if bytes.len() as u64 > MAX_SOURCE_FILE_BYTES {
+        return Err(AppError::git_op_failed(format!(
+            "source file exceeds the 2 MiB preview limit: {path}"
+        )));
+    }
+    if bytes.contains(&0) {
+        return Err(AppError::git_op_failed(format!(
+            "source preview requires a UTF-8 text file: {path}"
+        )));
+    }
+    let byte_size = bytes.len();
+    let content = String::from_utf8(bytes).map_err(|_| {
+        AppError::git_op_failed(format!("source preview requires a UTF-8 text file: {path}"))
+    })?;
+    Ok(GitFileDocument {
+        path: path.to_string(),
+        content,
+        byte_size,
+        source,
+    })
+}
+
+pub fn read_file(project_root: &Path, pathspec: &str) -> Result<GitFileDocument, AppError> {
+    let repo = open_repo_at(project_root)?;
+    let rel = safe_rel_path(project_root, pathspec)?;
+    let rel_str = rel.to_string_lossy().replace('\\', "/");
+    let absolute = project_root.join(&rel);
+
+    match fs::metadata(&absolute) {
+        Ok(metadata) => {
+            if !metadata.is_file() {
+                return Err(AppError::git_op_failed(format!(
+                    "source path is not a file: {rel_str}"
+                )));
+            }
+            if metadata.len() > MAX_SOURCE_FILE_BYTES {
+                return Err(AppError::git_op_failed(format!(
+                    "source file exceeds the 2 MiB preview limit: {rel_str}"
+                )));
+            }
+            let bytes = fs::read(&absolute).map_err(|error| {
+                AppError::git_op_failed(format!("read source file {rel_str}: {error}"))
+            })?;
+            return decode_source(&rel_str, bytes, GitFileSource::Worktree);
+        }
+        Err(error) if error.kind() == ErrorKind::NotFound => {}
+        Err(error) => {
+            return Err(AppError::git_op_failed(format!(
+                "inspect source file {rel_str}: {error}"
+            )));
+        }
+    }
+
+    let head = repo
+        .head()
+        .and_then(|reference| reference.peel_to_tree())
+        .map_err(|_| AppError::git_op_failed(format!("source file not found: {rel_str}")))?;
+    let entry = head
+        .get_path(&rel)
+        .map_err(|_| AppError::git_op_failed(format!("source file not found: {rel_str}")))?;
+    let blob = repo
+        .find_blob(entry.id())
+        .map_err(|_| AppError::git_op_failed(format!("source path is not a file: {rel_str}")))?;
+    decode_source(&rel_str, blob.content().to_vec(), GitFileSource::Head)
 }
 
 pub fn stage_paths(project_root: &Path, paths: &[String]) -> Result<(), AppError> {
@@ -303,18 +386,13 @@ pub fn checkout_branch(project_root: &Path, name: &str) -> Result<(), AppError> 
         return Err(AppError::git_op_failed("branch name is required"));
     }
     let repo = open_repo_at(project_root)?;
-    let (object, reference) = repo.revparse_ext(name).map_err(map_git)?;
-    repo.checkout_tree(&object, Some(CheckoutBuilder::new().force()))
+    let branch = repo.find_branch(name, BranchType::Local).map_err(map_git)?;
+    let reference = branch.into_reference();
+    let reference_name = reference.name().map_err(map_git)?.to_string();
+    let object = reference.peel(ObjectType::Commit).map_err(map_git)?;
+    repo.checkout_tree(&object, Some(CheckoutBuilder::new().safe()))
         .map_err(map_git)?;
-    match reference {
-        Some(reference) => {
-            let refname = reference.name().map_err(map_git)?;
-            repo.set_head(refname).map_err(map_git)?;
-        }
-        None => {
-            repo.set_head_detached(object.id()).map_err(map_git)?;
-        }
-    }
+    repo.set_head(&reference_name).map_err(map_git)?;
     Ok(())
 }
 
@@ -428,9 +506,129 @@ mod tests {
     }
 
     #[test]
+    fn unstage_restores_the_head_version_in_the_index() {
+        let (_dir, path) = init_repo();
+        fs::write(path.join("README.md"), "v2\n").expect("write");
+        stage_paths(&path, &["README.md".into()]).expect("stage");
+        assert!(status(&path)
+            .expect("staged status")
+            .files
+            .iter()
+            .any(|file| file.path == "README.md" && file.staged));
+
+        unstage_paths(&path, &["README.md".into()]).expect("unstage");
+
+        let file = status(&path)
+            .expect("unstaged status")
+            .files
+            .into_iter()
+            .find(|file| file.path == "README.md")
+            .expect("README status");
+        assert!(!file.staged);
+        assert!(file.unstaged);
+    }
+
+    #[test]
+    fn commit_requires_configured_git_author() {
+        let (_dir, path) = init_repo();
+        let repo = Repository::open(&path).expect("open");
+        let mut config = repo.config().expect("config");
+        config.set_str("user.name", "").expect("blank name");
+        config.set_str("user.email", "").expect("blank email");
+        drop(config);
+        fs::write(path.join("README.md"), "v2\n").expect("write");
+        stage_paths(&path, &["README.md".into()]).expect("stage");
+
+        let error = commit(&path, "update").expect_err("author is required");
+
+        assert!(error.to_string().contains("user.name"));
+        assert!(error.to_string().contains("user.email"));
+    }
+
+    #[test]
     fn non_repo_status_is_soft() {
         let dir = tempdir().expect("tempdir");
         let snap = status(dir.path()).expect("status");
         assert!(!snap.is_repo);
+    }
+
+    #[test]
+    fn checkout_preserves_dirty_worktree_changes() {
+        let (_dir, path) = init_repo();
+        create_branch(&path, "feature", false).expect("create branch");
+        fs::write(path.join("README.md"), "local work\n").expect("write local change");
+
+        checkout_branch(&path, "feature").expect("checkout");
+
+        assert_eq!(
+            fs::read_to_string(path.join("README.md")).expect("read"),
+            "local work\n"
+        );
+    }
+
+    #[test]
+    fn checkout_rejects_non_branch_revisions() {
+        let (_dir, path) = init_repo();
+        let err = checkout_branch(&path, "HEAD").expect_err("HEAD is not a local branch name");
+        assert!(matches!(err, AppError::GitOpFailed(_)));
+    }
+
+    #[test]
+    fn untracked_file_diff_includes_file_content() {
+        let (_dir, path) = init_repo();
+        fs::write(path.join("notes.txt"), "draft line\n").expect("write");
+
+        let diff = diff_file(&path, "notes.txt", false).expect("diff");
+
+        assert!(diff.patch.contains("draft line"));
+    }
+
+    #[test]
+    fn file_diff_treats_pathspec_metacharacters_literally() {
+        let (_dir, path) = init_repo();
+        fs::write(path.join("foo[1].txt"), "bracket file\n").expect("write bracket file");
+        fs::write(path.join("foo1.txt"), "plain file\n").expect("write plain file");
+
+        let diff = diff_file(&path, "foo[1].txt", false).expect("diff literal path");
+
+        assert!(diff.patch.contains("bracket file"));
+        assert!(!diff.patch.contains("plain file"));
+        assert!(!diff.patch.contains("foo1.txt"));
+    }
+
+    #[test]
+    fn source_file_reads_the_worktree_version() {
+        let (_dir, path) = init_repo();
+        fs::write(path.join("README.md"), "working copy\n").expect("write");
+
+        let source = read_file(&path, "README.md").expect("read source");
+
+        assert_eq!(source.path, "README.md");
+        assert_eq!(source.content, "working copy\n");
+        assert_eq!(source.source, GitFileSource::Worktree);
+        assert_eq!(source.byte_size, 13);
+    }
+
+    #[test]
+    fn source_file_falls_back_to_head_for_a_deleted_worktree_file() {
+        let (_dir, path) = init_repo();
+        fs::remove_file(path.join("README.md")).expect("delete");
+
+        let source = read_file(&path, "README.md").expect("read from head");
+
+        assert_eq!(source.content, "hello\n");
+        assert_eq!(source.source, GitFileSource::Head);
+    }
+
+    #[test]
+    fn source_file_rejects_binary_content_and_path_escape() {
+        let (_dir, path) = init_repo();
+        fs::write(path.join("binary.dat"), [0, 159, 146, 150]).expect("write binary");
+
+        let binary = read_file(&path, "binary.dat").expect_err("binary rejected");
+        assert!(binary.to_string().contains("UTF-8"));
+
+        let escaped = read_file(&path, "../secret.txt").expect_err("escape rejected");
+        assert!(matches!(escaped, AppError::GitPathDenied(_)));
     }
 }

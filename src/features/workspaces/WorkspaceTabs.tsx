@@ -35,9 +35,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useSettingsStore } from "@/features/settings/settingsStore";
 import {
-  formatChordMac,
+  formatChord,
   type ShortcutMap,
 } from "@/features/settings/shortcutModel";
+import { detectDesktopPlatform } from "@/platform/detection";
 import type { WorkspaceView } from "@/lib/tauri/contracts";
 import { cn } from "@/lib/utils/cn";
 import { WorkspaceContextMenu } from "./WorkspaceContextMenu";
@@ -57,7 +58,7 @@ export type WorkspaceTabsProps = {
 };
 
 function chordLabel(shortcuts: ShortcutMap, id: keyof ShortcutMap): string {
-  return formatChordMac(shortcuts[id]);
+  return formatChord(shortcuts[id], detectDesktopPlatform());
 }
 
 type WorkspaceMeasurement = {

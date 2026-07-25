@@ -16,7 +16,7 @@ pub fn resolve_project_path(canonical_path: &str) -> Result<PathBuf, AppError> {
 }
 
 pub fn open_repo_at(project_root: &Path) -> Result<Repository, AppError> {
-    Repository::discover(project_root).map_err(|err| {
+    Repository::open(project_root).map_err(|err| {
         if err.code() == git2::ErrorCode::NotFound {
             AppError::git_not_repo(format!("not a git repository: {}", project_root.display()))
         } else {
@@ -82,5 +82,19 @@ mod tests {
         let dir = tempdir().expect("tempdir");
         let rel = safe_rel_path(dir.path(), "src/lib/foo.rs").expect("ok");
         assert_eq!(rel, PathBuf::from("src/lib/foo.rs"));
+    }
+
+    #[test]
+    fn repository_discovery_does_not_escape_project_root() {
+        let dir = tempdir().expect("tempdir");
+        Repository::init(dir.path()).expect("init repo");
+        let nested = dir.path().join("nested-project");
+        std::fs::create_dir(&nested).expect("create nested project");
+
+        match open_repo_at(&nested) {
+            Err(AppError::GitNotRepo(_)) => {}
+            Err(other) => panic!("unexpected error: {other}"),
+            Ok(_) => panic!("nested project must not inherit parent repo"),
+        }
     }
 }

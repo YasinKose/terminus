@@ -1,3 +1,5 @@
+import type { DesktopPlatform } from "@/platform/detection";
+
 export type ShortcutCommandId =
   | "commandPalette"
   | "newWorkspace"
@@ -61,6 +63,91 @@ export const DEFAULT_SHORTCUTS: ShortcutMap = {
   openSettings: { key: ",", meta: true, ctrl: false, alt: false, shift: false },
 };
 
+export function defaultShortcutsForPlatform(
+  platform: DesktopPlatform,
+): ShortcutMap {
+  if (platform === "macos") return { ...DEFAULT_SHORTCUTS };
+  return {
+    commandPalette: {
+      key: "p",
+      meta: false,
+      ctrl: true,
+      alt: false,
+      shift: true,
+    },
+    newWorkspace: {
+      key: "t",
+      meta: false,
+      ctrl: true,
+      alt: false,
+      shift: true,
+    },
+    newTerminal: {
+      key: "n",
+      meta: false,
+      ctrl: true,
+      alt: false,
+      shift: true,
+    },
+    splitHorizontal: {
+      key: "h",
+      meta: false,
+      ctrl: true,
+      alt: true,
+      shift: false,
+    },
+    splitVertical: {
+      key: "v",
+      meta: false,
+      ctrl: true,
+      alt: true,
+      shift: false,
+    },
+    closePane: {
+      key: "w",
+      meta: false,
+      ctrl: true,
+      alt: false,
+      shift: true,
+    },
+    toggleFocus: {
+      key: "f",
+      meta: false,
+      ctrl: true,
+      alt: false,
+      shift: true,
+    },
+    toggleSidebar: {
+      key: "b",
+      meta: false,
+      ctrl: true,
+      alt: false,
+      shift: true,
+    },
+    nextWorkspace: {
+      key: "pagedown",
+      meta: false,
+      ctrl: true,
+      alt: false,
+      shift: false,
+    },
+    prevWorkspace: {
+      key: "pageup",
+      meta: false,
+      ctrl: true,
+      alt: false,
+      shift: false,
+    },
+    openSettings: {
+      key: ",",
+      meta: false,
+      ctrl: true,
+      alt: false,
+      shift: false,
+    },
+  };
+}
+
 export function normalizeKey(key: string): string {
   if (key === " ") return "space";
   if (key.length === 1) return key.toLowerCase();
@@ -120,6 +207,30 @@ export function formatChordMac(chord: ShortcutChord): string {
   return parts.join("");
 }
 
+export function formatChord(
+  chord: ShortcutChord,
+  platform: DesktopPlatform,
+): string {
+  if (platform === "macos") return formatChordMac(chord);
+  const parts: string[] = [];
+  if (chord.ctrl) parts.push("Ctrl");
+  if (chord.alt) parts.push("Alt");
+  if (chord.shift) parts.push("Shift");
+  if (chord.meta) parts.push(platform === "windows" ? "Win" : "Super");
+  const keyLabel =
+    chord.key.length === 1
+      ? chord.key.toUpperCase()
+      : chord.key === "space"
+        ? "Space"
+        : chord.key === "pageup"
+          ? "Page Up"
+          : chord.key === "pagedown"
+            ? "Page Down"
+            : chord.key.charAt(0).toUpperCase() + chord.key.slice(1);
+  parts.push(keyLabel);
+  return parts.join("+");
+}
+
 export function formatModifierChordMac(chord: ModifierChord): string {
   const parts: string[] = [];
   if (chord.ctrl) parts.push("⌃");
@@ -127,6 +238,19 @@ export function formatModifierChordMac(chord: ModifierChord): string {
   if (chord.shift) parts.push("⇧");
   if (chord.meta) parts.push("⌘");
   return parts.join("");
+}
+
+export function formatModifierChord(
+  chord: ModifierChord,
+  platform: DesktopPlatform,
+): string {
+  if (platform === "macos") return formatModifierChordMac(chord);
+  const parts: string[] = [];
+  if (chord.ctrl) parts.push("Ctrl");
+  if (chord.alt) parts.push("Alt");
+  if (chord.shift) parts.push("Shift");
+  if (chord.meta) parts.push(platform === "windows" ? "Win" : "Super");
+  return parts.join("+");
 }
 
 export function isModifierKey(key: string): boolean {
@@ -223,10 +347,15 @@ export function matchCommand(
   return null;
 }
 
-export function parseShortcutMap(value: unknown): ShortcutMap | null {
+export function parseShortcutMap(
+  value: unknown,
+  defaults: ShortcutMap = DEFAULT_SHORTCUTS,
+): ShortcutMap | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const raw = value as Record<string, unknown>;
-  const result = { ...DEFAULT_SHORTCUTS };
+  const result = Object.fromEntries(
+    SHORTCUT_COMMANDS.map(({ id }) => [id, { ...defaults[id] }]),
+  ) as ShortcutMap;
   for (const cmd of SHORTCUT_COMMANDS) {
     const entry = raw[cmd.id];
     if (!entry || typeof entry !== "object") continue;

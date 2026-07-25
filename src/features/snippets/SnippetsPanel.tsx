@@ -1,18 +1,41 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ToolbarIconButton } from "@/components/chrome/ToolbarIconButton";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+  WorkbenchEmptyState,
+  WorkbenchPanel,
+  WorkbenchSectionHeader,
+} from "@/components/workbench/WorkbenchPanel";
 import { useSnippetStore } from "@/features/snippets/snippetStore";
 import { useWorkspaceStore } from "@/features/workspaces/workspaceStore";
-import { cn } from "@/lib/utils/cn";
+import type { Snippet } from "@/lib/tauri/snippets";
 import {
   FileCode2,
   FolderOpen,
+  Pencil,
   Play,
   Plus,
-  RefreshCw,
   Trash2,
-  X,
 } from "lucide-react";
 
 export type SnippetsPanelProps = {
@@ -22,30 +45,48 @@ export type SnippetsPanelProps = {
 };
 
 export function SnippetsPanel({ projectId, open, onClose }: SnippetsPanelProps) {
-  const snippets = useSnippetStore((s) => s.snippets);
-  const makefileTargets = useSnippetStore((s) => s.makefileTargets);
-  const loading = useSnippetStore((s) => s.loading);
-  const draftName = useSnippetStore((s) => s.draftName);
-  const draftBody = useSnippetStore((s) => s.draftBody);
-  const setDraftName = useSnippetStore((s) => s.setDraftName);
-  const setDraftBody = useSnippetStore((s) => s.setDraftBody);
-  const refresh = useSnippetStore((s) => s.refresh);
-  const create = useSnippetStore((s) => s.create);
-  const remove = useSnippetStore((s) => s.remove);
-  const scanMakefile = useSnippetStore((s) => s.scanMakefile);
-  const importMakefile = useSnippetStore((s) => s.importMakefile);
-  const insertIntoSession = useSnippetStore((s) => s.insertIntoSession);
+  const snippets = useSnippetStore((state) => state.snippets);
+  const makefileTargets = useSnippetStore((state) => state.makefileTargets);
+  const loading = useSnippetStore((state) => state.loading);
+  const busy = useSnippetStore((state) => state.busy);
+  const draftName = useSnippetStore((state) => state.draftName);
+  const draftBody = useSnippetStore((state) => state.draftBody);
+  const setDraftName = useSnippetStore((state) => state.setDraftName);
+  const setDraftBody = useSnippetStore((state) => state.setDraftBody);
+  const refresh = useSnippetStore((state) => state.refresh);
+  const create = useSnippetStore((state) => state.create);
+  const update = useSnippetStore((state) => state.update);
+  const remove = useSnippetStore((state) => state.remove);
+  const scanMakefile = useSnippetStore((state) => state.scanMakefile);
+  const importMakefile = useSnippetStore((state) => state.importMakefile);
+  const insertIntoSession = useSnippetStore(
+    (state) => state.insertIntoSession,
+  );
 
-  const workspaces = useWorkspaceStore((s) => s.workspaces);
-  const activeWorkspaceId = useWorkspaceStore((s) => s.activeWorkspaceId);
+  const [editing, setEditing] = useState<Snippet | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editBody, setEditBody] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<Snippet | null>(null);
+
+  const workspaces = useWorkspaceStore((state) => state.workspaces);
+  const activeWorkspaceId = useWorkspaceStore(
+    (state) => state.activeWorkspaceId,
+  );
   const focusedSessionId = useMemo(() => {
     if (!activeWorkspaceId) return null;
     return (
-      workspaces.find((w) => w.id === activeWorkspaceId)?.activePaneId ?? null
+      workspaces.find((workspace) => workspace.id === activeWorkspaceId)
+        ?.activePaneId ?? null
     );
   }, [activeWorkspaceId, workspaces]);
 
   useEffect(() => {
+    setEditing(null);
+    setEditName("");
+    setEditBody("");
+    setEditDescription("");
+    setDeleteTarget(null);
     if (!open) return;
     void refresh(projectId);
     if (projectId) void scanMakefile();
@@ -53,79 +94,71 @@ export function SnippetsPanel({ projectId, open, onClose }: SnippetsPanelProps) 
 
   if (!open) return null;
 
-  const canCreate = Boolean(projectId && draftName.trim() && !loading);
+  const canCreate = Boolean(
+    projectId && draftName.trim() && !loading && !busy,
+  );
+
+  const openEditor = (snippet: Snippet) => {
+    setEditing(snippet);
+    setEditName(snippet.name);
+    setEditBody(snippet.body);
+    setEditDescription(snippet.description ?? "");
+  };
 
   return (
-    <aside
-      className="flex h-full w-[min(20.5rem,100%)] shrink-0 flex-col border-l border-border/90 bg-chrome"
-      aria-label="Snippets"
-    >
-      <header className="flex h-11 shrink-0 items-center justify-between gap-2 border-b border-border/80 px-2.5">
-        <div className="flex min-w-0 items-center gap-2 pl-0.5">
-          <FileCode2 className="size-3.5 shrink-0 text-primary" aria-hidden />
-          <div className="min-w-0">
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-xs font-semibold text-foreground">
-                Snippets
-              </span>
-              <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
-                {snippets.length}
-              </span>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-0.5">
-          <ToolbarIconButton
-            label="Refresh"
-            disabled={!projectId || loading}
-            onClick={() => void refresh(projectId)}
-          >
-            <RefreshCw
-              className={cn("size-4", loading && "animate-spin")}
-              aria-hidden
-            />
-          </ToolbarIconButton>
-          <ToolbarIconButton label="Close snippets" onClick={onClose}>
-            <X className="size-4" aria-hidden />
-          </ToolbarIconButton>
-        </div>
-      </header>
-
-      {!projectId ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center">
-          <div className="inline-flex size-10 items-center justify-center rounded-xl border border-border bg-surface-raised text-muted-foreground">
-            <FolderOpen className="size-4" aria-hidden />
-          </div>
-          <p className="text-sm font-medium">No project selected</p>
-          <p className="text-xs leading-5 text-muted-foreground">
-            Open a project to manage command snippets.
+    <>
+      <WorkbenchPanel
+        label="Snippets"
+        icon={<FileCode2 className="size-3.5" />}
+        count={snippets.length}
+        loading={loading}
+        refreshDisabled={!projectId || busy}
+        onRefresh={() => {
+          void refresh(projectId);
+          if (projectId) void scanMakefile();
+        }}
+        onClose={onClose}
+        footer={
+          <p className="text-[10px] leading-4 text-muted-foreground">
+            Insert writes text to the focused PTY; it never spawns a shell.
+            {focusedSessionId
+              ? " Focused terminal ready."
+              : " Focus a terminal first."}
           </p>
-        </div>
-      ) : (
-        <>
-          <div className="min-h-0 flex-1 overflow-y-auto">
+        }
+      >
+        {!projectId ? (
+          <WorkbenchEmptyState
+            icon={<FolderOpen className="size-4" aria-hidden />}
+            title="No project selected"
+            body="Open a project to manage its command snippets."
+          />
+        ) : (
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
             <section className="border-b border-border/70">
-              <div className="sticky top-0 z-[1] flex h-8 items-center border-b border-border/60 bg-chrome/95 px-3 backdrop-blur-sm">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                  New snippet
-                </span>
-              </div>
+              <WorkbenchSectionHeader title="New snippet" />
               <div className="space-y-2 p-2.5">
-                <Input
-                  value={draftName}
-                  onChange={(e) => setDraftName(e.target.value)}
-                  placeholder="Name"
-                  className="h-8 bg-surface-raised text-xs"
-                  aria-label="Snippet name"
-                />
-                <textarea
-                  value={draftBody}
-                  onChange={(e) => setDraftBody(e.target.value)}
-                  placeholder="Body (inserted into focused terminal)"
-                  rows={3}
-                  className="w-full resize-y rounded-md border border-input bg-surface-raised px-2.5 py-1.5 font-mono text-[11px] text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
-                  aria-label="Snippet body"
-                />
+                <label className="grid gap-1 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  Name
+                  <Input
+                    value={draftName}
+                    onChange={(event) => setDraftName(event.target.value)}
+                    placeholder="Build production"
+                    className="h-8 bg-surface-raised text-xs normal-case tracking-normal"
+                    disabled={busy}
+                  />
+                </label>
+                <label className="grid gap-1 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  Terminal input
+                  <textarea
+                    value={draftBody}
+                    onChange={(event) => setDraftBody(event.target.value)}
+                    placeholder="pnpm build"
+                    rows={3}
+                    disabled={busy}
+                    className="w-full resize-y rounded-lg border border-input bg-surface-raised px-2.5 py-2 font-mono text-[11px] normal-case tracking-normal text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/35 disabled:opacity-60"
+                  />
+                </label>
                 <Button
                   type="button"
                   size="sm"
@@ -134,20 +167,16 @@ export function SnippetsPanel({ projectId, open, onClose }: SnippetsPanelProps) 
                   onClick={() => void create()}
                 >
                   <Plus className="size-3.5" aria-hidden />
-                  Add snippet
+                  {busy ? "Adding…" : "Add snippet"}
                 </Button>
               </div>
             </section>
 
             <section>
-              <div className="sticky top-0 z-[1] flex h-8 items-center justify-between border-b border-border/60 bg-chrome/95 px-3 backdrop-blur-sm">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                  Library
-                </span>
-              </div>
+              <WorkbenchSectionHeader title="Library" count={snippets.length} />
               {snippets.length === 0 ? (
-                <p className="px-3 py-4 text-xs text-muted-foreground">
-                  No snippets yet. Add one or import Makefile targets.
+                <p className="px-3 py-4 text-xs leading-5 text-muted-foreground">
+                  No snippets yet. Add one above or import Makefile targets.
                 </p>
               ) : (
                 <ul className="py-1">
@@ -158,28 +187,26 @@ export function SnippetsPanel({ projectId, open, onClose }: SnippetsPanelProps) 
                     >
                       <button
                         type="button"
-                        className="min-w-0 flex-1 rounded-md px-2 py-1.5 text-left hover:bg-surface-raised"
+                        className="min-w-0 flex-1 rounded-lg border border-transparent px-2 py-1.5 text-left outline-none hover:border-border/50 hover:bg-surface-raised focus-visible:ring-2 focus-visible:ring-ring/35 disabled:opacity-60"
                         onClick={() =>
                           void insertIntoSession(focusedSessionId, snippet.body)
                         }
                         title="Insert into focused terminal"
+                        disabled={busy}
                       >
-                        <div className="truncate text-xs font-medium text-foreground">
+                        <span className="block truncate text-xs font-medium text-foreground">
                           {snippet.name}
-                        </div>
-                        {snippet.description ? (
-                          <div className="mt-0.5 truncate text-[10px] text-muted-foreground">
-                            {snippet.description}
-                          </div>
-                        ) : (
-                          <div className="mt-0.5 truncate font-mono text-[10px] text-muted-foreground">
-                            {snippet.body.split("\n")[0]}
-                          </div>
-                        )}
+                        </span>
+                        <span className="mt-0.5 block truncate font-mono text-[10px] text-muted-foreground">
+                          {snippet.description ||
+                            snippet.body.split("\n")[0] ||
+                            "Empty body"}
+                        </span>
                       </button>
-                      <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+                      <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
                         <ToolbarIconButton
                           label={`Insert ${snippet.name}`}
+                          disabled={busy}
                           onClick={() =>
                             void insertIntoSession(
                               focusedSessionId,
@@ -190,10 +217,21 @@ export function SnippetsPanel({ projectId, open, onClose }: SnippetsPanelProps) 
                           <Play className="size-3.5" aria-hidden />
                         </ToolbarIconButton>
                         <ToolbarIconButton
-                          label={`Delete ${snippet.name}`}
-                          onClick={() => void remove(snippet.id)}
+                          label={`Edit ${snippet.name}`}
+                          disabled={busy}
+                          onClick={() => openEditor(snippet)}
                         >
-                          <Trash2 className="size-3.5 text-destructive" aria-hidden />
+                          <Pencil className="size-3.5" aria-hidden />
+                        </ToolbarIconButton>
+                        <ToolbarIconButton
+                          label={`Delete ${snippet.name}`}
+                          disabled={busy}
+                          onClick={() => setDeleteTarget(snippet)}
+                        >
+                          <Trash2
+                            className="size-3.5 text-destructive"
+                            aria-hidden
+                          />
                         </ToolbarIconButton>
                       </div>
                     </li>
@@ -204,38 +242,41 @@ export function SnippetsPanel({ projectId, open, onClose }: SnippetsPanelProps) 
 
             {makefileTargets.length > 0 ? (
               <section className="border-t border-border/70">
-                <div className="sticky top-0 z-[1] flex h-8 items-center justify-between border-b border-border/60 bg-chrome/95 px-3 backdrop-blur-sm">
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                    Makefile ({makefileTargets.length})
-                  </span>
-                  <button
-                    type="button"
-                    className="text-[10px] font-medium text-primary hover:underline"
-                    onClick={() => void importMakefile()}
-                  >
-                    Import all
-                  </button>
-                </div>
+                <WorkbenchSectionHeader
+                  title="Makefile"
+                  count={makefileTargets.length}
+                  action={
+                    <button
+                      type="button"
+                      className="rounded px-1.5 py-0.5 text-[10px] font-medium text-primary outline-none hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring/35 disabled:opacity-50"
+                      onClick={() => void importMakefile()}
+                      disabled={busy}
+                    >
+                      Import all
+                    </button>
+                  }
+                />
                 <ul className="py-1">
                   {makefileTargets.slice(0, 12).map((target) => (
                     <li key={target.name} className="px-1.5 py-0.5">
                       <button
                         type="button"
-                        className="w-full rounded-md px-2 py-1.5 text-left hover:bg-surface-raised"
+                        className="w-full rounded-lg px-2 py-1.5 text-left outline-none hover:bg-surface-raised focus-visible:ring-2 focus-visible:ring-ring/35"
                         onClick={() =>
                           void insertIntoSession(
                             focusedSessionId,
                             `${target.command}\n`,
                           )
                         }
+                        disabled={busy}
                       >
-                        <div className="truncate font-mono text-xs text-foreground">
+                        <span className="block truncate font-mono text-xs text-foreground">
                           {target.name}
-                        </div>
+                        </span>
                         {target.description ? (
-                          <div className="mt-0.5 truncate text-[10px] text-muted-foreground">
+                          <span className="mt-0.5 block truncate text-[10px] text-muted-foreground">
                             {target.description}
-                          </div>
+                          </span>
                         ) : null}
                       </button>
                     </li>
@@ -244,17 +285,116 @@ export function SnippetsPanel({ projectId, open, onClose }: SnippetsPanelProps) 
               </section>
             ) : null}
           </div>
+        )}
+      </WorkbenchPanel>
 
-          <footer className="shrink-0 border-t border-border/80 p-2.5">
-            <p className="text-[10px] leading-4 text-muted-foreground">
-              Insert writes to the focused pane via PTY. No shell spawn.
-              {focusedSessionId
-                ? " Focused terminal ready."
-                : " Focus a terminal first."}
-            </p>
-          </footer>
-        </>
-      )}
-    </aside>
+      <Dialog
+        open={editing !== null}
+        onOpenChange={(value) => {
+          if (!value && !busy) setEditing(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit snippet</DialogTitle>
+            <DialogDescription>
+              Changes stay in this project’s local snippet library.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <label className="grid gap-1.5 text-xs font-medium">
+              Name
+              <Input
+                value={editName}
+                onChange={(event) => setEditName(event.target.value)}
+                disabled={busy}
+                autoFocus
+              />
+            </label>
+            <label className="grid gap-1.5 text-xs font-medium">
+              Description
+              <Input
+                value={editDescription}
+                onChange={(event) => setEditDescription(event.target.value)}
+                placeholder="Optional context"
+                disabled={busy}
+              />
+            </label>
+            <label className="grid gap-1.5 text-xs font-medium">
+              Terminal input
+              <textarea
+                value={editBody}
+                onChange={(event) => setEditBody(event.target.value)}
+                rows={6}
+                disabled={busy}
+                className="w-full resize-y rounded-lg border border-input bg-background px-3 py-2 font-mono text-xs text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/35 disabled:opacity-60"
+              />
+            </label>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setEditing(null)}
+              disabled={busy}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              disabled={!editing || !editName.trim() || busy}
+              onClick={() => {
+                if (!editing) return;
+                void update(
+                  editing.id,
+                  editName,
+                  editBody,
+                  editDescription || null,
+                ).then((saved) => {
+                  if (saved) setEditing(null);
+                });
+              }}
+            >
+              {busy ? "Saving…" : "Save changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={(value) => {
+          if (!value && !busy) setDeleteTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogMedia className="border-destructive/25 bg-destructive/10 text-destructive">
+              <Trash2 className="size-5" aria-hidden />
+            </AlertDialogMedia>
+            <AlertDialogTitle>Delete snippet?</AlertDialogTitle>
+            <AlertDialogDescription>
+              “{deleteTarget?.name ?? ""}” will be removed from this project.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={busy}
+              onClick={(event) => {
+                event.preventDefault();
+                if (!deleteTarget) return;
+                void remove(deleteTarget.id).then((deleted) => {
+                  if (deleted) setDeleteTarget(null);
+                });
+              }}
+            >
+              {busy ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

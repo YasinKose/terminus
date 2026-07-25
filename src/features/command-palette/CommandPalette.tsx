@@ -11,9 +11,10 @@ import type { CommandContext } from "./commandRegistry";
 import { Command, CornerDownLeft, Search } from "lucide-react";
 import { useSettingsStore } from "@/features/settings/settingsStore";
 import {
-  formatChordMac,
+  formatChord,
   type ShortcutMap,
 } from "@/features/settings/shortcutModel";
+import { detectDesktopPlatform } from "@/platform/detection";
 
 export type CommandPaletteProps = {
   open: boolean;
@@ -115,7 +116,10 @@ export function CommandPalette({
           {filtered.map((cmd, i) => {
             const shortcut =
               cmd.id in shortcuts
-                ? formatChordMac(shortcuts[cmd.id as keyof ShortcutMap])
+                ? formatChord(
+                    shortcuts[cmd.id as keyof ShortcutMap],
+                    detectDesktopPlatform(),
+                  )
                 : null;
             return (
               <li key={cmd.id}>

@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { ToolbarIconButton } from "@/components/chrome/ToolbarIconButton";
+import {
+  WorkbenchEmptyState,
+  WorkbenchPanel,
+  WorkbenchSectionHeader,
+} from "@/components/workbench/WorkbenchPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -20,12 +24,13 @@ import { cn } from "@/lib/utils/cn";
 import {
   Archive,
   ArchiveRestore,
-  FilePlus2,
+  FileCode2,
+  FileDiff,
+  FileSearch,
   GitBranch,
   GitCommitHorizontal,
   Minus,
   Plus,
-  RefreshCw,
   X,
 } from "lucide-react";
 
@@ -33,6 +38,7 @@ export type GitPanelProps = {
   projectId: string | null;
   open: boolean;
   onClose: () => void;
+  onOpenSource?: (file: GitFileEntry) => void;
 };
 
 function fileBaseName(path: string): string {
@@ -57,51 +63,65 @@ function statusMeta(file: GitFileEntry): {
     return {
       letter: "U",
       label: "Untracked",
-      className: "bg-sky-500/15 text-sky-300 ring-sky-500/25",
+      className: "bg-status-info/15 text-status-info ring-status-info/25",
     };
   }
   if (raw.includes("conflict") || raw.includes("unmerged") || raw === "u") {
     return {
       letter: "C",
       label: "Conflict",
-      className: "bg-destructive/15 text-red-300 ring-destructive/30",
+      className: "bg-status-danger/15 text-status-danger ring-status-danger/30",
     };
   }
   if (raw.includes("added") || raw.includes("new") || raw === "a") {
     return {
       letter: "A",
       label: "Added",
-      className: "bg-emerald-500/15 text-emerald-300 ring-emerald-500/25",
+      className:
+        "bg-status-success/15 text-status-success ring-status-success/25",
     };
   }
   if (raw.includes("deleted") || raw === "d") {
     return {
       letter: "D",
       label: "Deleted",
-      className: "bg-rose-500/15 text-rose-300 ring-rose-500/25",
+      className: "bg-status-danger/15 text-status-danger ring-status-danger/25",
     };
   }
   if (raw.includes("renamed") || raw === "r") {
     return {
       letter: "R",
       label: "Renamed",
-      className: "bg-violet-500/15 text-violet-300 ring-violet-500/25",
+      className:
+        "bg-status-special/15 text-status-special ring-status-special/25",
     };
   }
   return {
     letter: "M",
     label: "Modified",
-    className: "bg-amber-500/15 text-amber-300 ring-amber-500/25",
+    className:
+      "bg-status-warning/15 text-status-warning ring-status-warning/25",
   };
 }
 
-export function GitPanel({ projectId, open, onClose }: GitPanelProps) {
+export function GitPanel({
+  projectId,
+  open,
+  onClose,
+  onOpenSource,
+}: GitPanelProps) {
   const status = useGitStore((s) => s.status);
   const branches = useGitStore((s) => s.branches);
+  const stashes = useGitStore((s) => s.stashes);
+  const selectedDiff = useGitStore((s) => s.selectedDiff);
   const loading = useGitStore((s) => s.loading);
+  const diffLoading = useGitStore((s) => s.diffLoading);
+  const busy = useGitStore((s) => s.busy);
   const commitMessage = useGitStore((s) => s.commitMessage);
   const setCommitMessage = useGitStore((s) => s.setCommitMessage);
   const refresh = useGitStore((s) => s.refresh);
+  const openDiff = useGitStore((s) => s.openDiff);
+  const closeDiff = useGitStore((s) => s.closeDiff);
   const stage = useGitStore((s) => s.stage);
   const unstage = useGitStore((s) => s.unstage);
   const commit = useGitStore((s) => s.commit);
@@ -114,8 +134,38 @@ export function GitPanel({ projectId, open, onClose }: GitPanelProps) {
   const [creatingBranch, setCreatingBranch] = useState(false);
 
   useEffect(() => {
+    setNewBranch("");
+    setCreatingBranch(false);
     if (!open) return;
     void refresh(projectId);
+  }, [open, projectId, refresh]);
+
+  useEffect(() => {
+    if (!open || !projectId) return;
+
+    const refreshWhenIdle = () => {
+      const {
+        busy: storeBusy,
+        loading: storeLoading,
+        diffLoading: storeDiffLoading,
+      } = useGitStore.getState();
+      if (
+        storeBusy ||
+        storeLoading ||
+        storeDiffLoading ||
+        document.visibilityState === "hidden"
+      ) {
+        return;
+      }
+      void refresh(projectId);
+    };
+
+    window.addEventListener("focus", refreshWhenIdle);
+    const intervalId = window.setInterval(refreshWhenIdle, 30_000);
+    return () => {
+      window.removeEventListener("focus", refreshWhenIdle);
+      window.clearInterval(intervalId);
+    };
   }, [open, projectId, refresh]);
 
   const staged = useMemo(
@@ -133,58 +183,41 @@ export function GitPanel({ projectId, open, onClose }: GitPanelProps) {
 
   const changeCount = staged.length + unstaged.length;
   const canCommit =
-    Boolean(commitMessage.trim()) && staged.length > 0 && !loading;
+    Boolean(commitMessage.trim()) && staged.length > 0 && !loading && !busy;
 
   if (!open) return null;
 
   return (
-    <aside
-      className="flex h-full w-[min(20.5rem,100%)] shrink-0 flex-col border-l border-border/90 bg-chrome"
-      aria-label="Source control"
-    >
-      <header className="flex h-11 shrink-0 items-center justify-between gap-2 border-b border-border/80 px-2.5">
-        <div className="flex min-w-0 items-center gap-2 pl-0.5">
-          <GitBranch
-            className="size-3.5 shrink-0 text-primary"
-            aria-hidden
+    <WorkbenchPanel
+      label="Source control"
+      icon={<GitBranch className="size-3.5" />}
+      count={status.isRepo ? changeCount : undefined}
+      loading={loading}
+      refreshDisabled={!projectId || busy}
+      onRefresh={() => void refresh(projectId)}
+      onClose={onClose}
+      footer={
+        status.isRepo ? (
+          <CommitComposer
+            message={commitMessage}
+            stagedCount={staged.length}
+            canCommit={canCommit}
+            busy={busy}
+            onMessageChange={setCommitMessage}
+            onCommit={() => void commit()}
           />
-          <div className="min-w-0">
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-xs font-semibold text-foreground">
-                Source control
-              </span>
-              {status.isRepo ? (
-                <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
-                  {changeCount}
-                </span>
-              ) : null}
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-0.5">
-          <ToolbarIconButton
-            label="Refresh"
-            disabled={!projectId || loading}
-            onClick={() => void refresh(projectId)}
-          >
-            <RefreshCw
-              className={cn("size-4", loading && "animate-spin")}
-              aria-hidden
-            />
-          </ToolbarIconButton>
-          <ToolbarIconButton label="Close source control" onClick={onClose}>
-            <X className="size-4" aria-hidden />
-          </ToolbarIconButton>
-        </div>
-      </header>
-
+        ) : undefined
+      }
+    >
       {!projectId ? (
-        <EmptyState
+        <WorkbenchEmptyState
+          icon={<FileCode2 className="size-4" aria-hidden />}
           title="No project selected"
           body="Open a project to inspect its git working tree."
         />
       ) : !status.isRepo ? (
-        <EmptyState
+        <WorkbenchEmptyState
+          icon={<GitBranch className="size-4" aria-hidden />}
           title="Not a git repository"
           body="This project folder has no .git directory. Initialize git in the terminal if you need source control here."
         />
@@ -207,19 +240,19 @@ export function GitPanel({ projectId, open, onClose }: GitPanelProps) {
                   {(status.ahead > 0 || status.behind > 0) && (
                     <span className="inline-flex items-center gap-1 font-mono tabular-nums">
                       {status.ahead > 0 ? (
-                        <span className="rounded bg-emerald-500/10 px-1 py-px text-emerald-300">
+                        <span className="rounded bg-status-success/10 px-1 py-px text-status-success">
                           ↑{status.ahead}
                         </span>
                       ) : null}
                       {status.behind > 0 ? (
-                        <span className="rounded bg-amber-500/10 px-1 py-px text-amber-300">
+                        <span className="rounded bg-status-warning/10 px-1 py-px text-status-warning">
                           ↓{status.behind}
                         </span>
                       ) : null}
                     </span>
                   )}
                   {status.hasConflicts ? (
-                    <span className="rounded bg-destructive/15 px-1 py-px text-red-300">
+                    <span className="rounded bg-status-danger/15 px-1 py-px text-status-danger">
                       Conflicts
                     </span>
                   ) : null}
@@ -233,7 +266,7 @@ export function GitPanel({ projectId, open, onClose }: GitPanelProps) {
                 onValueChange={(value) => {
                   if (value && value !== status.branch) void checkout(value);
                 }}
-                disabled={localBranches.length === 0 || loading}
+                disabled={localBranches.length === 0 || loading || busy}
               >
                 <SelectTrigger
                   size="sm"
@@ -279,27 +312,32 @@ export function GitPanel({ projectId, open, onClose }: GitPanelProps) {
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && newBranch.trim()) {
                       const name = newBranch.trim();
-                      setNewBranch("");
-                      setCreatingBranch(false);
-                      void createBranch(name, true);
+                      void createBranch(name, true).then((created) => {
+                        if (!created) return;
+                        setNewBranch("");
+                        setCreatingBranch(false);
+                      });
                     }
                     if (e.key === "Escape") {
                       setCreatingBranch(false);
                       setNewBranch("");
                     }
                   }}
+                  disabled={loading || busy}
                 />
                 <Button
                   type="button"
                   size="sm"
                   className="h-8 px-2.5 text-xs"
-                  disabled={!newBranch.trim() || loading}
+                  disabled={!newBranch.trim() || loading || busy}
                   onClick={() => {
                     const name = newBranch.trim();
                     if (!name) return;
-                    setNewBranch("");
-                    setCreatingBranch(false);
-                    void createBranch(name, true);
+                    void createBranch(name, true).then((created) => {
+                      if (!created) return;
+                      setNewBranch("");
+                      setCreatingBranch(false);
+                    });
                   }}
                 >
                   Create
@@ -309,6 +347,13 @@ export function GitPanel({ projectId, open, onClose }: GitPanelProps) {
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto">
+            {selectedDiff || diffLoading ? (
+              <DiffViewer
+                diff={selectedDiff}
+                loading={diffLoading}
+                onClose={closeDiff}
+              />
+            ) : null}
             <ChangeSection
               title="Staged"
               count={staged.length}
@@ -322,6 +367,15 @@ export function GitPanel({ projectId, open, onClose }: GitPanelProps) {
                   : undefined
               }
               onFileAction={(path) => void unstage([path])}
+              onOpenFile={(file) => {
+                if (onOpenSource) {
+                  onOpenSource(file);
+                  return;
+                }
+                void openDiff(file.path, true);
+              }}
+              onOpenDiff={(path) => void openDiff(path, true)}
+              disabled={busy}
             />
             <ChangeSection
               title="Changes"
@@ -336,11 +390,25 @@ export function GitPanel({ projectId, open, onClose }: GitPanelProps) {
                   : undefined
               }
               onFileAction={(path) => void stage([path])}
+              onOpenFile={(file) => {
+                if (onOpenSource) {
+                  onOpenSource(file);
+                  return;
+                }
+                void openDiff(file.path, false);
+              }}
+              onOpenDiff={(path) => void openDiff(path, false)}
+              disabled={busy}
             />
 
             <div className="border-t border-border/60 px-3 py-2.5">
-              <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                Stash
+              <div className="mb-1.5 flex items-baseline justify-between gap-2">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                  Stash
+                </span>
+                <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
+                  {stashes.length}
+                </span>
               </div>
               <div className="flex gap-1.5">
                 <Button
@@ -348,7 +416,7 @@ export function GitPanel({ projectId, open, onClose }: GitPanelProps) {
                   size="sm"
                   variant="outline"
                   className="h-8 flex-1 gap-1.5 text-xs"
-                  disabled={loading || changeCount === 0}
+                  disabled={loading || busy || changeCount === 0}
                   onClick={() => void stashPush()}
                 >
                   <Archive className="size-3.5" aria-hidden />
@@ -359,75 +427,40 @@ export function GitPanel({ projectId, open, onClose }: GitPanelProps) {
                   size="sm"
                   variant="outline"
                   className="h-8 flex-1 gap-1.5 text-xs"
-                  disabled={loading}
-                  onClick={() => void stashPop()}
+                  disabled={loading || busy || stashes.length === 0}
+                  onClick={() => void stashPop(stashes[0]?.index ?? 0)}
                 >
                   <ArchiveRestore className="size-3.5" aria-hidden />
                   Pop
                 </Button>
               </div>
+              {stashes.length > 0 ? (
+                <ul className="mt-2 space-y-1" aria-label="Stashes">
+                  {stashes.map((stash) => (
+                    <li
+                      key={stash.index}
+                      className="flex items-center gap-2 rounded-md border border-border/60 bg-background/35 px-2 py-1.5"
+                    >
+                      <span className="min-w-0 flex-1 truncate text-[11px] text-foreground">
+                        {stash.message}
+                      </span>
+                      <button
+                        type="button"
+                        className="shrink-0 rounded px-1 py-0.5 text-[10px] font-medium text-primary outline-none hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring/35 disabled:opacity-50"
+                        disabled={busy}
+                        onClick={() => void stashPop(stash.index)}
+                      >
+                        Pop
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </div>
           </div>
-
-          <footer className="shrink-0 border-t border-border/90 bg-surface-raised/55 p-3 shadow-[0_-8px_24px_rgb(0_0_0/0.18)]">
-            <label className="sr-only" htmlFor="git-commit-message">
-              Commit message
-            </label>
-            <textarea
-              id="git-commit-message"
-              value={commitMessage}
-              onChange={(e) => setCommitMessage(e.target.value)}
-              rows={3}
-              placeholder="Commit message"
-              className="w-full resize-none rounded-lg border border-border/80 bg-background/70 px-2.5 py-2 text-sm leading-5 text-foreground outline-none transition-[border-color,box-shadow] placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/35"
-              onKeyDown={(e) => {
-                if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canCommit) {
-                  e.preventDefault();
-                  void commit();
-                }
-              }}
-            />
-            <div className="mt-2 flex items-center gap-2">
-              <Button
-                type="button"
-                className="h-9 flex-1 gap-1.5"
-                disabled={!canCommit}
-                onClick={() => void commit()}
-              >
-                <GitCommitHorizontal className="size-4" aria-hidden />
-                Commit
-                {staged.length > 0 ? (
-                  <span className="font-mono text-[11px] tabular-nums opacity-80">
-                    {staged.length}
-                  </span>
-                ) : null}
-              </Button>
-            </div>
-            <p className="mt-1.5 text-[10px] leading-4 text-muted-foreground">
-              {staged.length === 0
-                ? "Stage files before committing."
-                : "⌘↵ / Ctrl+Enter to commit"}
-            </p>
-          </footer>
         </>
       )}
-    </aside>
-  );
-}
-
-function EmptyState({ title, body }: { title: string; body: string }) {
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center px-6 py-10 text-center">
-      <div className="mb-3 inline-flex size-10 items-center justify-center rounded-2xl border border-border bg-surface-raised text-primary shadow-panel">
-        <FilePlus2 className="size-4" aria-hidden />
-      </div>
-      <h2 className="text-sm font-semibold tracking-[-0.01em] text-foreground">
-        {title}
-      </h2>
-      <p className="mt-1.5 max-w-[16rem] text-xs leading-5 text-muted-foreground text-pretty">
-        {body}
-      </p>
-    </div>
+    </WorkbenchPanel>
   );
 }
 
@@ -440,6 +473,9 @@ function ChangeSection({
   bulkLabel,
   onBulk,
   onFileAction,
+  onOpenFile,
+  onOpenDiff,
+  disabled,
 }: {
   title: string;
   count: number;
@@ -449,28 +485,28 @@ function ChangeSection({
   bulkLabel: string;
   onBulk?: () => void;
   onFileAction: (path: string) => void;
+  onOpenFile: (file: GitFileEntry) => void;
+  onOpenDiff: (path: string) => void;
+  disabled: boolean;
 }) {
   return (
     <section className="border-b border-border/60">
-      <div className="sticky top-0 z-[1] flex h-9 items-center justify-between gap-2 border-b border-border/40 bg-chrome/95 px-3 backdrop-blur-sm">
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-            {title}
-          </span>
-          <span className="font-mono text-[10px] tabular-nums text-muted-foreground/80">
-            {count}
-          </span>
-        </div>
-        {onBulk ? (
+      <WorkbenchSectionHeader
+        title={title}
+        count={count}
+        action={
+          onBulk ? (
           <button
             type="button"
             className="rounded-md px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground outline-none transition-colors hover:bg-accent/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/35"
             onClick={onBulk}
+            disabled={disabled}
           >
             {bulkLabel}
           </button>
-        ) : null}
-      </div>
+          ) : undefined
+        }
+      />
 
       {files.length === 0 ? (
         <p className="px-3 py-3 text-[11px] leading-4 text-muted-foreground">
@@ -484,6 +520,9 @@ function ChangeSection({
               file={file}
               action={action}
               onAction={() => onFileAction(file.path)}
+              onOpen={() => onOpenFile(file)}
+              onOpenDiff={() => onOpenDiff(file.path)}
+              disabled={disabled}
             />
           ))}
         </ul>
@@ -496,10 +535,16 @@ function FileRow({
   file,
   action,
   onAction,
+  onOpen,
+  onOpenDiff,
+  disabled,
 }: {
   file: GitFileEntry;
   action: "stage" | "unstage";
   onAction: () => void;
+  onOpen: () => void;
+  onOpenDiff: () => void;
+  disabled: boolean;
 }) {
   const meta = statusMeta(file);
   const base = fileBaseName(file.path);
@@ -512,7 +557,8 @@ function FileRow({
         type="button"
         className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-transparent px-1.5 py-1.5 text-left outline-none transition-[background-color,border-color] duration-150 hover:border-border/50 hover:bg-accent/45 focus-visible:ring-2 focus-visible:ring-ring/35"
         title={file.path}
-        onClick={onAction}
+        onClick={onOpen}
+        disabled={disabled}
       >
         <span
           className={cn(
@@ -539,8 +585,28 @@ function FileRow({
         <TooltipTrigger asChild>
           <button
             type="button"
+            className="inline-flex size-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground opacity-0 outline-none transition-[background-color,color,opacity] duration-150 hover:bg-accent hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/35 group-hover:opacity-100 group-focus-within:opacity-100"
+            aria-label={`View diff ${file.path}`}
+            disabled={disabled}
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpenDiff();
+            }}
+          >
+            <FileSearch className="size-3.5" aria-hidden />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="left" sideOffset={4}>
+          View diff
+        </TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
             className="mr-0.5 inline-flex size-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground opacity-0 outline-none transition-[background-color,color,opacity] duration-150 hover:bg-accent hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/35 group-hover:opacity-100 group-focus-within:opacity-100"
             aria-label={`${actionLabel} ${file.path}`}
+            disabled={disabled}
             onClick={(e) => {
               e.stopPropagation();
               onAction();
@@ -558,5 +624,112 @@ function FileRow({
         </TooltipContent>
       </Tooltip>
     </li>
+  );
+}
+
+function DiffViewer({
+  diff,
+  loading,
+  onClose,
+}: {
+  diff: { path: string; staged: boolean; patch: string } | null;
+  loading: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <section className="border-b border-border/70 bg-surface-sunken/45">
+      <WorkbenchSectionHeader
+        title={diff ? `${diff.staged ? "Staged" : "Working"} diff` : "Diff"}
+        action={
+          <button
+            type="button"
+            className="inline-flex size-6 items-center justify-center rounded text-muted-foreground outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/35"
+            onClick={onClose}
+            aria-label="Close diff"
+          >
+            <X className="size-3.5" aria-hidden />
+          </button>
+        }
+      />
+      <div className="max-h-64 overflow-auto overscroll-contain">
+        {loading && !diff ? (
+          <div className="flex items-center gap-2 px-3 py-4 text-xs text-muted-foreground">
+            <FileDiff className="size-3.5 animate-pulse" aria-hidden />
+            Loading diff…
+          </div>
+        ) : diff ? (
+          <>
+            <div className="sticky left-0 border-b border-border/50 bg-chrome/70 px-3 py-1.5 font-mono text-[10px] text-muted-foreground">
+              {diff.path}
+            </div>
+            <pre className="min-w-max p-3 font-mono text-[10px] leading-4 text-foreground/85">
+              {diff.patch || "No textual changes to display."}
+            </pre>
+          </>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+function CommitComposer({
+  message,
+  stagedCount,
+  canCommit,
+  busy,
+  onMessageChange,
+  onCommit,
+}: {
+  message: string;
+  stagedCount: number;
+  canCommit: boolean;
+  busy: boolean;
+  onMessageChange: (value: string) => void;
+  onCommit: () => void;
+}) {
+  return (
+    <div>
+      <label className="sr-only" htmlFor="git-commit-message">
+        Commit message
+      </label>
+      <textarea
+        id="git-commit-message"
+        value={message}
+        onChange={(event) => onMessageChange(event.target.value)}
+        rows={3}
+        placeholder="Commit message"
+        disabled={busy}
+        className="w-full resize-none rounded-lg border border-border/80 bg-background/70 px-2.5 py-2 text-sm leading-5 text-foreground outline-none transition-[border-color,box-shadow] placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/35 disabled:opacity-60"
+        onKeyDown={(event) => {
+          if (
+            (event.metaKey || event.ctrlKey) &&
+            event.key === "Enter" &&
+            canCommit
+          ) {
+            event.preventDefault();
+            onCommit();
+          }
+        }}
+      />
+      <Button
+        type="button"
+        className="mt-2 h-9 w-full gap-1.5"
+        disabled={!canCommit}
+        onClick={onCommit}
+      >
+        <GitCommitHorizontal className="size-4" aria-hidden />
+        {busy ? "Committing…" : "Commit"}
+        {stagedCount > 0 ? (
+          <span className="font-mono text-[11px] tabular-nums opacity-80">
+            {stagedCount}
+          </span>
+        ) : null}
+      </Button>
+      <p className="mt-1.5 text-[10px] leading-4 text-muted-foreground">
+        {stagedCount === 0
+          ? "Stage files before committing."
+          : "⌘↵ / Ctrl+Enter to commit"}
+      </p>
+    </div>
   );
 }

@@ -13,8 +13,9 @@ import {
   xtermThemeFromPreset,
 } from "./presets";
 import {
-  getDefaultTerminalRuntimeRegistry,
+  getDefaultTerminalRuntimeRegistryIfInitialized,
 } from "@/features/terminal/runtime/TerminalRuntimeRegistry";
+import { reportError } from "@/lib/errors";
 
 const APPEARANCE_KEY = "appearance";
 
@@ -33,12 +34,14 @@ function notifyTheme(presetId: PresetId): void {
   for (const listener of themeListeners) {
     listener(presetId);
   }
-  try {
-    const registry = getDefaultTerminalRuntimeRegistry();
-    for (const id of registry.listIds()) {
+  const registry = getDefaultTerminalRuntimeRegistryIfInitialized();
+  if (!registry) return;
+  for (const id of registry.listIds()) {
+    try {
       registry.get(id)?.applyTheme?.(xtermThemeFromPreset(presetId));
+    } catch (error) {
+      reportError("Could not apply terminal theme", error);
     }
-  } catch {
   }
 }
 

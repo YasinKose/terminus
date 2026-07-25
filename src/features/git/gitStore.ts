@@ -4,6 +4,8 @@ import {
   tauriGitApi,
   type GitApi,
   type GitBranchInfo,
+  type GitDiffResult,
+  type GitStashInfo,
   type GitStatusSnapshot,
 } from "@/lib/tauri/git";
 
@@ -21,123 +23,200 @@ export interface GitStoreState {
   projectId: string | null;
   status: GitStatusSnapshot;
   branches: GitBranchInfo[];
+  stashes: GitStashInfo[];
+  selectedDiff: GitDiffResult | null;
   loading: boolean;
+  diffLoading: boolean;
+  busy: boolean;
   commitMessage: string;
   setApi: (api: GitApi) => void;
   setCommitMessage: (message: string) => void;
   refresh: (projectId: string | null) => Promise<void>;
-  stage: (paths: string[]) => Promise<void>;
-  unstage: (paths: string[]) => Promise<void>;
-  commit: () => Promise<void>;
-  checkout: (name: string) => Promise<void>;
-  createBranch: (name: string, checkout: boolean) => Promise<void>;
-  stashPush: () => Promise<void>;
-  stashPop: () => Promise<void>;
+  openDiff: (path: string, staged: boolean) => Promise<void>;
+  closeDiff: () => void;
+  stage: (paths: string[]) => Promise<boolean>;
+  unstage: (paths: string[]) => Promise<boolean>;
+  commit: () => Promise<boolean>;
+  checkout: (name: string) => Promise<boolean>;
+  createBranch: (name: string, checkout: boolean) => Promise<boolean>;
+  stashPush: () => Promise<boolean>;
+  stashPop: (index?: number) => Promise<boolean>;
 }
 
 let api: GitApi = tauriGitApi;
+let refreshSequence = 0;
+let diffSequence = 0;
 
-export const useGitStore = create<GitStoreState>((set, get) => ({
-  projectId: null,
-  status: emptyStatus(),
-  branches: [],
-  loading: false,
-  commitMessage: "",
-  setApi: (next) => {
-    api = next;
-  },
-  setCommitMessage: (message) => set({ commitMessage: message }),
-  refresh: async (projectId) => {
-    if (!projectId) {
+export const useGitStore = create<GitStoreState>((set, get) => {
+  const mutate = async (
+    label: string,
+    operation: (projectId: string) => Promise<void>,
+    after?: (projectId: string) => void,
+  ): Promise<boolean> => {
+    const { projectId, busy } = get();
+    if (!projectId || busy) return false;
+    set({ busy: true });
+    try {
+      await operation(projectId);
+      if (get().projectId === projectId) {
+        after?.(projectId);
+        await get().refresh(projectId);
+      }
+      return true;
+    } catch (error) {
+      reportError(label, error);
+      if (get().projectId === projectId) {
+        await get().refresh(projectId);
+      }
+      return false;
+    } finally {
+      set({ busy: false });
+    }
+  };
+
+  return {
+    projectId: null,
+    status: emptyStatus(),
+    branches: [],
+    stashes: [],
+    selectedDiff: null,
+    loading: false,
+    diffLoading: false,
+    busy: false,
+    commitMessage: "",
+    setApi: (next) => {
+      api = next;
+    },
+    setCommitMessage: (message) => set({ commitMessage: message }),
+    refresh: async (projectId) => {
+      const request = ++refreshSequence;
+      ++diffSequence;
+      if (!projectId) {
+        set({
+          projectId: null,
+          status: emptyStatus(),
+          branches: [],
+          stashes: [],
+          selectedDiff: null,
+          loading: false,
+          diffLoading: false,
+          commitMessage: "",
+        });
+        return;
+      }
+      const changedProject = get().projectId !== projectId;
       set({
-        projectId: null,
-        status: emptyStatus(),
-        branches: [],
-        loading: false,
+        loading: true,
+        projectId,
+        diffLoading: false,
+        ...(changedProject
+          ? {
+              status: emptyStatus(),
+              branches: [],
+              stashes: [],
+              selectedDiff: null,
+              commitMessage: "",
+            }
+          : {}),
       });
-      return;
-    }
-    set({ loading: true, projectId });
-    try {
-      const [status, branches] = await Promise.all([
-        api.status(projectId),
-        api.branches(projectId).catch(() => [] as GitBranchInfo[]),
-      ]);
-      set({ status, branches, loading: false });
-    } catch (error) {
-      set({ loading: false, status: emptyStatus(), branches: [] });
-      reportError("Could not load git status", error);
-    }
-  },
-  stage: async (paths) => {
-    const { projectId, refresh } = get();
-    if (!projectId || paths.length === 0) return;
-    try {
-      await api.stage(projectId, paths);
-      await refresh(projectId);
-    } catch (error) {
-      reportError("Could not stage files", error);
-    }
-  },
-  unstage: async (paths) => {
-    const { projectId, refresh } = get();
-    if (!projectId || paths.length === 0) return;
-    try {
-      await api.unstage(projectId, paths);
-      await refresh(projectId);
-    } catch (error) {
-      reportError("Could not unstage files", error);
-    }
-  },
-  commit: async () => {
-    const { projectId, commitMessage, refresh } = get();
-    if (!projectId) return;
-    try {
-      await api.commit(projectId, commitMessage);
-      set({ commitMessage: "" });
-      await refresh(projectId);
-    } catch (error) {
-      reportError("Could not commit", error);
-    }
-  },
-  checkout: async (name) => {
-    const { projectId, refresh } = get();
-    if (!projectId) return;
-    try {
-      await api.checkout(projectId, name);
-      await refresh(projectId);
-    } catch (error) {
-      reportError("Could not checkout branch", error);
-    }
-  },
-  createBranch: async (name, checkout) => {
-    const { projectId, refresh } = get();
-    if (!projectId) return;
-    try {
-      await api.createBranch(projectId, name, checkout);
-      await refresh(projectId);
-    } catch (error) {
-      reportError("Could not create branch", error);
-    }
-  },
-  stashPush: async () => {
-    const { projectId, refresh } = get();
-    if (!projectId) return;
-    try {
-      await api.stashPush(projectId);
-      await refresh(projectId);
-    } catch (error) {
-      reportError("Could not stash", error);
-    }
-  },
-  stashPop: async () => {
-    const { projectId, refresh } = get();
-    if (!projectId) return;
-    try {
-      await api.stashPop(projectId, 0);
-      await refresh(projectId);
-    } catch (error) {
-      reportError("Could not pop stash", error);
-    }
-  },
-}));
+      try {
+        const status = await api.status(projectId);
+        const [branches, stashes] = status.isRepo
+          ? await Promise.all([
+              api.branches(projectId).catch(() => [] as GitBranchInfo[]),
+              api.stashList(projectId).catch(() => [] as GitStashInfo[]),
+            ])
+          : [[], []];
+        if (request !== refreshSequence || get().projectId !== projectId) {
+          return;
+        }
+        set({ status, branches, stashes, loading: false });
+      } catch (error) {
+        if (request !== refreshSequence || get().projectId !== projectId) {
+          return;
+        }
+        set({
+          loading: false,
+          status: emptyStatus(),
+          branches: [],
+          stashes: [],
+        });
+        reportError("Could not load git status", error);
+      }
+    },
+    openDiff: async (path, staged) => {
+      const { projectId } = get();
+      if (!projectId) return;
+      const request = ++diffSequence;
+      set({ selectedDiff: null, diffLoading: true });
+      try {
+        const selectedDiff = await api.diffFile(projectId, path, staged);
+        if (request !== diffSequence || get().projectId !== projectId) return;
+        set({ selectedDiff, diffLoading: false });
+      } catch (error) {
+        if (request !== diffSequence || get().projectId !== projectId) return;
+        set({ diffLoading: false });
+        reportError("Could not load file diff", error);
+      }
+    },
+    closeDiff: () => {
+      ++diffSequence;
+      set({ selectedDiff: null, diffLoading: false });
+    },
+    stage: async (paths) => {
+      if (paths.length === 0) return false;
+      return mutate(
+        "Could not stage files",
+        (projectId) => api.stage(projectId, paths),
+        () => set({ selectedDiff: null }),
+      );
+    },
+    unstage: async (paths) => {
+      if (paths.length === 0) return false;
+      return mutate(
+        "Could not unstage files",
+        (projectId) => api.unstage(projectId, paths),
+        () => set({ selectedDiff: null }),
+      );
+    },
+    commit: async () => {
+      const message = get().commitMessage.trim();
+      if (!message) return false;
+      return mutate(
+        "Could not commit",
+        async (projectId) => {
+          await api.commit(projectId, message);
+        },
+        () => set({ commitMessage: "", selectedDiff: null }),
+      );
+    },
+    checkout: async (name) => {
+      if (!name) return false;
+      return mutate(
+        "Could not checkout branch",
+        (projectId) => api.checkout(projectId, name),
+        () => set({ selectedDiff: null }),
+      );
+    },
+    createBranch: async (name, checkout) => {
+      if (!name.trim()) return false;
+      return mutate("Could not create branch", (projectId) =>
+        api.createBranch(projectId, name.trim(), checkout),
+      );
+    },
+    stashPush: async () => {
+      return mutate(
+        "Could not stash",
+        (projectId) => api.stashPush(projectId),
+        () => set({ selectedDiff: null }),
+      );
+    },
+    stashPop: async (index = 0) => {
+      return mutate(
+        "Could not pop stash",
+        (projectId) => api.stashPop(projectId, index),
+        () => set({ selectedDiff: null }),
+      );
+    },
+  };
+});

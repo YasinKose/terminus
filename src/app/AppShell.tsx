@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { Titlebar } from "@/app/Titlebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CommandPalette } from "@/features/command-palette/CommandPalette";
@@ -13,13 +13,10 @@ import {
 import { SettingsSheet } from "@/features/settings/SettingsSheet";
 import { ShortcutHost } from "@/features/settings/ShortcutHost";
 import { useSettingsStore } from "@/features/settings/settingsStore";
+import { useSourcePreviewStore } from "@/features/source-preview/sourcePreviewStore";
 import { useUiStore } from "@/features/ui/uiStore";
 import { collectTerminalIds } from "@/features/panes/tree";
 import type { PaneNode } from "@/features/panes/model";
-import { GitPanel } from "@/features/git/GitPanel";
-import { SnippetsPanel } from "@/features/snippets/SnippetsPanel";
-import { TasksPanel } from "@/features/tasks/TasksPanel";
-import { TmuxPanel } from "@/features/tmux/TmuxPanel";
 import { WorkspaceArea } from "@/features/workspaces/WorkspaceArea";
 import { WorkspaceTabs } from "@/features/workspaces/WorkspaceTabs";
 import { useWorkspaceStore } from "@/features/workspaces/workspaceStore";
@@ -31,6 +28,33 @@ import type { WorkspaceApi } from "@/lib/tauri/workspaces";
 import { useCloseRequestStore } from "@/stores/closeRequestStore";
 import { FolderOpen, Layers3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils/cn";
+
+const GitPanel = lazy(() =>
+  import("@/features/git/GitPanel").then((module) => ({
+    default: module.GitPanel,
+  })),
+);
+const SnippetsPanel = lazy(() =>
+  import("@/features/snippets/SnippetsPanel").then((module) => ({
+    default: module.SnippetsPanel,
+  })),
+);
+const TasksPanel = lazy(() =>
+  import("@/features/tasks/TasksPanel").then((module) => ({
+    default: module.TasksPanel,
+  })),
+);
+const TmuxPanel = lazy(() =>
+  import("@/features/tmux/TmuxPanel").then((module) => ({
+    default: module.TmuxPanel,
+  })),
+);
+const SourcePreviewWorkspace = lazy(() =>
+  import("@/features/source-preview/SourcePreviewWorkspace").then((module) => ({
+    default: module.SourcePreviewWorkspace,
+  })),
+);
 
 function parseRoot(rootJson: string | null): PaneNode | null {
   if (!rootJson) return null;
@@ -69,6 +93,10 @@ export function AppShell({
   const sidebarCollapsed = useUiStore((s) => s.sidebarCollapsed);
   const sidePanel = useUiStore((s) => s.sidePanel);
   const setSidePanel = useUiStore((s) => s.setSidePanel);
+  const sourceActive = useSourcePreviewStore((s) => s.active);
+  const sourceProjectId = useSourcePreviewStore((s) => s.projectId);
+  const openSource = useSourcePreviewStore((s) => s.open);
+  const closeSource = useSourcePreviewStore((s) => s.close);
   const focusMode = useSettingsStore((s) => s.focusMode);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const commandContext = useCommandActions({ setPaletteOpen });
@@ -76,6 +104,16 @@ export function AppShell({
   const projectWorkspaces = activeProjectId
     ? listForProject(activeProjectId)
     : [];
+  const sourceVisible =
+    sourceActive &&
+    sourceProjectId !== null &&
+    sourceProjectId === activeProjectId;
+
+  useEffect(() => {
+    if (sourceActive && sourceProjectId !== activeProjectId) {
+      closeSource();
+    }
+  }, [activeProjectId, closeSource, sourceActive, sourceProjectId]);
 
   const runAction = useCallback(
     (title: string, action: () => Promise<void>): void => {
@@ -96,20 +134,22 @@ export function AppShell({
   const handleSelectWorkspace = useCallback(
     async (workspaceId: string) => {
       if (!activeProjectId) return;
+      closeSource();
       await selectWorkspace(activeProjectId, workspaceId);
     },
-    [activeProjectId, selectWorkspace],
+    [activeProjectId, closeSource, selectWorkspace],
   );
 
   const handleNavigatorCommit = useCallback(
     async ({ projectId, workspaceId }: NavigatorSelection) => {
+      closeSource();
       if (workspaceId) {
         await selectWorkspace(projectId, workspaceId);
         return;
       }
       await selectProject(projectId);
     },
-    [selectProject, selectWorkspace],
+    [closeSource, selectProject, selectWorkspace],
   );
 
   const handleRenameWorkspace = useCallback(
@@ -133,6 +173,7 @@ export function AppShell({
 
   const handleCreateWorkspace = useCallback(async () => {
     if (!activeProjectId) return;
+    closeSource();
     const existing = listForProject(activeProjectId);
     const id = crypto.randomUUID();
     const position =
@@ -153,6 +194,7 @@ export function AppShell({
     await selectWorkspace(activeProjectId, saved.id);
   }, [
     activeProjectId,
+    closeSource,
     listForProject,
     saveWorkspace,
     selectWorkspace,
@@ -196,6 +238,12 @@ export function AppShell({
   return (
     <TooltipProvider delayDuration={300}>
       <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background text-foreground">
+        <a
+          href="#workspace-main"
+          className="fixed left-3 top-2 z-[70] -translate-y-16 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground shadow-dialog outline-none transition-transform focus:translate-y-0"
+        >
+          Skip to workspace
+        </a>
         <Titlebar
           onOpenSettings={() => commandContext.openSettings()}
           onOpenPalette={() => commandContext.openPalette()}
@@ -210,6 +258,7 @@ export function AppShell({
                 runAction("Could not open project", handleOpenProject);
               }}
               onSelectProject={(id) => {
+                closeSource();
                 runAction("Could not select project", () => selectProject(id));
               }}
               onCloseProject={handleCloseProject}
@@ -250,49 +299,95 @@ export function AppShell({
                       );
                     }}
                     onNewTerminal={() => {
+                      closeSource();
                       void commandContext.newTerminal();
                     }}
                     onSplitHorizontal={() => {
+                      closeSource();
                       void commandContext.splitHorizontal();
                     }}
                     onSplitVertical={() => {
+                      closeSource();
                       void commandContext.splitVertical();
                     }}
                     actionsDisabled={!activeWorkspaceId}
                   />
                 )}
-                <div className="flex min-h-0 flex-1">
-                  <div className="min-h-0 min-w-0 flex-1">
-                    <WorkspaceArea
-                      projectId={activeProjectId}
-                      workspaces={projectWorkspaces}
-                      activeWorkspaceId={activeWorkspaceId}
-                    />
+                <main
+                  id="workspace-main"
+                  tabIndex={-1}
+                  className="@container/workbench relative flex min-h-0 flex-1 outline-none"
+                >
+                  <div className="relative min-h-0 min-w-0 flex-1">
+                    <div
+                      className={cn(
+                        "absolute inset-0",
+                        sourceVisible && "invisible pointer-events-none",
+                      )}
+                      aria-hidden={sourceVisible || undefined}
+                      inert={sourceVisible || undefined}
+                    >
+                      <WorkspaceArea
+                        projectId={activeProjectId}
+                        workspaces={projectWorkspaces}
+                        activeWorkspaceId={activeWorkspaceId}
+                      />
+                    </div>
+                    {sourceVisible ? (
+                      <div className="absolute inset-0">
+                        <Suspense fallback={<SourcePreviewFallback />}>
+                          <SourcePreviewWorkspace />
+                        </Suspense>
+                      </div>
+                    ) : null}
                   </div>
-                  <GitPanel
-                    projectId={activeProjectId}
-                    open={sidePanel === "git"}
-                    onClose={() => setSidePanel(null)}
-                  />
-                  <SnippetsPanel
-                    projectId={activeProjectId}
-                    open={sidePanel === "snippets"}
-                    onClose={() => setSidePanel(null)}
-                  />
-                  <TasksPanel
-                    projectId={activeProjectId}
-                    open={sidePanel === "tasks"}
-                    onClose={() => setSidePanel(null)}
-                  />
-                  <TmuxPanel
-                    projectId={activeProjectId}
-                    open={sidePanel === "tmux"}
-                    onClose={() => setSidePanel(null)}
-                  />
-                </div>
+                  {sidePanel ? (
+                    <Suspense fallback={<SidePanelFallback />}>
+                      {sidePanel === "git" ? (
+                        <GitPanel
+                          projectId={activeProjectId}
+                          open
+                          onClose={() => setSidePanel(null)}
+                          onOpenSource={(file) => {
+                            void openSource(
+                              activeProjectId,
+                              file.path,
+                              file.status,
+                            );
+                          }}
+                        />
+                      ) : null}
+                      {sidePanel === "snippets" ? (
+                        <SnippetsPanel
+                          projectId={activeProjectId}
+                          open
+                          onClose={() => setSidePanel(null)}
+                        />
+                      ) : null}
+                      {sidePanel === "tasks" ? (
+                        <TasksPanel
+                          projectId={activeProjectId}
+                          open
+                          onClose={() => setSidePanel(null)}
+                        />
+                      ) : null}
+                      {sidePanel === "tmux" ? (
+                        <TmuxPanel
+                          projectId={activeProjectId}
+                          open
+                          onClose={() => setSidePanel(null)}
+                        />
+                      ) : null}
+                    </Suspense>
+                  ) : null}
+                </main>
               </>
             ) : (
-              <div className="flex h-full flex-col items-center justify-center p-8 text-center">
+              <main
+                id="workspace-main"
+                tabIndex={-1}
+                className="flex h-full flex-col items-center justify-center p-8 text-center outline-none"
+              >
                 <div className="flex max-w-sm flex-col items-center">
                   <div className="mb-5 inline-flex size-12 items-center justify-center rounded-2xl border border-border bg-surface-raised text-primary shadow-panel">
                     <Layers3 aria-hidden className="size-5" />
@@ -315,7 +410,7 @@ export function AppShell({
                   <FolderOpen aria-hidden className="size-4" />
                   Open project
                 </Button>
-              </div>
+              </main>
             )}
           </div>
         </div>
@@ -335,5 +430,50 @@ export function AppShell({
         />
       </div>
     </TooltipProvider>
+  );
+}
+
+function SidePanelFallback() {
+  return (
+    <aside
+      className="absolute inset-y-0 right-0 z-30 flex h-full w-[min(22rem,100%)] shrink-0 flex-col border-l border-border/90 bg-chrome shadow-dialog @4xl/workbench:static @4xl/workbench:z-auto @4xl/workbench:shadow-none"
+      aria-label="Loading workbench panel"
+      aria-busy="true"
+    >
+      <div className="flex h-11 items-center gap-2 border-b border-border/80 px-3">
+        <span className="size-3.5 animate-pulse rounded bg-primary/35" />
+        <span className="h-2.5 w-24 animate-pulse rounded bg-muted" />
+      </div>
+      <div className="space-y-2 p-3">
+        <span className="block h-8 animate-pulse rounded-lg bg-surface-raised" />
+        <span className="block h-16 animate-pulse rounded-lg bg-surface-raised" />
+        <span className="block h-16 animate-pulse rounded-lg bg-surface-raised" />
+      </div>
+      <span className="sr-only">Loading panel…</span>
+    </aside>
+  );
+}
+
+function SourcePreviewFallback() {
+  return (
+    <div
+      className="grid h-full grid-rows-[3.5rem_1fr_1.75rem] overflow-hidden bg-background"
+      aria-label="Loading source preview"
+      role="status"
+    >
+      <div className="flex items-center gap-2.5 border-b border-border/80 bg-chrome px-4">
+        <span className="size-8 animate-pulse rounded-lg bg-primary/15 motion-reduce:animate-none" />
+        <span className="h-2.5 w-36 animate-pulse rounded-full bg-muted motion-reduce:animate-none" />
+      </div>
+      <div className="grid grid-cols-[3.25rem_1fr]">
+        <div className="border-r border-border/60 bg-surface-sunken/70" />
+        <div className="space-y-3 p-6">
+          <span className="block h-2 w-3/4 animate-pulse rounded bg-muted motion-reduce:animate-none" />
+          <span className="block h-2 w-1/2 animate-pulse rounded bg-muted motion-reduce:animate-none" />
+          <span className="block h-2 w-5/6 animate-pulse rounded bg-muted motion-reduce:animate-none" />
+        </div>
+      </div>
+      <div className="border-t border-border/70 bg-chrome" />
+    </div>
   );
 }

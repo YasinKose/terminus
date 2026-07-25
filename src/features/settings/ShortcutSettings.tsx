@@ -6,8 +6,8 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  formatChordMac,
-  formatModifierChordMac,
+  formatChord,
+  formatModifierChord,
   isModifierKey,
   isUnmodifiedTerminalKeystroke,
   isValidModifierChord,
@@ -19,6 +19,9 @@ import {
 } from "./shortcutModel";
 import { useSettingsStore } from "./settingsStore";
 import { Keyboard, Layers3, RotateCcw } from "lucide-react";
+import {
+  detectDesktopPlatform,
+} from "@/platform/detection";
 
 type RecordingTarget = ShortcutCommandId | "workspaceNavigator";
 
@@ -57,7 +60,15 @@ export function ShortcutSettings() {
         return;
       }
 
-      const parsed = parseHotkey(hotkey, "mac");
+      const platform = detectDesktopPlatform();
+      const parsed = parseHotkey(
+        hotkey,
+        platform === "macos"
+          ? "mac"
+          : platform === "windows"
+            ? "windows"
+            : "linux",
+      );
       const chord = {
         key: normalizeKey(parsed.key),
         meta: parsed.meta,
@@ -202,9 +213,15 @@ export function ShortcutSettings() {
         >
           {recording === "workspaceNavigator"
             ? modifierPreview
-              ? formatModifierChordMac(modifierPreview)
+              ? formatModifierChord(
+                  modifierPreview,
+                  detectDesktopPlatform(),
+                )
               : "Press modifiers…"
-            : formatModifierChordMac(navigatorModifiers)}
+            : formatModifierChord(
+                navigatorModifiers,
+                detectDesktopPlatform(),
+              )}
         </button>
       </section>
 
@@ -244,7 +261,7 @@ export function ShortcutSettings() {
             >
               {recording === cmd.id
                 ? "Press keys…"
-                : formatChordMac(shortcuts[cmd.id])}
+                : formatChord(shortcuts[cmd.id], detectDesktopPlatform())}
             </button>
           </li>
         ))}

@@ -5,7 +5,7 @@ import {
 } from "@/lib/tauri/settings";
 import {
   DEFAULT_NAVIGATOR_MODIFIERS,
-  DEFAULT_SHORTCUTS,
+  defaultShortcutsForPlatform,
   findConflicts,
   isValidModifierChord,
   isUnmodifiedTerminalKeystroke,
@@ -17,6 +17,7 @@ import {
   type ShortcutCommandId,
   type ShortcutMap,
 } from "./shortcutModel";
+import { detectDesktopPlatform } from "@/platform/detection";
 
 const SHORTCUTS_KEY = "shortcuts";
 const NAVIGATOR_MODIFIERS_KEY = "shortcuts.navigatorModifiers";
@@ -54,7 +55,7 @@ export interface SettingsStoreState {
 let api: SettingsApi = tauriSettingsApi;
 
 export const useSettingsStore = create<SettingsStoreState>((set, get) => ({
-  shortcuts: { ...DEFAULT_SHORTCUTS },
+  shortcuts: defaultShortcutsForPlatform(detectDesktopPlatform()),
   navigatorModifiers: { ...DEFAULT_NAVIGATOR_MODIFIERS },
   shortcutRecording: false,
   settingsOpen: false,
@@ -69,7 +70,10 @@ export const useSettingsStore = create<SettingsStoreState>((set, get) => ({
   setShortcutRecording: (recording) => set({ shortcutRecording: recording }),
 
   hydrateFromBootstrap: (settings) => {
-    const parsed = parseShortcutMap(settings[SHORTCUTS_KEY]);
+    const parsed = parseShortcutMap(
+      settings[SHORTCUTS_KEY],
+      defaultShortcutsForPlatform(detectDesktopPlatform()),
+    );
     const navigatorModifiers = parseModifierChord(
       settings[NAVIGATOR_MODIFIERS_KEY],
     );
@@ -133,7 +137,10 @@ export const useSettingsStore = create<SettingsStoreState>((set, get) => ({
   },
 
   resetAllShortcuts: async () => {
-    const next = resetShortcuts();
+    const next =
+      detectDesktopPlatform() === "macos"
+        ? resetShortcuts()
+        : defaultShortcutsForPlatform(detectDesktopPlatform());
     const navigatorModifiers = { ...DEFAULT_NAVIGATOR_MODIFIERS };
     await Promise.all([
       api.saveSetting(SHORTCUTS_KEY, next),

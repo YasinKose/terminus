@@ -1,9 +1,10 @@
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use crate::project_files::{safe_project_data_file, safe_project_read_file};
 use crate::AppError;
 
 const SNIPPETS_DIR: &str = ".terminus";
@@ -38,8 +39,15 @@ pub struct MakefileTarget {
     pub command: String,
 }
 
-fn snippets_path(project_root: &Path) -> PathBuf {
-    project_root.join(SNIPPETS_DIR).join(SNIPPETS_FILE)
+fn is_safe_make_target(name: &str) -> bool {
+    let mut chars = name.chars();
+    let Some(first) = chars.next() else {
+        return false;
+    };
+    (first.is_ascii_alphanumeric() || first == '_')
+        && chars.all(|character| {
+            character.is_ascii_alphanumeric() || matches!(character, '_' | '-' | '.' | '/')
+        })
 }
 
 fn now_ms() -> i64 {
@@ -51,7 +59,7 @@ fn now_ms() -> i64 {
 }
 
 fn read_file(project_root: &Path) -> Result<SnippetFile, AppError> {
-    let path = snippets_path(project_root);
+    let path = safe_project_data_file(project_root, SNIPPETS_DIR, SNIPPETS_FILE, false)?;
     if !path.exists() {
         return Ok(SnippetFile::default());
     }
@@ -61,10 +69,7 @@ fn read_file(project_root: &Path) -> Result<SnippetFile, AppError> {
 }
 
 fn write_file(project_root: &Path, file: &SnippetFile) -> Result<(), AppError> {
-    let dir = project_root.join(SNIPPETS_DIR);
-    fs::create_dir_all(&dir)
-        .map_err(|err| AppError::Message(format!("create .terminus: {err}")))?;
-    let path = dir.join(SNIPPETS_FILE);
+    let path = safe_project_data_file(project_root, SNIPPETS_DIR, SNIPPETS_FILE, true)?;
     let raw = serde_json::to_string_pretty(file)
         .map_err(|err| AppError::Message(format!("serialize snippets: {err}")))?;
     fs::write(&path, raw).map_err(|err| AppError::Message(format!("write snippets: {err}")))
@@ -157,7 +162,7 @@ pub fn parse_makefile_targets(content: &str) -> Vec<MakefileTarget> {
             continue;
         }
         let target_name = before_colon.trim();
-        if target_name.is_empty() || target_name.contains(' ') {
+        if !is_safe_make_target(target_name) {
             continue;
         }
 
@@ -189,8 +194,7 @@ pub fn parse_makefile_targets(content: &str) -> Vec<MakefileTarget> {
 
 pub fn scan_makefile(project_root: &Path) -> Result<Vec<MakefileTarget>, AppError> {
     for name in ["Makefile", "makefile", "GNUmakefile"] {
-        let path = project_root.join(name);
-        if path.is_file() {
+        if let Some(path) = safe_project_read_file(project_root, name)? {
             let content = fs::read_to_string(&path)
                 .map_err(|err| AppError::Message(format!("read {name}: {err}")))?;
             return Ok(parse_makefile_targets(&content));
@@ -256,5 +260,66 @@ test:
         let build = targets.iter().find(|t| t.name == "build").unwrap();
         assert_eq!(build.description.as_deref(), Some("Build the app"));
         assert_eq!(build.command, "make build");
+    }
+
+    #[test]
+    fn parse_makefile_rejects_shell_metacharacters_in_targets() {
+        let content = "safe-target:\n\t@true\nunsafe;touch-pwned:\n\t@true\n";
+
+        let targets = parse_makefile_targets(content);
+
+        assert_eq!(targets.len(), 1);
+        assert_eq!(targets[0].name, "safe-target");
+        assert_eq!(targets[0].command, "make safe-target");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn create_rejects_symlinked_project_data_directory() {
+        use std::os::unix::fs::symlink;
+
+        let project = tempdir().expect("project");
+        let outside = tempdir().expect("outside");
+        symlink(outside.path(), project.path().join(SNIPPETS_DIR)).expect("symlink");
+
+        let error = create_snippet(project.path(), "unsafe", "echo no\n", None)
+            .expect_err("symlinked .terminus must be rejected");
+
+        assert!(error.to_string().contains("symlink"));
+        assert!(!outside.path().join(SNIPPETS_FILE).exists());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn scan_makefile_rejects_symlink_outside_project() {
+        use std::os::unix::fs::symlink;
+
+        let project = tempdir().expect("project");
+        let outside = tempdir().expect("outside");
+        let outside_makefile = outside.path().join("Makefile");
+        fs::write(&outside_makefile, "secret:\n\techo hidden\n").expect("write");
+        symlink(&outside_makefile, project.path().join("Makefile")).expect("symlink");
+
+        let error = scan_makefile(project.path()).expect_err("symlinked Makefile must be rejected");
+
+        assert!(error.to_string().contains("escapes project root"));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn scan_makefile_allows_symlink_inside_project() {
+        use std::os::unix::fs::symlink;
+
+        let project = tempdir().expect("project");
+        let build_dir = project.path().join("build");
+        fs::create_dir(&build_dir).expect("build directory");
+        let source = build_dir.join("project.mk");
+        fs::write(&source, "build:\n\tcargo build\n").expect("write");
+        symlink(&source, project.path().join("Makefile")).expect("symlink");
+
+        let targets = scan_makefile(project.path()).expect("contained symlink");
+
+        assert_eq!(targets.len(), 1);
+        assert_eq!(targets[0].name, "build");
     }
 }

@@ -94,6 +94,10 @@ export function getDefaultTerminalRuntimeRegistry(
   return defaultRegistry;
 }
 
+export function getDefaultTerminalRuntimeRegistryIfInitialized(): TerminalRuntimeRegistry | null {
+  return defaultRegistry;
+}
+
 export function resetDefaultTerminalRuntimeRegistryForTests(): void {
   defaultRegistry?.disposeAll();
   defaultRegistry = null;

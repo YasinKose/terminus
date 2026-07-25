@@ -1,7 +1,7 @@
 [package]
 name = "terminus"
-version = "0.1.0"
-description = "macOS-first local terminal workspace"
+version = "0.2.0"
+description = "Multi-OS local terminal workspace"
 authors = ["Terminus"]
 edition = "2021"
 rust-version = "1.77.2"

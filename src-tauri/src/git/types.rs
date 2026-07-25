@@ -44,3 +44,19 @@ pub struct GitDiffResult {
     pub staged: bool,
     pub patch: String,
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum GitFileSource {
+    Worktree,
+    Head,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GitFileDocument {
+    pub path: String,
+    pub content: String,
+    pub byte_size: usize,
+    pub source: GitFileSource,
+}

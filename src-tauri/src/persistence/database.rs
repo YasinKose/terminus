@@ -1,5 +1,4 @@
 use std::fs;
-use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 
 use parking_lot::Mutex;
@@ -85,12 +84,20 @@ impl Database {
     }
 }
 
+#[cfg(unix)]
 fn restrict_permissions(path: &Path) -> Result<(), AppError> {
+    use std::os::unix::fs::PermissionsExt;
+
     let meta = fs::metadata(path)
         .map_err(|e| AppError::Message(format!("failed to stat database file: {e}")))?;
     let mut perms = meta.permissions();
     perms.set_mode(0o600);
     fs::set_permissions(path, perms)
         .map_err(|e| AppError::Message(format!("failed to set database permissions: {e}")))?;
+    Ok(())
+}
+
+#[cfg(not(unix))]
+fn restrict_permissions(_path: &Path) -> Result<(), AppError> {
     Ok(())
 }

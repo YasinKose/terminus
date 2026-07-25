@@ -6,6 +6,9 @@ pub fn shell_candidates() -> Vec<&'static str> {
     #[cfg(windows)]
     {
         vec![
+            "pwsh.exe",
+            "powershell.exe",
+            "cmd.exe",
             r"C:\Program Files\PowerShell\7\pwsh.exe",
             r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe",
             r"C:\Windows\System32\cmd.exe",
@@ -25,6 +28,14 @@ pub fn shell_candidates() -> Vec<&'static str> {
 }
 
 pub fn default_shell_executable() -> String {
+    #[cfg(windows)]
+    if let Ok(shell) = std::env::var("COMSPEC") {
+        let trimmed = shell.trim();
+        if !trimmed.is_empty() && path_usable(trimmed) {
+            return trimmed.to_string();
+        }
+    }
+
     if let Ok(shell) = std::env::var("SHELL") {
         let trimmed = shell.trim();
         if !trimmed.is_empty() && path_usable(trimmed) {

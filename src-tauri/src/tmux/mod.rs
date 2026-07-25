@@ -171,16 +171,18 @@ pub fn parse_list_sessions_output(stdout: &str) -> Vec<TmuxSession> {
 }
 
 pub fn attach_args(session_name: &str) -> Result<(PathBuf, Vec<String>), AppError> {
-    validate_session_name(session_name)?;
+    let args = attach_command_args(session_name)?;
     let tmux = which_tmux()?;
-    Ok((
-        tmux,
-        vec![
-            "attach".into(),
-            "-t".into(),
-            session_name.trim().to_string(),
-        ],
-    ))
+    Ok((tmux, args))
+}
+
+fn attach_command_args(session_name: &str) -> Result<Vec<String>, AppError> {
+    validate_session_name(session_name)?;
+    Ok(vec![
+        "attach".into(),
+        "-t".into(),
+        session_name.trim().to_string(),
+    ])
 }
 
 pub fn tmux_profile(
@@ -236,8 +238,7 @@ mod tests {
 
     #[test]
     fn attach_args_are_fixed() {
-        let (path, args) = attach_args("main").expect("attach");
-        assert!(path.file_name().is_some());
+        let args = attach_command_args("main").expect("attach");
         assert_eq!(args, vec!["attach", "-t", "main"]);
     }
 }

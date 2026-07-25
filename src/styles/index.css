@@ -27,6 +27,11 @@
   --color-surface-raised: var(--surface-raised);
   --color-surface-sunken: var(--surface-sunken);
   --color-chrome: var(--chrome);
+  --color-status-info: var(--status-info);
+  --color-status-success: var(--status-success);
+  --color-status-warning: var(--status-warning);
+  --color-status-danger: var(--status-danger);
+  --color-status-special: var(--status-special);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -289,6 +294,19 @@
   --surface-raised: color-mix(in oklab, var(--card) 94%, var(--foreground) 6%);
   --surface-sunken: color-mix(in oklab, var(--background) 94%, #000000);
   --chrome: color-mix(in oklab, var(--card) 82%, var(--background));
+  --status-info: color-mix(in oklab, #38bdf8 82%, var(--foreground));
+  --status-success: color-mix(in oklab, #34d399 82%, var(--foreground));
+  --status-warning: color-mix(in oklab, #fbbf24 84%, var(--foreground));
+  --status-danger: color-mix(in oklab, var(--destructive) 88%, var(--foreground));
+  --status-special: color-mix(in oklab, #c084fc 82%, var(--foreground));
+  --syntax-comment: color-mix(in oklab, var(--muted-foreground) 88%, transparent);
+  --syntax-keyword: color-mix(in oklab, var(--status-special) 90%, var(--foreground));
+  --syntax-string: color-mix(in oklab, var(--status-success) 86%, var(--foreground));
+  --syntax-number: color-mix(in oklab, var(--status-warning) 88%, var(--foreground));
+  --syntax-type: color-mix(in oklab, var(--primary) 88%, var(--foreground));
+  --syntax-function: color-mix(in oklab, var(--status-info) 90%, var(--foreground));
+  --syntax-property: color-mix(in oklab, var(--foreground) 88%, var(--primary));
+  --syntax-punctuation: color-mix(in oklab, var(--muted-foreground) 86%, var(--foreground));
   --shadow-panel:
     0 1px 0 rgb(255 255 255 / 0.035) inset,
     0 14px 40px rgb(0 0 0 / 0.18);

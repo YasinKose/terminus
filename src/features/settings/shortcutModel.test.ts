@@ -3,6 +3,7 @@ import {
   chordFromKeyboardEvent,
   DEFAULT_NAVIGATOR_MODIFIERS,
   DEFAULT_SHORTCUTS,
+  defaultShortcutsForPlatform,
   findConflicts,
   formatChordMac,
   formatModifierChordMac,
@@ -148,6 +149,26 @@ describe("shortcutModel", () => {
     });
     expect(parsed?.commandPalette.key).toBe("p");
     expect(parsed?.newTerminal).toEqual(DEFAULT_SHORTCUTS.newTerminal);
+  });
+
+  it("fills partial stored maps with the active platform defaults", () => {
+    const windowsDefaults = defaultShortcutsForPlatform("windows");
+    const parsed = parseShortcutMap(
+      {
+        commandPalette: {
+          key: "g",
+          meta: false,
+          ctrl: true,
+          alt: false,
+          shift: true,
+        },
+      },
+      windowsDefaults,
+    );
+
+    expect(parsed?.commandPalette.key).toBe("g");
+    expect(parsed?.newTerminal).toEqual(windowsDefaults.newTerminal);
+    expect(parsed?.newTerminal.meta).toBe(false);
   });
 
   it("uses Control+Option+Shift as the default navigator trigger", () => {

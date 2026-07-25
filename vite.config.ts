@@ -33,5 +33,25 @@ export default defineConfig({
     target: process.env.TAURI_ENV_PLATFORM === "windows" ? "chrome105" : "safari14",
     minify: !process.env.TAURI_ENV_DEBUG,
     sourcemap: !!process.env.TAURI_ENV_DEBUG,
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            {
+              name: "terminal-vendor",
+              test: /node_modules\/@xterm\//,
+            },
+            {
+              name: "react-vendor",
+              test: /node_modules\/(?:react|react-dom|scheduler)\//,
+            },
+            {
+              name: "radix-vendor",
+              test: /node_modules\/(?:radix-ui|@radix-ui)\//,
+            },
+          ],
+        },
+      },
+    },
   },
 });

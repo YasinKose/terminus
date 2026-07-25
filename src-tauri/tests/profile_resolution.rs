@@ -45,6 +45,7 @@ fn empty_profile_resolves_to_shell_login() {
     assert_eq!(resolved.args, vec!["-l".to_string()]);
 }
 
+#[cfg(not(windows))]
 #[test]
 fn empty_profile_uses_shell_from_login_environment_without_override() {
     let root = project_root();
@@ -61,6 +62,31 @@ fn empty_profile_uses_shell_from_login_environment_without_override() {
 
     assert_eq!(resolved.executable, "/bin/sh");
     assert_eq!(resolved.args, vec!["-l".to_string()]);
+}
+
+#[cfg(windows)]
+#[test]
+fn windows_empty_profile_ignores_unix_shell_from_login_environment() {
+    let root = project_root();
+    let mut vars = HashMap::new();
+    vars.insert("SHELL".into(), "/usr/bin/bash".into());
+
+    let resolved = resolve_profile(ResolveProfileInput {
+        profile: &empty_profile(),
+        project_root: &root,
+        login_env: &login_env_with(vars),
+        shell_override: None,
+    })
+    .expect("resolve from native platform default");
+
+    assert_eq!(
+        resolved.executable,
+        terminus_lib::platform::default_shell_executable()
+    );
+    assert_eq!(
+        resolved.args,
+        terminus_lib::platform::default_shell_login_args()
+    );
 }
 
 #[test]

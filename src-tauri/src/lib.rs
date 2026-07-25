@@ -3,6 +3,7 @@ mod commands;
 pub mod git;
 pub mod persistence;
 pub mod platform;
+mod project_files;
 pub mod pty;
 pub mod snippets;
 mod state;
@@ -64,6 +65,7 @@ pub fn run() {
             commands::save_setting,
             commands::git_status,
             commands::git_diff_file,
+            commands::git_read_file,
             commands::git_stage,
             commands::git_unstage,
             commands::git_commit,

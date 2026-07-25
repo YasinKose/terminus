@@ -82,17 +82,27 @@ fn resolve_executable(
                 .filter(|value| !value.is_empty())
                 .map(str::to_string)
         })
-        .or_else(|| {
-            login_env
-                .get("SHELL")
-                .map(str::trim)
-                .filter(|value| !value.is_empty())
-                .map(str::to_string)
-        })
+        .or_else(|| login_environment_shell(login_env))
         .unwrap_or_else(crate::platform::default_shell_executable);
 
     validate_executable(&candidate)?;
     Ok(candidate)
+}
+
+fn login_environment_shell(login_env: &LoginEnvironment) -> Option<String> {
+    #[cfg(windows)]
+    {
+        let _ = login_env;
+        None
+    }
+    #[cfg(not(windows))]
+    {
+        login_env
+            .get("SHELL")
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(str::to_string)
+    }
 }
 
 fn validate_executable(path: &str) -> Result<(), AppError> {
@@ -143,6 +153,14 @@ fn which_exists(name: &str) -> bool {
         let candidate = dir.join(name);
         if candidate.is_file() {
             return true;
+        }
+        #[cfg(windows)]
+        if Path::new(name).extension().is_none() {
+            for extension in ["exe", "cmd", "bat"] {
+                if dir.join(format!("{name}.{extension}")).is_file() {
+                    return true;
+                }
+            }
         }
     }
     false

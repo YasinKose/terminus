@@ -11,10 +11,15 @@ import {
 import { ToolbarIconButton } from "@/components/chrome/ToolbarIconButton";
 import { useSettingsStore } from "@/features/settings/settingsStore";
 import {
-  formatChordMac,
+  formatChord,
   type ShortcutMap,
 } from "@/features/settings/shortcutModel";
 import { useUiStore } from "@/features/ui/uiStore";
+import {
+  detectDesktopPlatform,
+  isAppleDesktop,
+} from "@/platform/detection";
+import { cn } from "@/lib/utils/cn";
 
 export type TitlebarProps = {
   onOpenSettings?: () => void;
@@ -22,7 +27,7 @@ export type TitlebarProps = {
 };
 
 function chordLabel(shortcuts: ShortcutMap, id: keyof ShortcutMap): string {
-  return formatChordMac(shortcuts[id]);
+  return formatChord(shortcuts[id], detectDesktopPlatform());
 }
 
 export function Titlebar({ onOpenSettings, onOpenPalette }: TitlebarProps) {
@@ -50,7 +55,10 @@ export function Titlebar({ onOpenSettings, onOpenPalette }: TitlebarProps) {
       data-tauri-drag-region
     >
       <div
-        className="w-[78px] shrink-0"
+        className={cn(
+          "shrink-0",
+          isAppleDesktop() ? "w-[78px]" : "w-2",
+        )}
         aria-hidden
         data-tauri-drag-region
         data-traffic-light-inset

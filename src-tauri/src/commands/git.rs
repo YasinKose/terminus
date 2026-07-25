@@ -1,9 +1,9 @@
 use tauri::{AppHandle, State};
 
 use crate::git::{
-    checkout_branch, commit, create_branch, diff_file, list_branches, resolve_project_path,
-    stage_paths, stash_list, stash_pop, stash_push, status, unstage_paths, GitBranchInfo,
-    GitDiffResult, GitStashInfo, GitStatusSnapshot,
+    checkout_branch, commit, create_branch, diff_file, list_branches, read_file,
+    resolve_project_path, stage_paths, stash_list, stash_pop, stash_push, status, unstage_paths,
+    GitBranchInfo, GitDiffResult, GitFileDocument, GitStashInfo, GitStatusSnapshot,
 };
 use crate::state::SharedAppState;
 use crate::AppError;
@@ -27,6 +27,13 @@ pub struct GitDiffInput {
     pub project_id: String,
     pub path: String,
     pub staged: bool,
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GitFileInput {
+    pub project_id: String,
+    pub path: String,
 }
 
 #[derive(Debug, Clone, serde::Deserialize)]
@@ -95,6 +102,16 @@ pub fn git_diff_file(
 ) -> Result<GitDiffResult, AppError> {
     let root = project_root(&app, &state, &input.project_id)?;
     diff_file(&root, &input.path, input.staged)
+}
+
+#[tauri::command]
+pub fn git_read_file(
+    app: AppHandle,
+    state: State<'_, SharedAppState>,
+    input: GitFileInput,
+) -> Result<GitFileDocument, AppError> {
+    let root = project_root(&app, &state, &input.project_id)?;
+    read_file(&root, &input.path)
 }
 
 #[tauri::command]

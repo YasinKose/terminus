@@ -1,4 +1,5 @@
 use std::fs;
+#[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -237,13 +238,16 @@ fn repository_roundtrip_bootstrap_and_settings() {
         Some(&serde_json::json!("dark"))
     );
 
-    let meta = fs::metadata(dir.path().join("terminus.db")).expect("meta");
-    let mode = meta.permissions().mode() & 0o777;
-    assert_eq!(
-        mode & 0o077,
-        0,
-        "db must not be group/other accessible, mode={mode:o}"
-    );
+    #[cfg(unix)]
+    {
+        let meta = fs::metadata(dir.path().join("terminus.db")).expect("meta");
+        let mode = meta.permissions().mode() & 0o777;
+        assert_eq!(
+            mode & 0o077,
+            0,
+            "db must not be group/other accessible, mode={mode:o}"
+        );
+    }
 }
 
 #[test]

@@ -15,6 +15,7 @@ import { tauriDialogApi } from "@/lib/tauri/dialog";
 import { useCloseRequestStore } from "@/stores/closeRequestStore";
 import { FolderOpen, LoaderCircle, SquareTerminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { reportError } from "@/lib/errors";
 
 export type AppProps = {
   dialogApi?: DialogApi;
@@ -81,7 +82,8 @@ export function App({
         if (cancelled) {
           unlisten?.();
         }
-      } catch {
+      } catch (error) {
+        reportError("Could not intercept window close", error);
       }
     })();
 
@@ -175,7 +177,7 @@ export function App({
                 Open project
               </Button>
               <p className="mt-4 text-xs text-muted-foreground">
-                Your projects and layouts stay on this Mac.
+                Your projects and layouts stay on this device.
               </p>
             </div>
           </main>

@@ -1,20 +1,21 @@
 import { useEffect } from "react";
-import { ToolbarIconButton } from "@/components/chrome/ToolbarIconButton";
 import { Button } from "@/components/ui/button";
+import {
+  WorkbenchEmptyState,
+  WorkbenchPanel,
+  WorkbenchSectionHeader,
+} from "@/components/workbench/WorkbenchPanel";
 import { createTerminalLeaf, type PaneNode } from "@/features/panes/model";
 import { collectTerminalIds, splitPane } from "@/features/panes/tree";
 import { useTmuxStore } from "@/features/tmux/tmuxStore";
 import { useWorkspaceStore } from "@/features/workspaces/workspaceStore";
 import { reportError } from "@/lib/errors";
 import type { TmuxSession } from "@/lib/tauri/tmux";
-import { cn } from "@/lib/utils/cn";
 import {
   FolderOpen,
   Layers,
   Link2,
-  RefreshCw,
   SquareTerminal,
-  X,
 } from "lucide-react";
 
 export type TmuxPanelProps = {
@@ -103,59 +104,26 @@ export function TmuxPanel({ projectId, open, onClose }: TmuxPanelProps) {
   };
 
   return (
-    <aside
-      className="flex h-full w-[min(20.5rem,100%)] shrink-0 flex-col border-l border-border/90 bg-chrome"
-      aria-label="tmux"
+    <WorkbenchPanel
+      label="tmux"
+      icon={<Layers className="size-3.5" />}
+      count={sessions.length}
+      loading={loading}
+      onRefresh={() => void refresh()}
+      onClose={onClose}
     >
-      <header className="flex h-11 shrink-0 items-center justify-between gap-2 border-b border-border/80 px-2.5">
-        <div className="flex min-w-0 items-center gap-2 pl-0.5">
-          <Layers className="size-3.5 shrink-0 text-primary" aria-hidden />
-          <div className="min-w-0">
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-xs font-semibold text-foreground">tmux</span>
-              <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
-                {sessions.length}
-              </span>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-0.5">
-          <ToolbarIconButton
-            label="Refresh"
-            disabled={loading}
-            onClick={() => void refresh()}
-          >
-            <RefreshCw
-              className={cn("size-4", loading && "animate-spin")}
-              aria-hidden
-            />
-          </ToolbarIconButton>
-          <ToolbarIconButton label="Close tmux panel" onClick={onClose}>
-            <X className="size-4" aria-hidden />
-          </ToolbarIconButton>
-        </div>
-      </header>
-
       {!projectId ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center">
-          <div className="inline-flex size-10 items-center justify-center rounded-xl border border-border bg-surface-raised text-muted-foreground">
-            <FolderOpen className="size-4" aria-hidden />
-          </div>
-          <p className="text-sm font-medium">No project selected</p>
-          <p className="text-xs leading-5 text-muted-foreground">
-            Open a project to attach tmux sessions into a workspace pane.
-          </p>
-        </div>
+        <WorkbenchEmptyState
+          icon={<FolderOpen className="size-4" aria-hidden />}
+          title="No project selected"
+          body="Open a project to attach tmux sessions into a workspace pane."
+        />
       ) : detectInfo && !detectInfo.available ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center">
-          <div className="inline-flex size-10 items-center justify-center rounded-xl border border-border bg-surface-raised text-muted-foreground">
-            <SquareTerminal className="size-4" aria-hidden />
-          </div>
-          <p className="text-sm font-medium">tmux not found</p>
-          <p className="text-xs leading-5 text-muted-foreground">
-            Install tmux and ensure it is on PATH, or set TMUX_BIN.
-          </p>
-        </div>
+        <WorkbenchEmptyState
+          icon={<SquareTerminal className="size-4" aria-hidden />}
+          title="tmux not found"
+          body="Install tmux and ensure it is on PATH, or set TMUX_BIN."
+        />
       ) : (
         <>
           <div className="border-b border-border/70 px-3 py-2">
@@ -175,11 +143,10 @@ export function TmuxPanel({ projectId, open, onClose }: TmuxPanelProps) {
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto">
             <section>
-              <div className="sticky top-0 z-[1] flex h-8 items-center border-b border-border/60 bg-chrome/95 px-3 backdrop-blur-sm">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                  Sessions
-                </span>
-              </div>
+              <WorkbenchSectionHeader
+                title="Sessions"
+                count={sessions.length}
+              />
               {sessions.length === 0 ? (
                 <div className="flex flex-col items-center justify-center gap-2 p-6 text-center">
                   <p className="text-sm font-medium">No sessions</p>
@@ -224,6 +191,6 @@ export function TmuxPanel({ projectId, open, onClose }: TmuxPanelProps) {
           </div>
         </>
       )}
-    </aside>
+    </WorkbenchPanel>
   );
 }

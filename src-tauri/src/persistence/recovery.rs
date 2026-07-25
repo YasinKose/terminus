@@ -163,11 +163,36 @@ pub fn reveal_database_path(db_path: &Path) -> Result<(), AppError> {
             })
     }
 
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(target_os = "windows")]
     {
-        let parent = target.parent().unwrap_or(target);
+        let status = if db_path.exists() {
+            Command::new("explorer.exe")
+                .arg("/select,")
+                .arg(target)
+                .status()
+        } else {
+            Command::new("explorer.exe").arg(target).status()
+        };
+        status
+            .map_err(|e| AppError::Message(format!("failed to reveal path: {e}")))
+            .and_then(|s| {
+                if s.success() {
+                    Ok(())
+                } else {
+                    Err(AppError::Message(format!("reveal command exited with {s}")))
+                }
+            })
+    }
+
+    #[cfg(all(not(target_os = "macos"), not(target_os = "windows")))]
+    {
+        let directory = if db_path.exists() {
+            target.parent().unwrap_or(target)
+        } else {
+            target
+        };
         Command::new("xdg-open")
-            .arg(parent)
+            .arg(directory)
             .status()
             .map_err(|e| AppError::Message(format!("failed to reveal path: {e}")))
             .and_then(|s| {

@@ -15,6 +15,8 @@ import {
   useProjectStore,
 } from "@/features/projects/projectStore";
 import { useUiStore } from "@/features/ui/uiStore";
+import { useGitStore } from "@/features/git/gitStore";
+import { useSourcePreviewStore } from "@/features/source-preview/sourcePreviewStore";
 import { useWorkspaceStore } from "@/features/workspaces/workspaceStore";
 import type { DialogApi } from "@/lib/tauri/dialog";
 import type {
@@ -29,10 +31,19 @@ import {
   DEFAULT_SHORTCUTS,
 } from "@/features/settings/shortcutModel";
 import type { RecoveryApi } from "@/lib/tauri/recovery";
+import type { GitApi } from "@/lib/tauri/git";
+import type { SourceFileApi } from "@/lib/tauri/sourceFiles";
 
 vi.mock("@/features/terminal/TerminalPane", () => ({
   TerminalPane: ({ sessionId }: { sessionId: string }) => (
     <div data-testid={`terminal-${sessionId}`}>terminal:{sessionId}</div>
+  ),
+}));
+
+vi.mock("@/features/source-preview/SourceCodeView", () => ({
+  sourceLanguageName: () => "TypeScript",
+  SourceCodeView: ({ value }: { value: string }) => (
+    <pre data-testid="source-code-view">{value}</pre>
   ),
 }));
 
@@ -179,7 +190,20 @@ function resetStores(api: WorkspaceApi) {
     workspaces: [],
     activeWorkspaceId: null,
   });
-  useUiStore.setState({ sidebarCollapsed: false });
+  useUiStore.setState({
+    sidebarCollapsed: false,
+    sidePanel: null,
+    gitPanelOpen: false,
+  });
+  useSourcePreviewStore.setState({
+    projectId: null,
+    path: null,
+    status: null,
+    document: null,
+    loading: false,
+    error: null,
+    active: false,
+  });
   useSettingsStore.setState({
     shortcuts: { ...DEFAULT_SHORTCUTS },
     navigatorModifiers: { ...DEFAULT_NAVIGATOR_MODIFIERS },
@@ -382,6 +406,83 @@ describe("App shell", () => {
     await waitFor(() => {
       expect(persistSelection).toHaveBeenCalledWith("p1", "w2");
     });
+  });
+
+  it("opens a Git file in the source workspace and returns to the terminal tab", async () => {
+    const p1 = project("p1", "/a", "w1");
+    const w1 = workspace("w1", "p1", "Main", 0);
+    const api = createMockApi({ projects: [p1], workspaces: [w1] });
+    resetStores(api);
+    await useProjectStore.getState().bootstrap();
+    await useProjectStore.getState().selectProject("p1");
+
+    const gitApi: GitApi = {
+      status: vi.fn(async () => ({
+        isRepo: true,
+        branch: "main",
+        upstream: null,
+        ahead: 0,
+        behind: 0,
+        files: [
+          {
+            path: "src/app.ts",
+            status: "modified",
+            staged: false,
+            unstaged: true,
+            untracked: false,
+          },
+        ],
+        hasConflicts: false,
+      })),
+      diffFile: vi.fn(),
+      stage: vi.fn(async () => {}),
+      unstage: vi.fn(async () => {}),
+      commit: vi.fn(async () => "commit"),
+      branches: vi.fn(async () => []),
+      checkout: vi.fn(async () => {}),
+      createBranch: vi.fn(async () => {}),
+      stashList: vi.fn(async () => []),
+      stashPush: vi.fn(async () => {}),
+      stashPop: vi.fn(async () => {}),
+    };
+    const sourceApi: SourceFileApi = {
+      read: vi.fn(async () => ({
+        path: "src/app.ts",
+        content: "export const app = true;\n",
+        byteSize: 25,
+        source: "worktree" as const,
+      })),
+    };
+    useGitStore.getState().setApi(gitApi);
+    useSourcePreviewStore.getState().setApi(sourceApi);
+    useUiStore.setState({ sidePanel: "git", gitPanelOpen: true });
+
+    const user = userEvent.setup();
+    render(
+      <AppShell
+        dialogApi={{ openDirectory: async () => null }}
+        workspaceApi={api}
+      />,
+    );
+
+    await user.click(await screen.findByTitle("src/app.ts"));
+
+    expect(
+      await screen.findByRole("region", { name: "Source preview" }),
+    ).toBeVisible();
+    expect(sourceApi.read).toHaveBeenCalledWith("p1", "src/app.ts");
+    expect(screen.getByTestId("source-code-view")).toHaveTextContent(
+      "export const app = true;",
+    );
+
+    await user.click(screen.getByRole("tab", { name: "Main" }));
+
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("region", { name: "Source preview" }),
+      ).not.toBeInTheDocument(),
+    );
+    expect(useSourcePreviewStore.getState().active).toBe(false);
   });
 
   it("persists workspace selection from the chrome create button", async () => {

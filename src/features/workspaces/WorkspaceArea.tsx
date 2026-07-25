@@ -1,7 +1,7 @@
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import type { WorkspaceView } from "@/lib/tauri/contracts";
 import { createTerminalLeaf, type PaneNode } from "@/features/panes/model";
-import { TerminalPane } from "@/features/terminal/TerminalPane";
+import { PaneTree } from "@/features/panes/PaneTree";
 import { useWorkspaceStore } from "@/features/workspaces/workspaceStore";
 
 function parseRoot(rootJson: string | null): PaneNode | null {
@@ -11,16 +11,6 @@ function parseRoot(rootJson: string | null): PaneNode | null {
   } catch {
     return null;
   }
-}
-
-function firstTerminalId(node: PaneNode | null): string | null {
-  if (!node) return null;
-  if (node.type === "terminal") return node.id;
-  for (const child of node.children) {
-    const id = firstTerminalId(child);
-    if (id) return id;
-  }
-  return null;
 }
 
 export type WorkspaceAreaProps = {
@@ -53,6 +43,27 @@ export function WorkspaceArea({
     void saveWorkspace(next);
   }, [activeWorkspaceId, workspaces, saveWorkspace]);
 
+  const handleTreeChange = useCallback(
+    (workspace: WorkspaceView, next: PaneNode) => {
+      void saveWorkspace({
+        ...workspace,
+        rootJson: JSON.stringify(next),
+      });
+    },
+    [saveWorkspace],
+  );
+
+  const handleActivatePane = useCallback(
+    (workspace: WorkspaceView, paneId: string) => {
+      if (workspace.activePaneId === paneId) return;
+      void saveWorkspace({
+        ...workspace,
+        activePaneId: paneId,
+      });
+    },
+    [saveWorkspace],
+  );
+
   if (initialized.length === 0) {
     return (
       <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
@@ -66,7 +77,6 @@ export function WorkspaceArea({
       {initialized.map((ws) => {
         const visible = ws.id === activeWorkspaceId;
         const root = parseRoot(ws.rootJson);
-        const terminalId = firstTerminalId(root) ?? ws.activePaneId;
 
         return (
           <div
@@ -80,7 +90,7 @@ export function WorkspaceArea({
             data-workspace-id={ws.id}
             data-visible={visible ? "true" : "false"}
           >
-            {!terminalId ? (
+            {!root ? (
               <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
                 <p className="text-sm text-muted-foreground">
                   This workspace has no terminal yet.
@@ -102,10 +112,11 @@ export function WorkspaceArea({
                 </button>
               </div>
             ) : (
-              <TerminalPane
-                sessionId={terminalId}
+              <PaneTree
+                root={root}
                 projectId={projectId}
-                title={ws.name}
+                onTreeChange={(next) => handleTreeChange(ws, next)}
+                onActivatePane={(paneId) => handleActivatePane(ws, paneId)}
               />
             )}
           </div>

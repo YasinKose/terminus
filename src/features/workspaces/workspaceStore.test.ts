@@ -70,6 +70,7 @@ describe("workspaceStore", () => {
       saveTwoWorkspaces: vi.fn(
         async (a, b): Promise<[typeof a, typeof b]> => [a, b],
       ),
+      deleteWorkspace: vi.fn(async () => {}),
     };
     useWorkspaceStore.getState().setApi(api);
     useWorkspaceStore.getState().hydrateFromBootstrap([w1]);

@@ -27,6 +27,7 @@ export interface WorkspaceApi {
     first: WorkspaceRecord,
     second: WorkspaceRecord,
   ) => Promise<[WorkspaceRecord, WorkspaceRecord]>;
+  deleteWorkspace: (workspaceId: string) => Promise<void>;
 }
 
 export const tauriWorkspaceApi: WorkspaceApi = {
@@ -52,4 +53,6 @@ export const tauriWorkspaceApi: WorkspaceApi = {
     invoke<[WorkspaceRecord, WorkspaceRecord]>("save_two_workspaces", {
       input: { first, second },
     }),
+  deleteWorkspace: (workspaceId) =>
+    invoke<void>("delete_workspace", { input: { workspaceId } }),
 };

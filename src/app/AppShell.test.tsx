@@ -122,6 +122,9 @@ function createMockApi(seed?: {
       }
       return [first, second];
     },
+    deleteWorkspace: async (workspaceId) => {
+      workspaces = workspaces.filter((w) => w.id !== workspaceId);
+    },
   };
 }
 

@@ -3,6 +3,8 @@ import { Titlebar } from "@/app/Titlebar";
 import { ProjectSidebar } from "@/features/projects/ProjectSidebar";
 import { useProjectStore } from "@/features/projects/projectStore";
 import { useUiStore } from "@/features/ui/uiStore";
+import { collectTerminalIds } from "@/features/panes/tree";
+import type { PaneNode } from "@/features/panes/model";
 import { WorkspaceArea } from "@/features/workspaces/WorkspaceArea";
 import { WorkspaceTabs } from "@/features/workspaces/WorkspaceTabs";
 import { useWorkspaceStore } from "@/features/workspaces/workspaceStore";
@@ -11,6 +13,20 @@ import type { DialogApi } from "@/lib/tauri/dialog";
 import { tauriDialogApi } from "@/lib/tauri/dialog";
 import type { WorkspaceApi } from "@/lib/tauri/workspaces";
 import { tauriWorkspaceApi } from "@/lib/tauri/workspaces";
+import { useCloseRequestStore } from "@/stores/closeRequestStore";
+
+function parseRoot(rootJson: string | null): PaneNode | null {
+  if (!rootJson) return null;
+  try {
+    return JSON.parse(rootJson) as PaneNode;
+  } catch {
+    return null;
+  }
+}
+
+function countTerminalsInWorkspace(rootJson: string | null): number {
+  return collectTerminalIds(parseRoot(rootJson)).length;
+}
 
 export type AppShellProps = {
   dialogApi?: DialogApi;
@@ -126,6 +142,41 @@ export function AppShell({
     workspaceApi,
   ]);
 
+  const handleCloseWorkspace = useCallback(
+    (workspaceId: string) => {
+      const ws = workspaces.find((w) => w.id === workspaceId);
+      if (!ws) return;
+      useCloseRequestStore.getState().requestClose({
+        kind: "workspace",
+        workspaceId,
+        projectId: ws.projectId,
+        name: ws.name,
+        terminalCount: countTerminalsInWorkspace(ws.rootJson),
+      });
+    },
+    [workspaces],
+  );
+
+  const handleCloseProject = useCallback(
+    (projectId: string) => {
+      const project = projects.find((p) => p.id === projectId);
+      if (!project) return;
+      const projectWs = listForProject(projectId);
+      const terminalCount = projectWs.reduce(
+        (sum, ws) => sum + countTerminalsInWorkspace(ws.rootJson),
+        0,
+      );
+      useCloseRequestStore.getState().requestClose({
+        kind: "project",
+        projectId,
+        name: project.displayName,
+        terminalCount,
+        workspaceCount: projectWs.length,
+      });
+    },
+    [listForProject, projects],
+  );
+
   return (
     <div className="flex h-full min-h-0 flex-col bg-background text-foreground">
       <Titlebar />
@@ -140,6 +191,7 @@ export function AppShell({
           onSelectProject={(id) => {
             void selectProject(id);
           }}
+          onCloseProject={handleCloseProject}
         />
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           {activeProjectId ? (
@@ -156,6 +208,7 @@ export function AppShell({
                 onCreateWorkspace={() => {
                   void handleCreateWorkspace();
                 }}
+                onCloseWorkspace={handleCloseWorkspace}
               />
               <div className="min-h-0 flex-1">
                 <WorkspaceArea

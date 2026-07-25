@@ -1,5 +1,6 @@
 import { useCallback, useRef } from "react";
 import { TerminalPane } from "@/features/terminal/TerminalPane";
+import { useCloseRequestStore } from "@/stores/closeRequestStore";
 import { DropZoneOverlay } from "./DropZoneOverlay";
 import {
   hitTestDropZone,
@@ -130,9 +131,28 @@ function TerminalLeafView({
           >
             ⋮⋮
           </button>
-          <span className="truncate text-[10px] text-muted-foreground">
+          <span className="min-w-0 flex-1 truncate text-[10px] text-muted-foreground">
             {leaf.titleOverride ?? "Terminal"}
           </span>
+          <button
+            type="button"
+            data-testid={`close-pane-${leaf.id}`}
+            className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded text-[12px] text-muted-foreground hover:bg-accent hover:text-foreground"
+            aria-label="Close terminal"
+            onClick={(e) => {
+              e.stopPropagation();
+              useCloseRequestStore.getState().requestClose({
+                kind: "terminal",
+                sessionId: leaf.id,
+                workspaceId,
+                projectId,
+                title: leaf.titleOverride ?? "Terminal",
+                terminalCount: 1,
+              });
+            }}
+          >
+            ×
+          </button>
         </div>
         <div className="min-h-0 flex-1">
           <TerminalPane
@@ -141,6 +161,7 @@ function TerminalLeafView({
             profileId={leaf.profileId}
             initialCwd={leaf.initialCwd || null}
             title={leaf.titleOverride ?? "Terminal"}
+            showChrome={false}
           />
         </div>
       </div>

@@ -273,6 +273,33 @@ impl Repository {
         })
     }
 
+    pub fn delete_workspace(&self, workspace_id: &str) -> Result<(), AppError> {
+        self.db.with_conn_mut(|conn| {
+            let workspace = load_workspace_by_id(conn, workspace_id)?.ok_or_else(|| {
+                AppError::Message(format!("workspace not found: {workspace_id}"))
+            })?;
+
+            let n = conn
+                .execute("DELETE FROM workspaces WHERE id = ?1", params![workspace_id])
+                .map_err(sql_err)?;
+            if n == 0 {
+                return Err(AppError::Message(format!(
+                    "workspace not found: {workspace_id}"
+                )));
+            }
+
+            conn.execute(
+                "UPDATE projects
+                 SET last_active_workspace_id = NULL, updated_at = ?1
+                 WHERE id = ?2 AND last_active_workspace_id = ?3",
+                params![now_ms(), workspace.project_id, workspace_id],
+            )
+            .map_err(sql_err)?;
+
+            Ok(())
+        })
+    }
+
     pub fn save_profile(&self, profile: &ProfileRecord) -> Result<(), AppError> {
         serde_json::from_str::<serde_json::Value>(&profile.args_json)
             .map_err(|e| AppError::Message(format!("profile args_json is invalid: {e}")))?;

@@ -13,6 +13,8 @@ export type TerminalPaneProps = {
   rows?: number;
   registry?: TerminalRuntimeRegistry;
   ptyApi?: PtyApi;
+  onRequestClose?: () => void;
+  showChrome?: boolean;
 };
 
 export function TerminalPane({
@@ -25,6 +27,8 @@ export function TerminalPane({
   rows,
   registry,
   ptyApi,
+  onRequestClose,
+  showChrome = true,
 }: TerminalPaneProps) {
   const session = useTerminalStore((s) => s.sessions[sessionId]);
   const markStarting = useTerminalStore((s) => s.markStarting);
@@ -69,12 +73,30 @@ export function TerminalPane({
 
   return (
     <div className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden border border-border bg-background">
-      <div className="flex h-7 shrink-0 items-center justify-between gap-2 border-b border-border px-2 text-xs text-muted-foreground">
-        <span className="truncate font-medium text-foreground">
-          {displayTitle}
-        </span>
-        <span className="shrink-0 tabular-nums opacity-70">{status}</span>
-      </div>
+      {showChrome ? (
+        <div className="flex h-7 shrink-0 items-center justify-between gap-2 border-b border-border px-2 text-xs text-muted-foreground">
+          <span className="truncate font-medium text-foreground">
+            {displayTitle}
+          </span>
+          <div className="flex shrink-0 items-center gap-2">
+            <span className="tabular-nums opacity-70">{status}</span>
+            {onRequestClose ? (
+              <button
+                type="button"
+                data-testid={`close-terminal-${sessionId}`}
+                className="inline-flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"
+                aria-label="Close terminal"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRequestClose();
+                }}
+              >
+                ×
+              </button>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
       <div className="relative min-h-0 flex-1">
         <TerminalHost
           sessionId={sessionId}

@@ -182,6 +182,24 @@ pub fn save_two_workspaces(
     })
 }
 
+#[derive(Debug, Clone, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DeleteWorkspaceInput {
+    pub workspace_id: String,
+}
+
+#[tauri::command]
+pub fn delete_workspace(
+    app: AppHandle,
+    state: State<'_, SharedAppState>,
+    input: DeleteWorkspaceInput,
+) -> Result<(), AppError> {
+    if input.workspace_id.trim().is_empty() {
+        return Err(AppError::Message("workspace_id is required".into()));
+    }
+    state.with_repository(&app, |repo| repo.delete_workspace(&input.workspace_id))
+}
+
 #[tauri::command]
 pub fn default_workspace_label() -> String {
     default_workspace_name().to_string()

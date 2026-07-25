@@ -39,6 +39,7 @@ pub fn run() {
             commands::set_last_active_workspace,
             commands::save_workspace,
             commands::save_two_workspaces,
+            commands::delete_workspace,
             commands::default_workspace_label,
             commands::open_pty,
             commands::write_pty,

@@ -6,6 +6,7 @@ export type ProjectSidebarProps = {
   collapsed: boolean;
   onOpenProject: () => void;
   onSelectProject: (projectId: string) => void;
+  onCloseProject?: (projectId: string) => void;
 };
 
 export function ProjectSidebar({
@@ -14,6 +15,7 @@ export function ProjectSidebar({
   collapsed,
   onOpenProject,
   onSelectProject,
+  onCloseProject,
 }: ProjectSidebarProps) {
   if (collapsed) {
     return null;
@@ -45,13 +47,13 @@ export function ProjectSidebar({
           projects.map((project) => {
             const active = project.id === activeProjectId;
             return (
-              <li key={project.id}>
+              <li key={project.id} className="group flex items-center gap-0.5">
                 <button
                   type="button"
                   className={
                     active
-                      ? "flex w-full items-center gap-2 rounded-md bg-accent px-2 py-1.5 text-left text-sm text-accent-foreground"
-                      : "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-foreground hover:bg-accent/60"
+                      ? "flex min-w-0 flex-1 items-center gap-2 rounded-md bg-accent px-2 py-1.5 text-left text-sm text-accent-foreground"
+                      : "flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-foreground hover:bg-accent/60"
                   }
                   aria-current={active ? "true" : undefined}
                   onClick={() => onSelectProject(project.id)}
@@ -63,6 +65,20 @@ export function ProjectSidebar({
                   />
                   <span className="truncate">{project.displayName}</span>
                 </button>
+                {onCloseProject ? (
+                  <button
+                    type="button"
+                    data-testid={`close-project-${project.id}`}
+                    className="mr-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded text-xs text-muted-foreground opacity-0 hover:bg-accent hover:text-foreground group-hover:opacity-100"
+                    aria-label={`Close ${project.displayName}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onCloseProject(project.id);
+                    }}
+                  >
+                    ×
+                  </button>
+                ) : null}
               </li>
             );
           })

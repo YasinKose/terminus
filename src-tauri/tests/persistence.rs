@@ -288,3 +288,47 @@ fn project_record_fields_match_schema() {
     assert!(project.last_active_workspace_id.is_none());
 }
 
+#[test]
+fn delete_workspace_removes_row_and_clears_last_active() {
+    let dir = TempDir::new().unwrap();
+    let repo = open_repo(&dir);
+    let project_path = project_dir(&dir, "proj-del-ws");
+    let project = repo
+        .add_project(&project_path, "Delete WS", "#abc")
+        .expect("add");
+    let ws = WorkspaceRecord {
+        id: "ws-del".into(),
+        project_id: project.id.clone(),
+        name: "Workspace 1".into(),
+        root_json: Some(leaf_json("t1", project_path.to_string_lossy().as_ref())),
+        active_pane_id: Some("t1".into()),
+        position: 0,
+        created_at: now_ms(),
+        updated_at: now_ms(),
+    };
+    repo.save_workspace(&ws).expect("save");
+    repo.set_last_active_workspace(&project.id, &ws.id)
+        .expect("set last");
+
+    let project_id = project.id.clone();
+    repo.delete_workspace(&ws.id).expect("delete");
+
+    let state = repo.load_bootstrap_state().expect("bootstrap");
+    assert!(state.workspaces.is_empty());
+    let remaining = state
+        .projects
+        .into_iter()
+        .find(|p| p.id == project_id)
+        .expect("project remains");
+    assert!(remaining.last_active_workspace_id.is_none());
+}
+
+#[test]
+fn delete_workspace_missing_is_error() {
+    let dir = TempDir::new().unwrap();
+    let repo = open_repo(&dir);
+    let err = repo.delete_workspace("missing").expect_err("must fail");
+    let payload: terminus_lib::ErrorPayload = err.into();
+    assert!(payload.message.contains("workspace not found"));
+}
+

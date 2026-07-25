@@ -120,6 +120,10 @@ function createMockApi(seed?: {
       }
       return [first, second] as [typeof first, typeof second];
     }),
+    deleteWorkspace: vi.fn(async (workspaceId) => {
+      const idx = workspaces.findIndex((w) => w.id === workspaceId);
+      if (idx >= 0) workspaces.splice(idx, 1);
+    }),
   };
   return api;
 }

@@ -26,6 +26,7 @@ export interface WorkspaceStoreState extends WorkspaceStoreApi {
     first: WorkspaceRecord,
     second: WorkspaceRecord,
   ) => Promise<[WorkspaceView, WorkspaceView]>;
+  removeWorkspace: (workspaceId: string) => Promise<void>;
 }
 
 let api: WorkspaceApi = tauriWorkspaceApi;
@@ -110,5 +111,29 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
     get().upsertWorkspace(a);
     get().upsertWorkspace(b);
     return [get().getWorkspace(a.id)!, get().getWorkspace(b.id)!];
+  },
+
+  removeWorkspace: async (workspaceId) => {
+    const current = get().getWorkspace(workspaceId);
+    if (!current) {
+      throw new Error(`workspace not found: ${workspaceId}`);
+    }
+    await api.deleteWorkspace(workspaceId);
+    set((s) => {
+      const workspaces = s.workspaces.filter((w) => w.id !== workspaceId);
+      let activeWorkspaceId = s.activeWorkspaceId;
+      if (activeWorkspaceId === workspaceId) {
+        const siblings = workspaces
+          .filter((w) => w.projectId === current.projectId)
+          .slice()
+          .sort((a, b) => a.position - b.position);
+        activeWorkspaceId = siblings[0]?.id ?? null;
+      }
+      return { workspaces, activeWorkspaceId };
+    });
+    const nextActive = get().activeWorkspaceId;
+    if (nextActive) {
+      await get().activateWorkspace(nextActive);
+    }
   },
 }));

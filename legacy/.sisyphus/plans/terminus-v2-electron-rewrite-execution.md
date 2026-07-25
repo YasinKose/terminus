@@ -47,51 +47,54 @@
 - [x] [P1.20] `packages/shared/package.json` dosyasını ESM export olacak şekilde yapılandır
 - [x] [P1.21] Diğer paketlerin `import { PtySpawnConfig } from '@terminus/shared'` yapabildiğini doğrula
 - [x] [P1.22] `tsc --noEmit` komutunun strict modda başarıyla geçtiğini doğrula
-- [ ] [P1.23] `git commit -m "feat(p1): add @terminus/shared types and IPC constants"`
+- [x] [P1.23] `git commit -m "feat(p1): add @terminus/shared types and IPC constants"`
 
 ### TODO-1.3: @terminus/electron main process kabuğu
 
-- [ ] [P1.24] `packages/electron/src/main.ts` dosyasını oluştur — Electron app entry, window creation
-- [ ] [P1.25] `packages/electron/src/preload.ts` dosyasını oluştur — Typed ContextBridge `window.terminus.*`
-- [ ] [P1.26] `packages/electron/src/ipc/pty.handler.ts` dosyasını oluştur — PTY IPC handler iskelet
-- [ ] [P1.27] `packages/electron/src/ipc/db.handler.ts` dosyasını oluştur — DB IPC handler iskelet
-- [ ] [P1.28] `packages/electron/src/ipc/ai.handler.ts` dosyasını oluştur — AI IPC handler iskelet
-- [ ] [P1.29] `packages/electron/src/ipc/git.handler.ts` dosyasını oluştur — Git IPC handler iskelet
-- [ ] [P1.30] `packages/electron/src/ipc/fs.handler.ts` dosyasını oluştur — FS IPC handler iskelet
-- [ ] [P1.31] Renderer DevTools konsolundan `window.terminus.app.getVersion()` çağrısının doğru sürümü döndürdüğünü doğrula
-- [ ] [P1.32] `window.terminus` nesnesinin renderer'da tam TypeScript tipleriyle erişilebilir olduğunu doğrula
-- [ ] [P1.33] `git commit -m "feat(p1): add typed ContextBridge and IPC handler skeletons"`
+- [x] [P1.24] `packages/electron/src/main.ts` dosyasını oluştur — Electron app entry, window creation
+- [x] [P1.25] `packages/electron/src/preload.ts` dosyasını oluştur — Typed ContextBridge `window.terminus.*`
+- [x] [P1.26] `packages/electron/src/ipc/pty.handler.ts` dosyasını oluştur — PTY IPC handler iskelet
+- [x] [P1.27] `packages/electron/src/ipc/db.handler.ts` dosyasını oluştur — DB IPC handler iskelet
+- [x] [P1.28] `packages/electron/src/ipc/ai.handler.ts` dosyasını oluştur — AI IPC handler iskelet
+- [x] [P1.29] `packages/electron/src/ipc/git.handler.ts` dosyasını oluştur — Git IPC handler iskelet
+- [x] [P1.30] `packages/electron/src/ipc/fs.handler.ts` dosyasını oluştur — FS IPC handler iskelet
+- [x] [P1.31] Renderer DevTools konsolundan `window.terminus.app.getVersion()` çağrısının doğru sürümü döndürdüğünü doğrula
+- [x] [P1.32] `window.terminus` nesnesinin renderer'da tam TypeScript tipleriyle erişilebilir olduğunu doğrula
+#BT|- [x] [P1.33] `git commit -m "feat(p1): add typed ContextBridge and IPC handler skeletons"`
 
 ### TODO-1.4: @terminus/core UI kabuğu
 
-- [ ] [P1.34] `cd terminus-v2 && pnpm add -w react@19 zustand tailwindcss @radix-ui/react-dialog lucide-react`
-- [ ] [P1.35] shadcn/ui'yi yapılandır: `npx shadcn-ui@latest init` (terminus-v2/ içinde)
-- [ ] [P1.36] `packages/core/src/App.tsx` dosyasını oluştur — root bileşen
-- [ ] [P1.37] `packages/core/src/layouts/MainLayout.tsx` dosyasını oluştur — Sidebar + Main + Bottom Panel (CSS Grid)
-- [ ] [P1.38] `packages/core/src/layouts/SplitContainer.tsx` dosyasını oluştur — iskelet
-- [ ] [P1.39] `packages/core/src/components/Sidebar.tsx` dosyasını oluştur — "Projects" başlığıyla
-- [ ] [P1.40] `packages/core/src/components/TabBar.tsx` dosyasını oluştur — iskelet
-- [ ] [P1.41] `packages/core/src/stores/projectStore.ts` dosyasını oluştur — Zustand store
-- [ ] [P1.42] `packages/core/src/stores/uiStore.ts` dosyasını oluştur — Zustand store
-- [ ] [P1.43] `packages/core/src/stores/settingsStore.ts` dosyasını oluştur — Zustand store
-- [ ] [P1.44] Uygulamanın sidebar, boş ana alan ve daraltılabilir alt panel ile render olduğunu doğrula
+- [x] [P1.34] `cd terminus-v2 && pnpm add -w react@19 zustand tailwindcss @radix-ui/react-dialog lucide-react`
+- [x] [P1.35] shadcn/ui'yi yapılandır: npx shadcn-ui@latest init (terminus-v2/ içinde)
+- [x] [P1.36] `packages/core/src/App.tsx` dosyasını oluştur — root bileşen
+- [x] [P1.37] `packages/core/src/layouts/MainLayout.tsx` dosyasını oluştur — Sidebar + Main + Bottom Panel (CSS Grid)
+- [x] [P1.38] `packages/core/src/layouts/SplitContainer.tsx` dosyasını oluştur — iskelet
+- [x] [P1.39] `packages/core/src/components/Sidebar.tsx` dosyasını oluştur — "Projects" başlığıyla
+- [x] [P1.40] `packages/core/src/components/TabBar.tsx` dosyasını oluştur — iskelet
+- [x] [P1.41] `packages/core/src/stores/projectStore.ts` dosyasını oluştur — Zustand store
+- [x] [P1.42] `packages/core/src/stores/uiStore.ts` dosyasını oluştur — Zustand store
+- [x] [P1.43] `packages/core/src/stores/settingsStore.ts` dosyasını oluştur — Zustand store
+- [x] [P1.44] Uygulamanın sidebar, boş ana alan ve daraltılabilir alt panel ile render olduğunu doğrula
+- [x] [P1.45] Karanlık temanın uygulandığını, sidebar'ın daraldığını/genişlediğini doğrula
+- [x] [P1.46] `git commit -m "feat(p1): add core UI shell with MainLayout and Zustand stores"`
+
 - [ ] [P1.45] Karanlık temanın uygulandığını, sidebar'ın daraldığını/genişlediğini doğrula
 - [ ] [P1.46] `git commit -m "feat(p1): add core UI shell with MainLayout and Zustand stores"`
 
 ### TODO-1.5: SQLite kurulumu ve migration'lar
 
-- [ ] [P1.47] `pnpm add better-sqlite3` komutunu çalıştır
-- [ ] [P1.48] `packages/electron/src/services/db.service.ts` dosyasını oluştur — sync API wrapper
-- [ ] [P1.49] `packages/electron/src/migrations/001_initial.sql` dosyasını oluştur — kaynak plandaki tam şemayı içerecek şekilde
-- [ ] [P1.50] Migration runner'ı `db.service.ts` içine ekle — `_migrations` tablosunu takip eder, `.sql` dosyalarını sırayla uygular
-- [ ] [P1.51] Tüm tabloları oluştur: `projects`, `terminal_sessions`, `blocks`, `ai_conversations`, `ai_messages`, `snippets`, `settings`
-- [ ] [P1.52] FTS5 sanal tablolarını ekle: `blocks_fts`, `snippets_fts`
-- [ ] [P1.53] FTS trigger'larını ekle (INSERT, DELETE, UPDATE için)
-- [ ] [P1.54] Index'leri ekle (kaynak planda listelenen tüm index'ler)
-- [ ] [P1.55] Uygulama başlangıcında `~/.terminus/terminus.db` dosyasının oluşturulduğunu doğrula
-- [ ] [P1.56] `PRAGMA table_info(projects)` ile tüm sütunların varlığını doğrula
-- [ ] [P1.57] Test projesi ekle, uygulama yeniden başlatıldığında veri kalıcılığını doğrula
-- [ ] [P1.58] `git commit -m "feat(p1): add SQLite with better-sqlite3 and full schema migration"`
+- [x] [P1.47] `pnpm add better-sqlite3` komutunu çalıştır
+- [x] [P1.48] `packages/electron/src/services/db.service.ts` dosyasını oluştur — sync API wrapper
+- [x] [P1.49] `packages/electron/src/migrations/001_initial.sql` dosyasını oluştur — kaynak plandaki tam şemayı içerecek şekilde
+- [x] [P1.50] Migration runner'ı `db.service.ts` içine ekle — `_migrations` tablosunu takip eder, `.sql` dosyalarını sırayla uygular
+- [x] [P1.51] Tüm tabloları oluştur: `projects`, `terminal_sessions`, `blocks`, `ai_conversations`, `ai_messages`, `snippets`, `settings`
+- [x] [P1.52] FTS5 sanal tablolarını ekle: `blocks_fts`, `snippets_fts`
+- [x] [P1.53] FTS trigger'larını ekle (INSERT, DELETE, UPDATE için)
+- [x] [P1.54] Index'leri ekle (kaynak planda listelenen tüm index'ler)
+- [x] [P1.55] Uygulama başlangıcında `~/.terminus/terminus.db` dosyasının oluşturulduğunu doğrula
+- [x] [P1.56] `PRAGMA table_info(projects)` ile tüm sütunların varlığını doğrula
+- [x] [P1.57] Test projesi ekle, uygulama yeniden başlatıldığında veri kalıcılığını doğrula
+- [x] [P1.58] `git commit -m "feat(p1): add SQLite with better-sqlite3 and full schema migration"`
 
 ---
 
@@ -101,13 +104,13 @@
 
 ### TODO-2.1: xterm.js + node-pty ile temel terminal
 
-- [ ] [P2.1] `pnpm add xterm @xterm/addon-fit @xterm/addon-webgl node-pty` komutunu çalıştır
-- [ ] [P2.2] `packages/electron/src/services/pty.service.ts` dosyasını oluştur — node-pty spawn, write, resize, kill
-- [ ] [P2.3] `packages/electron/src/ipc/pty.handler.ts` dosyasını implement et — spawn, write, resize, kill, onData, onExit
-- [ ] [P2.4] `packages/terminal/src/components/XTermInstance.tsx` dosyasını oluştur — xterm.js wrapper bileşeni
-- [ ] [P2.5] Renderer'dan `window.terminus.pty.spawn()` çağrısını, sessionId almasını implement et
-- [ ] [P2.6] `onData` aboneliğini ve `xterm.write()` borulama işlemini implement et
-- [ ] [P2.7] Kullanıcı tuş vuruşlarını `window.terminus.pty.write(sessionId, data)` ile yönlendir
+- [x] [P2.1] `pnpm add xterm @xterm/addon-fit @xterm/addon-webgl node-pty` komutunu çalıştır
+- [x] [P2.2] `packages/electron/src/services/pty.service.ts` dosyasını oluştur — node-pty spawn, write, resize, kill
+- [x] [P2.3] `packages/electron/src/ipc/pty.handler.ts` dosyasını implement et — spawn, write, resize, kill, onData, onExit
+- [x] [P2.4] `packages/terminal/src/components/XTermInstance.tsx` dosyasını oluştur — xterm.js wrapper bileşeni
+- [x] [P2.5] Renderer'dan `window.terminus.pty.spawn()` çağrısını, sessionId almasını implement et
+- [x] [P2.6] `onData` aboneliğini ve `xterm.write()` borulama işlemini implement et
+- [x] [P2.7] Kullanıcı tuş vuruşlarını `window.terminus.pty.write(sessionId, data)` ile yönlendir
 - [ ] [P2.8] Uygulama açıldığında terminal görüntülendiğini doğrula, `ls` yazınca çıktı geldiğini doğrula
 - [ ] [P2.9] `echo hello` komutunun "hello" çıktısı verdiğini doğrula
 - [ ] [P2.10] zsh ve bash ile test et
@@ -117,11 +120,11 @@
 
 ### TODO-2.2: Çoklu terminal sekme sistemi
 
-- [ ] [P2.14] `packages/terminal/src/stores/terminalStore.ts` dosyasını oluştur — `sessions: Map<id, Session>`, `activeSessionId`
-- [ ] [P2.15] `packages/core/src/components/TabBar.tsx` bileşenini tam olarak implement et
-- [ ] [P2.16] "+" butonuyla yeni terminal sekmesi oluşturma özelliğini ekle
-- [ ] [P2.17] Sekme kapatma özelliğini implement et — PTY'yi öldürür
-- [ ] [P2.18] Sekmeler arası geçiş özelliğini implement et — gizli sekmeler xterm'i unmount eder ama PTY canlı tutar
+- [x] [P2.14] `packages/terminal/src/stores/terminalStore.ts` dosyasını oluştur — `sessions: Map<id, Session>`, `activeSessionId`
+- [x] [P2.15] `packages/core/src/components/TabBar.tsx` bileşenini tam olarak implement et
+- [x] [P2.16] "+" butonuyla yeni terminal sekmesi oluşturma özelliğini ekle
+- [x] [P2.17] Sekme kapatma özelliğini implement et — PTY'yi öldürür
+- [x] [P2.18] Sekmeler arası geçiş özelliğini implement et — gizli sekmeler xterm'i unmount eder ama PTY canlı tutar
 - [ ] [P2.19] "+" butonuyla yeni sekme oluşturmayı doğrula, her sekmenin bağımsız shell oturumu olduğunu doğrula
 - [ ] [P2.20] 10 sekme hızlıca aç, bellek sızıntısı olmadığını doğrula
 - [ ] [P2.21] Sekmeler arasında geçiş yapınca çıktıların karışmadığını doğrula
@@ -129,11 +132,11 @@
 
 ### TODO-2.3: Bölünmüş paneller (dikey/yatay)
 
-- [ ] [P2.23] `packages/core/src/layouts/SplitContainer.tsx` dosyasını tam implement et — özyinelemeli bileşen
-- [ ] [P2.24] Ağaç veri yapısını implement et: `SplitNode = { type: 'terminal', sessionId } | { type: 'split', direction: 'h'|'v', children, ratio }`
-- [ ] [P2.25] CSS flexbox ile sürüklenebilir bölücü ekle (harici kütüphane yok)
-- [ ] [P2.26] `Cmd+D` kısayolunu dikey bölme için bağla
-- [ ] [P2.27] `Cmd+Shift+D` kısayolunu yatay bölme için bağla
+- [x] [P2.23] `packages/core/src/layouts/SplitContainer.tsx` dosyasını tam implement et — özyinelemeli bileşen
+- [x] [P2.24] Ağaç veri yapısını implement et: `SplitNode = { type: 'terminal', sessionId } | { type: 'split', direction: 'h'|'v', children, ratio }`
+- [x] [P2.25] CSS flexbox ile sürüklenebilir bölücü ekle (harici kütüphane yok)
+- [x] [P2.26] `Cmd+D` kısayolunu dikey bölme için bağla
+- [x] [P2.27] `Cmd+Shift+D` kısayolunu yatay bölme için bağla
 - [ ] [P2.28] 4 yönde bölme yaparak tüm panellerin bağımsız I/O aldığını doğrula
 - [ ] [P2.29] Bir panel kapatıldığında diğerlerinin kaldığını doğrula
 - [ ] [P2.30] Boyutlandırma tutamaçlarının sorunsuz çalıştığını doğrula
@@ -141,8 +144,8 @@
 
 ### TODO-2.4: PTY geri basınç kontrolü (Tabby stili)
 
-- [ ] [P2.32] `packages/electron/src/services/pty.service.ts` dosyasını güncelle — ackData mekanizması, varsayılan tampon boyutu 65536 byte
-- [ ] [P2.33] `packages/terminal/src/components/XTermInstance.tsx` dosyasını güncelle — chunk işlenince ack gönder
+- [x] [P2.32] `packages/electron/src/services/pty.service.ts` dosyasını güncelle — ackData mekanizması, varsayılan tampon boyutu 65536 byte
+- [x] [P2.33] `packages/terminal/src/components/XTermInstance.tsx` dosyasını güncelle — chunk işlenince ack gönder
 - [ ] [P2.34] `cat /dev/urandom | head -c 100000000` komutunun uygulamayı çökertemediğini doğrula
 - [ ] [P2.35] 500MB RAM sınırının aşılmadığını doğrula
 - [ ] [P2.36] `yes | head -1000000` komutunun donma olmadan sorunsuz kaydırma sağladığını doğrula
@@ -150,9 +153,9 @@
 
 ### TODO-2.5: Terminal oturum kalıcılığı
 
-- [ ] [P2.38] Sekme oluşturulduğunda `terminal_sessions` tablosuna kaydet
-- [ ] [P2.39] Sekme kapatıldığında `closed_at` alanını güncelle
-- [ ] [P2.40] Proje açıldığında `closed_at IS NULL` olan oturumları geri yükle (PTY değil, sadece sekme düzeni ve adı)
+- [x] [P2.38] Sekme oluşturulduğunda `terminal_sessions` tablosuna kaydet
+- [x] [P2.39] Sekme kapatıldığında `closed_at` alanını güncelle
+- [x] [P2.40] Proje açıldığında `closed_at IS NULL` olan oturumları geri yükle (PTY değil, sadece sekme düzeni ve adı)
 - [ ] [P2.41] 3 özel adlı sekme aç, uygulamayı kapat ve yeniden aç, aynı 3 sekmenin göründüğünü doğrula
 - [ ] [P2.42] Sekme sırasının kalıcı olduğunu doğrula
 - [ ] [P2.43] Kapatılan oturumların yeniden görünmediğini doğrula
@@ -166,11 +169,11 @@
 
 ### TODO-3.1: Shell entegrasyon scriptleri
 
-- [ ] [P3.1] `shell-integration/bash-integration.sh` dosyasını oluştur — precmd/preexec hooks ile OSC 133 A/B/C/D
-- [ ] [P3.2] `shell-integration/zsh-integration.sh` dosyasını oluştur — precmd/preexec hooks ile OSC 133 A/B/C/D
-- [ ] [P3.3] `shell-integration/fish-integration.fish` dosyasını oluştur — fish_prompt/fish_preexec hooks
-- [ ] [P3.4] `packages/electron/src/services/shell-integration.service.ts` dosyasını oluştur — `~/.terminus/shell-integration/` dizinine kopyalama, kullanıcı izniyle rc dosyasına `source` satırı ekleme
-- [ ] [P3.5] `TERMINUS_SHELL_INTEGRATION` env değişkeniyle shell entegrasyonunun yüklenip yüklenmediğini tespit eden mantığı ekle
+- [x] [P3.1] `shell-integration/bash-integration.sh` dosyasını oluştur — precmd/preexec hooks ile OSC 133 A/B/C/D
+- [x] [P3.2] `shell-integration/zsh-integration.sh` dosyasını oluştur — precmd/preexec hooks ile OSC 133 A/B/C/D
+- [x] [P3.3] `shell-integration/fish-integration.fish` dosyasını oluştur — fish_prompt/fish_preexec hooks
+- [x] [P3.4] `packages/electron/src/services/shell-integration.service.ts` dosyasını oluştur — `~/.terminus/shell-integration/` dizinine kopyalama, kullanıcı izniyle rc dosyasına `source` satırı ekleme
+- [x] [P3.5] `TERMINUS_SHELL_INTEGRATION` env değişkeniyle shell entegrasyonunun yüklenip yüklenmediğini tespit eden mantığı ekle
 - [ ] [P3.6] Terminus'ta terminal açıldığında shell entegrasyonunun otomatik yüklendiğini doğrula
 - [ ] [P3.7] Ham PTY çıktısında OSC 133 dizilerinin göründüğünü doğrula
 - [ ] [P3.8] zsh, bash ve fish ile test et
@@ -179,10 +182,10 @@
 
 ### TODO-3.2: OSC 133 ayrıştırıcı
 
-- [ ] [P3.11] `packages/terminal/src/engine/block-parser.ts` dosyasını oluştur
-- [ ] [P3.12] `xterm.js parser.registerOscHandler(133, ...)` kullanımını implement et
-- [ ] [P3.13] A (prompt start), B (prompt end / command start), C (output start), D (command finished + exit code) ayrıştırmasını implement et
-- [ ] [P3.14] Olayları yayınla: `onPromptStart`, `onCommandStart`, `onOutputStart`, `onCommandFinished(exitCode)`
+- [x] [P3.11] `packages/terminal/src/engine/block-parser.ts` dosyasını oluştur
+- [x] [P3.12] `xterm.js parser.registerOscHandler(133, ...)` kullanımını implement et
+- [x] [P3.13] A (prompt start), B (prompt end / command start), C (output start), D (command finished + exit code) ayrıştırmasını implement et
+- [x] [P3.14] Olayları yayınla: `onPromptStart`, `onCommandStart`, `onOutputStart`, `onCommandFinished(exitCode)`
 - [ ] [P3.15] Komut yazınca ayrıştırıcının doğru olay dizisini tetiklediğini doğrula
 - [ ] [P3.16] Olayların doğru metadata (çıkış kodu, zamanlama) içerdiğini doğrula
 - [ ] [P3.17] OSC dizileri çıkaran komutlarla test et (`printf '\e]133;A\a'`) — ayrıştırıcının karışmadığını doğrula
@@ -190,13 +193,13 @@
 
 ### TODO-3.3: Blok durum makinesi
 
-- [ ] [P3.19] `packages/terminal/src/engine/block-state-machine.ts` dosyasını oluştur
-- [ ] [P3.20] Durum geçişlerini implement et: `PROMPT → EXECUTING → COMPLETED`
-- [ ] [P3.21] Her blok için veri yapısını implement et: `{ id, state, command, output, exitCode, cwd, startedAt, finishedAt }`
-- [ ] [P3.22] `onPromptStart` olayında yeni blok oluşturmayı implement et
-- [ ] [P3.23] `onCommandStart` olayında komutu yakalamayı implement et
-- [ ] [P3.24] C ve D arasındaki veriyle çıktı birikimini implement et
-- [ ] [P3.25] `onCommandFinished` olayında bloğu sonlandırmayı implement et
+- [x] [P3.19] `packages/terminal/src/engine/block-state-machine.ts` dosyasını oluştur
+- [x] [P3.20] Durum geçişlerini implement et: `PROMPT → EXECUTING → COMPLETED`
+- [x] [P3.21] Her blok için veri yapısını implement et: `{ id, state, command, output, exitCode, cwd, startedAt, finishedAt }`
+- [x] [P3.22] `onPromptStart` olayında yeni blok oluşturmayı implement et
+- [x] [P3.23] `onCommandStart` olayında komutu yakalamayı implement et
+- [x] [P3.24] C ve D arasındaki veriyle çıktı birikimini implement et
+- [x] [P3.25] `onCommandFinished` olayında bloğu sonlandırmayı implement et
 - [ ] [P3.26] Her komutun doğru metadata ile ayrı bir blok oluşturduğunu doğrula
 - [ ] [P3.27] Hızlı komutlarla test et (`ls && pwd && date`)
 - [ ] [P3.28] Boş komutlarla test et (sadece Enter tuşu)
@@ -205,12 +208,12 @@
 
 ### TODO-3.4: Çoklu xterm blok render'ı
 
-- [ ] [P3.31] `packages/terminal/src/engine/xterm-manager.ts` dosyasını oluştur — maksimum 2 canlı xterm instance
-- [ ] [P3.32] `packages/terminal/src/components/Block.tsx` dosyasını oluştur — tek blok (prompt + çıktı)
-- [ ] [P3.33] `packages/terminal/src/components/BlockList.tsx` dosyasını oluştur — `react-virtuoso` ile kaydırılabilir liste
-- [ ] [P3.34] `packages/terminal/src/components/ActivePrompt.tsx` dosyasını oluştur — canlı xterm prompt
-- [ ] [P3.35] `packages/terminal/src/TerminalPanel.tsx` dosyasını tam implement et
-- [ ] [P3.36] `react-virtuoso` bağımlılığını ekle: `pnpm add react-virtuoso`
+- [x] [P3.31] `packages/terminal/src/engine/xterm-manager.ts` dosyasını oluştur — maksimum 2 canlı xterm instance
+- [x] [P3.32] `packages/terminal/src/components/Block.tsx` dosyasını oluştur — tek blok (prompt + çıktı)
+- [x] [P3.33] `packages/terminal/src/components/BlockList.tsx` dosyasını oluştur — `react-virtuoso` ile kaydırılabilir liste
+- [x] [P3.34] `packages/terminal/src/components/ActivePrompt.tsx` dosyasını oluştur — canlı xterm prompt
+- [x] [P3.35] `packages/terminal/src/TerminalPanel.tsx` dosyasını tam implement et
+- [x] [P3.36] `react-virtuoso` bağımlılığını ekle: `pnpm add react-virtuoso`
 - [ ] [P3.37] Blok tamamlandıktan 5 saniye sonra xterm tamponunu ANSI metne serialize eden mantığı implement et
 - [ ] [P3.38] Serialize edilen metni stillendirilmiş `<pre>` olarak render et, xterm instance'ı yok et
 - [ ] [P3.39] 5 komut yaz, 5 görsel bloğun yığıldığını, sadece alt bloğun canlı imlece sahip olduğunu doğrula
@@ -221,12 +224,12 @@
 
 ### TODO-3.5: Blok eylemleri
 
-- [ ] [P3.44] `packages/terminal/src/components/BlockActions.tsx` dosyasını oluştur
-- [ ] [P3.45] `Block.tsx` dosyasını üzerine gelince/tıklayınca eylem çubuğu gösterecek şekilde güncelle
-- [ ] [P3.46] "Kopyala" eylemini implement et — clipboard API
-- [ ] [P3.47] "Yeniden çalıştır" eylemini implement et — komutu aktif terminale ilet
-- [ ] [P3.48] "Daralt/Genişlet" eylemini implement et — çıktı görünürlüğünü aç/kapa
-- [ ] [P3.49] "İçinde ara" eylemini implement et — blok çıktısında eşleşmeleri vurgula
+- [x] [P3.44] `packages/terminal/src/components/BlockActions.tsx` dosyasını oluştur
+- [x] [P3.45] `Block.tsx` dosyasını üzerine gelince/tıklayınca eylem çubuğu gösterecek şekilde güncelle
+- [x] [P3.46] "Kopyala" eylemini implement et — clipboard API
+- [x] [P3.47] "Yeniden çalıştır" eylemini implement et — komutu aktif terminale ilet
+- [x] [P3.48] "Daralt/Genişlet" eylemini implement et — çıktı görünürlüğünü aç/kapa
+- [x] [P3.49] "İçinde ara" eylemini implement et — blok çıktısında eşleşmeleri vurgula
 - [ ] [P3.50] Üzerine gelince eylem butonlarının göründüğünü, kopyalamanın çalıştığını doğrula
 - [ ] [P3.51] Yeniden çalıştırmanın komutu mevcut terminalde çalıştırdığını doğrula
 - [ ] [P3.52] Çok satırlı çıktıyla kopyalamayı test et
@@ -235,8 +238,8 @@
 
 ### TODO-3.6: Blok kalıcılığı
 
-- [ ] [P3.55] Blok `COMPLETED` durumuna geçince `blocks` tablosuna async kaydetmeyi implement et
-- [ ] [P3.56] FTS5 index'inin trigger'lar aracılığıyla otomatik güncelleneceğini doğrula
+- [x] [P3.55] Blok `COMPLETED` durumuna geçince `blocks` tablosuna async kaydetmeyi implement et
+- [x] [P3.56] FTS5 index'inin trigger'lar aracılığıyla otomatik güncelleneceğini doğrula
 - [ ] [P3.57] `window.terminus.db.query("SELECT * FROM blocks_fts WHERE blocks_fts MATCH ?", [searchTerm])` API'sini doğrula
 - [ ] [P3.58] `Cmd+Shift+F` kısayoluyla tüm geçmiş komut ve çıktılarda arama yapılabildiğini doğrula
 - [ ] [P3.59] 10000 blok ekle, aramanın 100ms içinde sonuç döndürdüğünü doğrula
@@ -251,10 +254,10 @@
 
 ### TODO-4.1: AI sohbet paneli UI
 
-- [ ] [P4.1] `pnpm add react-markdown remark-gfm rehype-highlight` komutunu çalıştır
-- [ ] [P4.2] `packages/ai/src/AIChatPanel.tsx` dosyasını oluştur — sağdan kayan yan panel
-- [ ] [P4.3] `packages/ai/src/components/MessageList.tsx` dosyasını oluştur — Markdown desteğiyle
-- [ ] [P4.4] `packages/ai/src/components/MessageInput.tsx` dosyasını oluştur — bağlam ekleri için
+- [x] [P4.1] `pnpm add react-markdown remark-gfm rehype-highlight` komutunu çalıştır
+- [x] [P4.2] `packages/ai/src/AIChatPanel.tsx` dosyasını oluştur — sağdan kayan yan panel
+- [x] [P4.3] `packages/ai/src/components/MessageList.tsx` dosyasını oluştur — Markdown desteğiyle
+- [x] [P4.4] `packages/ai/src/components/MessageInput.tsx` dosyasını oluştur — bağlam ekleri için
 - [ ] [P4.5] AI panelinin açılınca boş sohbeti gösterdiğini doğrula
 - [ ] [P4.6] Mesaj yazınca kullanıcı mesajı olarak göründüğünü, yükleme göstergesinin belirdiğini doğrula
 - [ ] [P4.7] Panelin terminal performansını etkilemediğini doğrula
@@ -263,12 +266,12 @@
 
 ### TODO-4.2: Main process'te provider proxy
 
-- [ ] [P4.10] `pnpm add openai @anthropic-ai/sdk keytar` komutunu çalıştır
-- [ ] [P4.11] `packages/electron/src/services/secret.service.ts` dosyasını oluştur — keytar wrapper
-- [ ] [P4.12] `packages/electron/src/services/ai-proxy.service.ts` dosyasını oluştur — ProviderRegistry
-- [ ] [P4.13] `packages/electron/src/ipc/ai.handler.ts` dosyasını tam implement et — stream, cancelStream, onChunk, onStreamEnd
-- [ ] [P4.14] OpenAI provider'ını implement et — API key'i keytar'dan al, stream gönder
-- [ ] [P4.15] Anthropic provider'ını implement et
+- [x] [P4.10] `pnpm add openai @anthropic-ai/sdk keytar` komutunu çalıştır
+- [x] [P4.11] `packages/electron/src/services/secret.service.ts` dosyasını oluştur — keytar wrapper
+- [x] [P4.12] `packages/electron/src/services/ai-proxy.service.ts` dosyasını oluştur — ProviderRegistry
+- [x] [P4.13] `packages/electron/src/ipc/ai.handler.ts` dosyasını tam implement et — stream, cancelStream, onChunk, onStreamEnd
+- [x] [P4.14] OpenAI provider'ını implement et — API key'i keytar'dan al, stream gönder
+- [x] [P4.15] Anthropic provider'ını implement et
 - [ ] [P4.16] OpenAI key yapılandır, mesaj gönder, streaming yanıt aldığını doğrula
 - [ ] [P4.17] Key'in OS keychain'de (herhangi bir dosyada değil) olduğunu doğrula
 - [ ] [P4.18] Geçersiz API key ile test et — zarif hata mesajı doğrula
@@ -278,10 +281,10 @@
 
 ### TODO-4.3: Vercel AI SDK entegrasyonu
 
-- [ ] [P4.22] `pnpm add @ai-sdk/react ai` komutunu çalıştır
-- [ ] [P4.23] `packages/ai/src/hooks/useAIChat.ts` dosyasını oluştur — IPC üzerinden yönlendiren özel useChat wrapper
-- [ ] [P4.24] IPC olaylarını (ai:chunk, ai:end, ai:error) Vercel AI SDK'nın stream protokolüne eşle
-- [ ] [P4.25] Konuşma durumunu Zustand'da yönet
+- [x] [P4.22] `pnpm add @ai-sdk/react ai` komutunu çalıştır
+- [x] [P4.23] `packages/ai/src/hooks/useAIChat.ts` dosyasını oluştur — IPC üzerinden yönlendiren özel useChat wrapper
+- [x] [P4.24] IPC olaylarını (ai:chunk, ai:end, ai:error) Vercel AI SDK'nın stream protokolüne eşle
+- [x] [P4.25] Konuşma durumunu Zustand'da yönet
 - [ ] [P4.26] IPC köprüsü üzerinden tam streaming sohbetin çalıştığını doğrula
 - [ ] [P4.27] Stream iptalini test et
 - [ ] [P4.28] Eşzamanlı akışların bloke edildiğini test et (aynı anda yalnızca bir akış)
@@ -290,11 +293,11 @@
 
 ### TODO-4.4: Bağlam farkındalığı
 
-- [ ] [P4.31] `packages/ai/src/components/MessageInput.tsx` dosyasına "Bağlam ekle" butonu ekle
-- [ ] [P4.32] "Mevcut terminal" seçeneğini implement et — aktif bloktan son N satırı kazı
-- [ ] [P4.33] "Dosya" seçeneğini implement et — dosya seçici diyalogu
-- [ ] [P4.34] "Git diff" seçeneğini implement et — `git diff` çalıştır ve ekle
-- [ ] [P4.35] Bağlamı `ai_messages.context_json` alanına yapılandırılmış JSON olarak serialize et
+- [x] [P4.31] `packages/ai/src/components/MessageInput.tsx` dosyasına "Bağlam ekle" butonu ekle
+- [x] [P4.32] "Mevcut terminal" seçeneğini implement et — aktif bloktan son N satırı kazı
+- [x] [P4.33] "Dosya" seçeneğini implement et — dosya seçici diyalogu
+- [x] [P4.34] "Git diff" seçeneğini implement et — `git diff` çalıştır ve ekle
+- [x] [P4.35] Bağlamı `ai_messages.context_json` alanına yapılandırılmış JSON olarak serialize et
 - [ ] [P4.36] "terminal ekle" butonuna tıklayınca son 50 satırın otomatik eklendiğini doğrula
 - [ ] [P4.37] AI yanıtının terminal içeriğine atıfta bulunduğunu doğrula
 - [ ] [P4.38] Boş terminalle test et (çökme olmamalı)
@@ -304,11 +307,11 @@
 
 ### TODO-4.5: Kod bloğu "Çalıştır" butonu
 
-- [ ] [P4.42] `packages/ai/src/components/CodeBlock.tsx` dosyasını oluştur
-- [ ] [P4.43] AI yanıtında çitli kod bloklarını tespit et
-- [ ] [P4.44] `bash`/`sh`/`zsh` dil etiketli bloklara "Çalıştır" butonu ekle
-- [ ] [P4.45] Tıklandığında `window.terminus.pty.write(activeSessionId, command + '\n')` çağrısını implement et
-- [ ] [P4.46] Tehlikeli komutlar (rm, sudo) için onay diyalogu ekle
+- [x] [P4.42] `packages/ai/src/components/CodeBlock.tsx` dosyasını oluştur
+- [x] [P4.43] AI yanıtında çitli kod bloklarını tespit et
+- [x] [P4.44] `bash`/`sh`/`zsh` dil etiketli bloklara "Çalıştır" butonu ekle
+- [x] [P4.45] Tıklandığında `window.terminus.pty.write(activeSessionId, command + '\n')` çağrısını implement et
+- [x] [P4.46] Tehlikeli komutlar (rm, sudo) için onay diyalogu ekle
 - [ ] [P4.47] AI'ın `npm install express` önerdiğini, Çalıştır'a tıklayınca terminalde çalıştığını doğrula
 - [ ] [P4.48] Çok satırlı komutlarla test et
 - [ ] [P4.49] Tehlikeli komutlarla test et — onayı doğrula
@@ -317,22 +320,22 @@
 
 ### TODO-4.6: AI mod sistemi
 
-- [ ] [P4.52] `packages/ai/src/components/ModeSelector.tsx` dosyasını oluştur
-- [ ] [P4.53] `packages/ai/src/stores/aiStore.ts` dosyasını güncelle — mod yönetimi ekle
-- [ ] [P4.54] Modları `settings` tablosunun `ai.modes` anahtarına kaydet
-- [ ] [P4.55] Varsayılan modları implement et: "General" (GPT-4o), "Code Review" (Claude), "Offline" (Ollama)
-- [ ] [P4.56] Özel mod oluştur, seç, AI'ın yapılandırılmış provider/modeli kullandığını doğrula
-- [ ] [P4.57] Modun yeniden başlatmada kalıcı olduğunu doğrula
-- [ ] [P4.58] Konuşma ortasında mod değiştirmeyi test et
-- [ ] [P4.59] Kullanılamayan provider'a sahip mod ile test et — zarif geri dönüş doğrula
+- [x] [P4.52] `packages/ai/src/components/ModeSelector.tsx` dosyasını oluştur
+- [x] [P4.53] `packages/ai/src/stores/aiStore.ts` dosyasını güncelle — mod yönetimi ekle
+- [x] [P4.54] Modları `settings` tablosunun `ai.modes` anahtarına kaydet
+- [x] [P4.55] Varsayılan modları implement et: "General" (GPT-4o), "Code Review" (Claude), "Offline" (Ollama)
+- [x] [P4.56] Özel mod oluştur, seç, AI'ın yapılandırılmış provider/modeli kullandığını doğrula
+- [x] [P4.57] Modun yeniden başlatmada kalıcı olduğunu doğrula
+- [x] [P4.58] Konuşma ortasında mod değiştirmeyi test et
+- [x] [P4.59] Kullanılamayan provider'a sahip mod ile test et — zarif geri dönüş doğrula
 - [ ] [P4.60] `git commit -m "feat(p4): add AI mode system with user-defined profiles"`
 
 ### TODO-4.7: AI konuşma kalıcılığı
 
-- [ ] [P4.61] Yeni konuşmada `ai_conversations` tablosuna kaydetmeyi implement et
-- [ ] [P4.62] Her mesajda `ai_messages` tablosuna kaydetmeyi implement et
-- [ ] [P4.63] Uygulama başlangıcında son konuşmaları DB'den yüklemeyi implement et
-- [ ] [P4.64] Konuşma seçildiğinde mesajları tembel yüklemeyi implement et
+- [x] [P4.61] Yeni konuşmada `ai_conversations` tablosuna kaydetmeyi implement et
+- [x] [P4.62] Her mesajda `ai_messages` tablosuna kaydetmeyi implement et
+- [x] [P4.63] Uygulama başlangıcında son konuşmaları DB'den yüklemeyi implement et
+- [x] [P4.64] Konuşma seçildiğinde mesajları tembel yüklemeyi implement et
 - [ ] [P4.65] AI ile sohbet et, uygulamayı kapat ve yeniden aç, konuşma geçmişinin varlığını doğrula
 - [ ] [P4.66] Devam etmek için tıklamayı doğrula
 - [ ] [P4.67] 100+ konuşmayla test et (tembel yükleme çalışıyor mu)
@@ -347,12 +350,12 @@
 
 ### TODO-5.1: Git panel UI
 
-- [ ] [P5.1] `packages/git/src/GitPanel.tsx` dosyasını oluştur — yan panel container
-- [ ] [P5.2] `packages/git/src/components/StatusView.tsx` dosyasını oluştur — duruma göre gruplanmış dosya listesi
-- [ ] [P5.3] Dosya durumu simgelerini göster (modified, added, deleted, untracked)
-- [ ] [P5.4] Dosyaya tıklayınca diff göster
-- [ ] [P5.5] Dosyaları ayrı ayrı stage/unstage etmek için checkbox ekle
-- [ ] [P5.6] Sidebar simgesine rozet sayısı ekle
+- [x] [P5.1] `packages/git/src/GitPanel.tsx` dosyasını oluştur — yan panel container
+- [x] [P5.2] `packages/git/src/components/StatusView.tsx` dosyasını oluştur — duruma göre gruplanmış dosya listesi
+- [x] [P5.3] Dosya durumu simgelerini göster (modified, added, deleted, untracked)
+- [x] [P5.4] Dosyaya tıklayınca diff göster
+- [x] [P5.5] Dosyaları ayrı ayrı stage/unstage etmek için checkbox ekle
+- [x] [P5.6] Sidebar simgesine rozet sayısı ekle
 - [ ] [P5.7] Git değişikliği olan proje açınca dosya listesinin göründüğünü doğrula
 - [ ] [P5.8] 100+ değiştirilmiş dosyayla test et (sanallaştırılmış liste)
 - [ ] [P5.9] İkili dosyalarla test et
@@ -361,9 +364,9 @@
 
 ### TODO-5.2: simple-git entegrasyonu
 
-- [ ] [P5.12] `pnpm add simple-git` komutunu çalıştır
-- [ ] [P5.13] `packages/electron/src/services/git.service.ts` dosyasını oluştur — simple-git wrapper
-- [ ] [P5.14] `packages/electron/src/ipc/git.handler.ts` dosyasını tam implement et — status, diff, commit, checkout, log, branches, createBranch, push, pull
+- [x] [P5.12] `pnpm add simple-git` komutunu çalıştır
+- [x] [P5.13] `packages/electron/src/services/git.service.ts` dosyasını oluştur — simple-git wrapper
+- [x] [P5.14] `packages/electron/src/ipc/git.handler.ts` dosyasını tam implement et — status, diff, commit, checkout, log, branches, createBranch, push, pull
 - [ ] [P5.15] Her IPC endpoint'in renderer'dan doğru çalıştığını doğrula
 - [ ] [P5.16] Büyük repo'larla test et (performans)
 - [ ] [P5.17] Merge conflict'li repo ile test et (hata işleme)
@@ -372,11 +375,11 @@
 
 ### TODO-5.3: Git kimlik değiştirici
 
-- [ ] [P5.20] `packages/git/src/components/ProfileSwitcher.tsx` dosyasını oluştur
-- [ ] [P5.21] Proje açılınca `~/.gitconfig` dosyasını `includeIf` direktifleri için ayrıştır
-- [ ] [P5.22] `settings.git.profiles` alanından profilleri de oku
-- [ ] [P5.23] Değiştirme UI açılır menüsünü implement et
-- [ ] [P5.24] Değiştirince `git config --local user.name/email` komutunu çalıştır
+- [x] [P5.20] `packages/git/src/components/ProfileSwitcher.tsx` dosyasını oluştur
+- [x] [P5.21] Proje açılınca `~/.gitconfig` dosyasını `includeIf` direktifleri için ayrıştır
+- [x] [P5.22] `settings.git.profiles` alanından profilleri de oku
+- [x] [P5.23] Değiştirme UI açılır menüsünü implement et
+- [x] [P5.24] Değiştirince `git config --local user.name/email` komutunu çalıştır
 - [ ] [P5.25] Mevcut profillerin tespit edildiğini, değiştirince `git config user.name` yeni adı döndürdüğünü doğrula
 - [ ] [P5.26] Profil yapılandırılmamışsa test et
 - [ ] [P5.27] `includeIf` kalıplarıyla test et
@@ -384,12 +387,12 @@
 
 ### TODO-5.4: Commit iş akışı
 
-- [ ] [P5.29] `packages/git/src/components/CommitForm.tsx` dosyasını oluştur
-- [ ] [P5.30] Dosya checkbox'larıyla stage işlemini implement et
-- [ ] [P5.31] Conventional commit ön eki önerileriyle mesaj textarea'sı ekle
-- [ ] [P5.32] "Commit" butonunu implement et
-- [ ] [P5.33] "Commit ve Push" butonunu implement et
-- [ ] [P5.34] Commit sonrası durum görünümünü yenile
+- [x] [P5.29] `packages/git/src/components/CommitForm.tsx` dosyasını oluştur
+- [x] [P5.30] Dosya checkbox'larıyla stage işlemini implement et
+- [x] [P5.31] Conventional commit ön eki önerileriyle mesaj textarea'sı ekle
+- [x] [P5.32] "Commit" butonunu implement et
+- [x] [P5.33] "Commit ve Push" butonunu implement et
+- [x] [P5.34] Commit sonrası durum görünümünü yenile
 - [ ] [P5.35] 3 dosya stage et, "feat: add login" yaz, commit et, temiz durumu doğrula
 - [ ] [P5.36] Push'un başarılı olduğunu doğrula
 - [ ] [P5.37] Boş commit mesajını test et (engellenmeli)
@@ -399,12 +402,12 @@
 
 ### TODO-5.5: Branch yönetimi
 
-- [ ] [P5.41] `packages/git/src/components/BranchManager.tsx` dosyasını oluştur
-- [ ] [P5.42] Mevcut branch + tüm branch'leri gösteren açılır menü ekle
-- [ ] [P5.43] Mevcut branch'den yeni branch oluşturmayı implement et
-- [ ] [P5.44] Branch değiştirmeyi implement et (kirli durum varsa stash sor)
-- [ ] [P5.45] Onaylamayla branch silmeyi implement et
-- [ ] [P5.46] Branch'i mevcut'a merge etmeyi implement et
+- [x] [P5.41] `packages/git/src/components/BranchManager.tsx` dosyasını oluştur
+- [x] [P5.42] Mevcut branch + tüm branch'leri gösteren açılır menü ekle
+- [x] [P5.43] Mevcut branch'den yeni branch oluşturmayı implement et
+- [x] [P5.44] Branch değiştirmeyi implement et (kirli durum varsa stash sor)
+- [x] [P5.45] Onaylamayla branch silmeyi implement et
+- [x] [P5.46] Branch'i mevcut'a merge etmeyi implement et
 - [ ] [P5.47] Branch listesini gör, "feature/x" oluştur, ona geç, geri dön, sil işlemini doğrula
 - [ ] [P5.48] Teslim edilmemiş değişikliklerle branch değiştirmeyi test et (stash diyalogu)
 - [ ] [P5.49] Mevcut branch'i silmeyi test et (engellenmeli)
@@ -419,11 +422,11 @@
 
 ### TODO-6.1: Snippet CRUD işlemleri
 
-- [ ] [P6.1] `@terminus/core` içine snippet yönetimi bileşeni ekle
-- [ ] [P6.2] Snippet formu oluştur: başlık, içerik (kod editörü), dil, etiketler
-- [ ] [P6.3] Liste görünümü ve arama arayüzünü implement et
-- [ ] [P6.4] Proje kapsamlı snippet'ları implement et (`project_id` belirli) ve global snippet'ları (`project_id=NULL`)
-- [ ] [P6.5] FTS5 aramasını başlık + içerik + açıklama üzerinde implement et
+- [x] [P6.1] `@terminus/core` içine snippet yönetimi bileşeni ekle
+- [x] [P6.2] Snippet formu oluştur: başlık, içerik (kod editörü), dil, etiketler
+- [x] [P6.3] Liste görünümü ve arama arayüzünü implement et
+- [x] [P6.4] Proje kapsamlı snippet'ları implement et (`project_id` belirli) ve global snippet'ları (`project_id=NULL`)
+- [x] [P6.5] FTS5 aramasını başlık + içerik + açıklama üzerinde implement et
 - [ ] [P6.6] Snippet oluştur, anahtar kelimeyle ara, düzenle, sil işlemlerini doğrula
 - [ ] [P6.7] Kısmi eşleşmelerle FTS'i test et
 - [ ] [P6.8] İçerikte özel karakterlerle test et
@@ -432,11 +435,11 @@
 
 ### TODO-6.2: Makefile tarayıcı
 
-- [ ] [P6.11] `packages/electron/src/services/makefile.service.ts` dosyasını oluştur
-- [ ] [P6.12] Rust `makefile.rs` mantığını TypeScript'e yeniden yaz
-- [ ] [P6.13] Regex tabanlı ayrıştırıcı implement et: `/^([a-zA-Z_-]+)\s*:/` satırlarını bul
-- [ ] [P6.14] Hedef adı, bağımlılıklar ve açıklama için ilk yorum satırını çıkar
-- [ ] [P6.15] Geçici öğeler döndür (DB'ye kaydetme)
+- [x] [P6.11] `packages/electron/src/services/makefile.service.ts` dosyasını oluştur
+- [x] [P6.12] Rust `makefile.rs` mantığını TypeScript'e yeniden yaz
+- [x] [P6.13] Regex tabanlı ayrıştırıcı implement et: `/^([a-zA-Z_-]+)\s*:/` satırlarını bul
+- [x] [P6.14] Hedef adı, bağımlılıklar ve açıklama için ilk yorum satırını çıkar
+- [x] [P6.15] Geçici öğeler döndür (DB'ye kaydetme)
 - [ ] [P6.16] Makefile olan proje aç, hedeflerin komut paletinde göründüğünü doğrula
 - [ ] [P6.17] Hedef seçince `make {hedef}` komutunun terminalde çalıştığını doğrula
 - [ ] [P6.18] Karmaşık Makefile'larla test et (includes, conditionals, .PHONY)
@@ -445,9 +448,9 @@
 
 ### TODO-6.3: package.json tarayıcı
 
-- [ ] [P6.21] `packages/electron/src/services/makefile.service.ts` dosyasını package.json'u da işleyecek şekilde genişlet
-- [ ] [P6.22] `package.json` dosyasını oku, `scripts` nesnesini çıkar
-- [ ] [P6.23] Her öğe için döndür: ad, komut, `source="package.json"`
+- [x] [P6.21] `packages/electron/src/services/makefile.service.ts` dosyasını package.json'u da işleyecek şekilde genişlet
+- [x] [P6.22] `package.json` dosyasını oku, `scripts` nesnesini çıkar
+- [x] [P6.23] Her öğe için döndür: ad, komut, `source="package.json"`
 - [ ] [P6.24] Node projesi aç, npm script'lerinin komut paletinde göründüğünü doğrula
 - [ ] [P6.25] Seçince `npm run {script}` komutunun çalıştığını doğrula
 - [ ] [P6.26] Workspace'lerle test et (birden fazla package.json)
@@ -456,12 +459,12 @@
 
 ### TODO-6.4: Birleşik komut paleti
 
-- [ ] [P6.29] `pnpm add fuse.js` komutunu çalıştır
-- [ ] [P6.30] `packages/core/src/components/CommandPalette.tsx` dosyasını tam implement et
-- [ ] [P6.31] Bulanık arama şunları kapsar: (1) DB'den snippet'lar, (2) Makefile hedefleri (geçici), (3) npm script'leri (geçici), (4) son blok komutları (blocks DB'den)
-- [ ] [P6.32] Sonuçları kaynağa göre grupla
-- [ ] [P6.33] Seçim mantığını implement et: aktif terminalde çalıştır veya metin olarak ekle
-- [ ] [P6.34] `Cmd+K` kısayolunu bağla
+- [x] [P6.29] `pnpm add fuse.js` komutunu çalıştır
+- [x] [P6.30] `packages/core/src/components/CommandPalette.tsx` dosyasını tam implement et
+- [x] [P6.31] Bulanık arama şunları kapsar: (1) DB'den snippet'lar, (2) Makefile hedefleri (geçici), (3) npm script'leri (geçici), (4) son blok komutları (blocks DB'den)
+- [x] [P6.32] Sonuçları kaynağa göre grupla
+- [x] [P6.33] Seçim mantığını implement et: aktif terminalde çalıştır veya metin olarak ekle
+- [x] [P6.34] `Cmd+K` kısayolunu bağla
 - [ ] [P6.35] `Cmd+K` tuşlayıp "build" yazınca eşleşen snippet'lar, Makefile hedefleri ve npm script'lerinin göründüğünü doğrula
 - [ ] [P6.36] 500+ öğeyle test et (performans)
 - [ ] [P6.37] Bulanık eşleşme doğruluğunu test et
@@ -470,11 +473,11 @@
 
 ### TODO-6.5: "Snippet olarak kaydet" eylemi
 
-- [ ] [P6.40] `packages/terminal/src/components/BlockActions.tsx` dosyasını güncelle — "Snippet Olarak Kaydet" butonu ekle
-- [ ] [P6.41] `packages/core/src/components/CommandPalette.tsx` dosyasını güncelle — palette öğelerine "Snippet Olarak Kaydet" ekle
-- [ ] [P6.42] Komut metniyle önceden doldurulmuş snippet formunu aç
-- [ ] [P6.43] Kullanıcının başlık, etiket, dil eklemesine izin ver
-- [ ] [P6.44] `snippets` tablosuna kaydet
+- [x] [P6.40] `packages/terminal/src/components/BlockActions.tsx` dosyasını güncelle — "Snippet Olarak Kaydet" butonu ekle
+- [x] [P6.41] `packages/core/src/components/CommandPalette.tsx` dosyasını güncelle — palette öğelerine "Snippet Olarak Kaydet" ekle
+- [x] [P6.42] Komut metniyle önceden doldurulmuş snippet formunu aç
+- [x] [P6.43] Kullanıcının başlık, etiket, dil eklemesine izin ver
+- [x] [P6.44] `snippets` tablosuna kaydet
 - [ ] [P6.45] `docker compose up -d` çalıştır, bloğa üzerine gel, "Snippet Olarak Kaydet" yap, "Docker Başlat" başlığı ekle, sonra paletten bul
 - [ ] [P6.46] Keşfedilen Makefile hedefini snippet olarak kaydetmeyi test et
 - [ ] [P6.47] Çok satırlı komut kaydetmeyi test et
@@ -488,13 +491,13 @@
 
 ### TODO-7.1: Ayarlar UI
 
-- [ ] [P7.1] `packages/core/src/components/Settings/SettingsPanel.tsx` dosyasını oluştur — tam sayfa ayarlar, kenar çubuğu navigasyonu
-- [ ] [P7.2] `SettingsGeneral.tsx` dosyasını oluştur — genel ayarlar kategorisi
-- [ ] [P7.3] `SettingsTerminal.tsx` dosyasını oluştur — terminal ayarları (font boyutu, shell, renk şeması)
-- [ ] [P7.4] `SettingsAI.tsx` dosyasını oluştur — AI sağlayıcı API key'leri, modlar
-- [ ] [P7.5] `SettingsKeybindings.tsx` dosyasını oluştur — kısayol listesi
-- [ ] [P7.6] Her ayarı SQLite `settings` tablosundaki ilgili anahtarla eşleştir
-- [ ] [P7.7] Değişikliklerin anında uygulandığını implement et ("kaydet" butonu yok)
+- [x] [P7.1] `packages/core/src/components/Settings/SettingsPanel.tsx` dosyasını oluştur — tam sayfa ayarlar, kenar çubuğu navigasyonu
+- [x] [P7.2] `SettingsGeneral.tsx` dosyasını oluştur — genel ayarlar kategorisi
+- [x] [P7.3] `SettingsTerminal.tsx` dosyasını oluştur — terminal ayarları (font boyutu, shell, renk şeması)
+- [x] [P7.4] `SettingsAI.tsx` dosyasını oluştur — AI sağlayıcı API key'leri, modlar
+- [x] [P7.5] `SettingsKeybindings.tsx` dosyasını oluştur — kısayol listesi
+- [x] [P7.6] Her ayarı SQLite `settings` tablosundaki ilgili anahtarla eşleştir
+- [x] [P7.7] Değişikliklerin anında uygulandığını implement et ("kaydet" butonu yok)
 - [ ] [P7.8] Ayarları aç, font boyutunu değiştir, terminalin anında güncellendiğini doğrula
 - [ ] [P7.9] Yeniden başlatma sonrası ayarın kaldığını doğrula
 - [ ] [P7.10] Geçersiz değerlerle test et (doğrulama)
@@ -503,11 +506,11 @@
 
 ### TODO-7.2: Tema sistemi
 
-- [ ] [P7.13] `packages/core/src/hooks/useTheme.ts` dosyasını oluştur
-- [ ] [P7.14] Tüm renkler için CSS özel özellikleri (custom properties) ekle
-- [ ] [P7.15] Temayı settings tablosuna kaydet/yükle
-- [ ] [P7.16] Terminal temasını xterm.js `ITheme` nesnesi olarak implement et
-- [ ] [P7.17] Hazır temaları ekle: Terminus Dark, Terminus Light, Dracula, One Dark, Solarized
+- [x] [P7.13] `packages/core/src/hooks/useTheme.ts` dosyasını oluştur
+- [x] [P7.14] Tüm renkler için CSS özel özellikleri (custom properties) ekle
+- [x] [P7.15] Temayı settings tablosuna kaydet/yükle
+- [x] [P7.16] Terminal temasını xterm.js `ITheme` nesnesi olarak implement et
+- [x] [P7.17] Hazır temaları ekle: Terminus Dark, Terminus Light, Dracula, One Dark, Solarized
 - [ ] [P7.18] Tema değiştirince tüm uygulamanın güncellendiğini doğrula
 - [ ] [P7.19] Terminal renklerinin değiştiğini doğrula
 - [ ] [P7.20] Yeniden başlatmada kalıcı olduğunu doğrula
@@ -516,10 +519,10 @@
 
 ### TODO-7.3: Özelleştirilebilir kısayollar
 
-- [ ] [P7.23] Varsayılan kısayolları kod içinde tanımla
-- [ ] [P7.24] Kullanıcı geçersiz kılmalarını settings tablosuna kaydet
-- [ ] [P7.25] Kısayol yöneticisini implement et — key olaylarını dinle, conflict kontrolü yap
-- [ ] [P7.26] Yeni kısayol kaydetmek için görsel editör ekle
+- [x] [P7.23] Varsayılan kısayolları kod içinde tanımla
+- [x] [P7.24] Kullanıcı geçersiz kılmalarını settings tablosuna kaydet
+- [x] [P7.25] Kısayol yöneticisini implement et — key olaylarını dinle, conflict kontrolü yap
+- [x] [P7.26] Yeni kısayol kaydetmek için görsel editör ekle
 - [ ] [P7.27] "Yeni Sekme" kısayolunu `Cmd+T`'den `Cmd+N`'e değiştir, anında çalıştığını doğrula
 - [ ] [P7.28] Yeniden başlatmada kaldığını doğrula
 - [ ] [P7.29] Key conflict'leri test et (uyarı göster)
@@ -529,11 +532,11 @@
 
 ### TODO-7.4: Uygulama paketleme
 
-- [ ] [P7.33] `pnpm add -D electron-builder` komutunu çalıştır
-- [ ] [P7.34] `terminus-v2/electron-builder.yml` dosyasını oluştur
-- [ ] [P7.35] macOS yapılandırmasını ekle: DMG + universal binary (arm64 + x64)
-- [ ] [P7.36] Windows yapılandırmasını ekle: NSIS installer
-- [ ] [P7.37] Linux yapılandırmasını ekle: AppImage + deb
+- [x] [P7.33] `pnpm add -D electron-builder` komutunu çalıştır
+- [x] [P7.34] `terminus-v2/electron-builder.yml` dosyasını oluştur
+- [x] [P7.35] macOS yapılandırmasını ekle: DMG + universal binary (arm64 + x64)
+- [x] [P7.36] Windows yapılandırmasını ekle: NSIS installer
+- [x] [P7.37] Linux yapılandırmasını ekle: AppImage + deb
 - [ ] [P7.38] Tüm 3 platform için kurulabilir paket üretildiğini doğrula
 - [ ] [P7.39] Temiz makineye kurulumu doğrula
 - [ ] [P7.40] Otomatik başlatmanın çalıştığını doğrula

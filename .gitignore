@@ -7,10 +7,44 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies & build
 node_modules
 dist
 dist-ssr
 *.local
+target/
+src-tauri/target/
+src-tauri/gen/schemas/
+
+# Secrets / env
+.env
+.env.*
+!.env.example
+*.pem
+credentials*
+
+# Local peer-repo research clones (not part of the product)
+.peer-research/
+legacy/.peer-research/
+legacy/tabby-repo/
+legacy/dist/
+legacy/**/node_modules/
+legacy/**/target/
+legacy/**/.git/
+legacy/**/.env
+legacy/**/.env.*
+legacy/**/.DS_Store
+
+# Firecrawl CLI research dumps (durable notes live in docs/research/)
+.firecrawl/
+
+# Git worktrees (local isolation)
+.worktrees/
+worktrees/
+
+# Agent / loop local state (not product)
+.sisyphus/ralph-loop.local.md
+.sisyphus/**/*.local.md
 
 # Editor directories and files
 .vscode/*

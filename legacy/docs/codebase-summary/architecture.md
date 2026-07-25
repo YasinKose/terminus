@@ -1,4 +1,7 @@
-# Architecture
+# Architecture (current Svelte snapshot)
+
+> **Note (2026-07-18):** This file describes the **running Svelte app**.  
+> Target architecture (React + git2) lives in [`docs/architecture.md`](../architecture.md).
 
 ## Runtime Architecture
 ```mermaid
@@ -6,9 +9,10 @@ graph TD
   UI[Svelte UI<br/>src/App.svelte + src/lib/components] --> STORES[Svelte stores<br/>project/task/snippet/ui]
   STORES --> LS[localStorage persistence<br/>v2 normalized keys]
   UI --> TAURIAPI[@tauri-apps/api/core.invoke(...)]
-  TAURIAPI --> COMMANDS[Rust Tauri Commands<br/>spawn_pty/write_to_pty/resize_pty/close_pty<br/>load_board/save_board<br/>scan_makefile]
+  TAURIAPI --> COMMANDS[Rust Tauri Commands<br/>spawn_pty/write_to_pty/resize_pty/close_pty<br/>load_board/save_board<br/>scan_makefile<br/>git shell-outs]
   COMMANDS --> PTY[portable-pty sessions]
   COMMANDS --> FILES[Filesystem I/O<br/>.tasks/board.json, Makefile]
+  COMMANDS --> GITCLI[git / gh CLI processes]
 ```
 
 ## Boundaries

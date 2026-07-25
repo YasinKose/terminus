@@ -1,45 +1,54 @@
 # Repository Guidelines
 
-## Project Structure & Module Organization
-Terminus is a desktop app with a **Svelte + TypeScript frontend** and a **Tauri (Rust) backend**.
+## Product (v0.1)
 
-- `src/`: active UI code (`App.svelte`, `lib/components`, `lib/stores`, `lib/utils`, `lib/types`).
-- `src-tauri/src/`: native commands (`pty.rs`, `task.rs`, `makefile.rs`) exposed through Tauri `invoke`.
-- `docs/`: product docs and implementation plans (`docs/phases/*`, `docs/plans/YYYY-MM-DD-*.md`).
-- `public/`, `src/assets/`: static assets.
-- `src/main`, `src/renderer`, `src/shared`: legacy Electron prototype code; avoid extending unless intentionally reviving Electron.
+Terminus is a **macOS-first local terminal workspace** (projects → workspaces → split panes). Not an IDE; no SSH, tmux daemon, AI agents, Git UI, tasks, or snippets in v0.1.
 
-## Build, Test, and Development Commands
-- `npm install`: install JS dependencies.
-- `npm run dev`: run Vite frontend only.
-- `npm run tauri dev`: run full desktop app (frontend + Tauri backend).
-- `npm run build`: build frontend bundle to `dist/`.
-- `npm run tauri build`: create production desktop bundle.
-- `npm run check`: Svelte + TypeScript checks (`svelte-check` and `tsc`).
-- `make dev|build|check|clean|install`: convenience wrappers around the same flows.
+**Authoritative docs:** `docs/plans/2026-07-23-terminus-terminal-core-design.md` and `docs/plans/2026-07-23-terminus-terminal-core.md`. Agent deep-dive: `CLAUDE.md`. Process: `docs/phases/00-process-overview.md`.
 
-## Coding Style & Naming Conventions
-- TypeScript/Svelte: 2-space indentation, semicolons, `strict` typing.
-- Rust (`src-tauri`): standard rustfmt style (4 spaces).
-- Components use `PascalCase` (`WorkspaceTabs.svelte`); stores use `camelCase` + `Store` suffix (`projectStore.ts`).
-- Keep shared types in `src/lib/types` (or `src/shared` for legacy Electron paths).
-- Use `$lib/*` alias for internal imports where it improves clarity.
+## Project structure
 
-## Testing Guidelines
-There is no dedicated unit/integration test suite yet.
+| Path | Role |
+|------|------|
+| `src/` | React 19 + TypeScript UI (`features/`, `stores/`, `lib/tauri/`) |
+| `src-tauri/` | Tauri v2 Rust: PTY, persistence, commands |
+| `docs/` | Design, implementation plans, phase process, research |
+| `legacy/` | Frozen previous app + old docs — **read-only**, never import |
 
-- Treat `npm run check` as the required pre-PR gate.
-- For backend changes, also run `cd src-tauri && cargo check`.
-- Manually smoke test core flows in `npm run tauri dev` (open project, terminal spawn/write, pane split, task/snippet interactions).
+Until Phase 0 completes, the tree may be archival-only (`legacy/` + docs). Scaffold per the implementation plan (pnpm + Tauri v2).
 
-## Commit & Pull Request Guidelines
-Git history follows Conventional Commit style:
+## Commands (target)
 
-- Format: `feat: ...`, `fix: ...`, `chore: ...` (optionally scoped).
-- Keep commits focused and atomic.
-- PRs should include: concise summary, linked issue/task, testing notes (`npm run check`, manual flows), and screenshots/video for UI changes.
+```bash
+pnpm install
+pnpm dev / pnpm tauri:dev
+pnpm check / pnpm test:run / pnpm build
+pnpm tauri:build
+cargo check --manifest-path src-tauri/Cargo.toml
+cargo test --manifest-path src-tauri/Cargo.toml
+```
 
-## Security & Configuration Tips
-- Never commit secrets or machine-specific paths.
-- Review Tauri capability/security changes carefully in `src-tauri/tauri.conf.json` and `src-tauri/capabilities/default.json`.
-- Prefer least-privilege command exposure in Rust `invoke_handler`.
+## Style
+
+- TypeScript/React: 2-space, semicolons, `strict`; components `PascalCase`
+- Rust: rustfmt, 4 spaces
+- Conventional Commits: `feat:`, `fix:`, `chore:`, `docs:`, `test:`
+- High-frequency PTY output must not go through Zustand
+
+## Testing & gates
+
+- Unit: Vitest + Cargo for domain/PTY/SQL
+- Lifecycle: real Tauri smoke (jsdom is not enough)
+- Phase gates and final DoD: implementation plan + `docs/phases/`
+- Pre-claim: automated checks + smoke evidence
+
+## Security
+
+- Least-privilege Tauri capabilities only
+- No free-form shell executor; profile-validated spawn only
+- Parameterized SQL; treat PTY/OSC data as untrusted
+- Never commit secrets, machine-specific paths, or `.firecrawl/`
+
+## Scope discipline
+
+If a change is not in the approved design / plan, do not add it. Park future ideas as dated docs under `docs/plans/`, do not merge into v0.1 core.

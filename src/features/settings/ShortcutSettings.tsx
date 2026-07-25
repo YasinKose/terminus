@@ -1,9 +1,14 @@
-import { useState } from "react";
+import {
+  parseHotkey,
+  useHotkeyRecorder,
+  type Hotkey,
+} from "@tanstack/react-hotkeys";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  chordFromKeyboardEvent,
   formatChordMac,
   isUnmodifiedTerminalKeystroke,
+  normalizeKey,
   SHORTCUT_COMMANDS,
   type ShortcutCommandId,
 } from "./shortcutModel";
@@ -14,37 +19,54 @@ export function ShortcutSettings() {
   const shortcuts = useSettingsStore((s) => s.shortcuts);
   const setShortcut = useSettingsStore((s) => s.setShortcut);
   const resetAllShortcuts = useSettingsStore((s) => s.resetAllShortcuts);
+  const setShortcutRecording = useSettingsStore(
+    (s) => s.setShortcutRecording,
+  );
   const [recording, setRecording] = useState<ShortcutCommandId | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  const onKeyDown = async (
-    e: React.KeyboardEvent,
-    id: ShortcutCommandId,
-  ) => {
-    if (recording !== id) return;
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.key === "Escape") {
-      setRecording(null);
-      return;
-    }
-    if (e.key === "Meta" || e.key === "Control" || e.key === "Alt" || e.key === "Shift") {
-      return;
-    }
-    const chord = chordFromKeyboardEvent(e);
-    if (isUnmodifiedTerminalKeystroke(chord)) {
-      setMessage("Cannot bind unmodified terminal keystrokes");
-      setRecording(null);
-      return;
-    }
-    const result = await setShortcut(id, chord);
-    if (!result.ok) {
-      setMessage(result.reason);
-    } else {
-      setMessage(null);
-    }
+  const finishRecording = () => {
     setRecording(null);
+    setShortcutRecording(false);
   };
+
+  const recorder = useHotkeyRecorder({
+    ignoreInputs: false,
+    onCancel: finishRecording,
+    onRecord: (hotkey: Hotkey) => {
+      const id = recording;
+      finishRecording();
+      if (!id || !hotkey) {
+        setMessage("Shortcuts cannot be empty");
+        return;
+      }
+
+      const parsed = parseHotkey(hotkey, "mac");
+      const chord = {
+        key: normalizeKey(parsed.key),
+        meta: parsed.meta,
+        ctrl: parsed.ctrl,
+        alt: parsed.alt,
+        shift: parsed.shift,
+      };
+      if (isUnmodifiedTerminalKeystroke(chord)) {
+        setMessage("Cannot bind unmodified terminal keystrokes");
+        return;
+      }
+
+      void setShortcut(id, chord).then((result) => {
+        if (!result.ok) {
+          setMessage(result.reason);
+        } else {
+          setMessage(null);
+        }
+      });
+    },
+  });
+
+  useEffect(() => {
+    return () => setShortcutRecording(false);
+  }, [setShortcutRecording]);
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-4">
@@ -90,11 +112,13 @@ export function ShortcutSettings() {
                   : "border-input bg-surface-raised text-foreground hover:border-muted-foreground/50 hover:bg-accent"
               }`}
               onClick={() => {
+                if (recorder.isRecording) {
+                  recorder.cancelRecording();
+                }
                 setRecording(cmd.id);
+                setShortcutRecording(true);
                 setMessage(null);
-              }}
-              onKeyDown={(e) => {
-                void onKeyDown(e, cmd.id);
+                recorder.startRecording();
               }}
             >
               {recording === cmd.id

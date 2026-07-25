@@ -7,6 +7,7 @@ describe("settingsStore", () => {
   beforeEach(() => {
     useSettingsStore.setState({
       shortcuts: { ...DEFAULT_SHORTCUTS },
+      shortcutRecording: false,
       settingsOpen: false,
       settingsTab: "shortcuts",
       focusMode: false,

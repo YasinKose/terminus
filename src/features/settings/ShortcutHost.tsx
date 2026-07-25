@@ -66,9 +66,12 @@ function runCommand(id: ShortcutCommandId, ctx: CommandContext): void {
 
 export function ShortcutHost({ context }: { context: CommandContext }) {
   const shortcuts = useSettingsStore((s) => s.shortcuts);
+  const shortcutRecording = useSettingsStore((s) => s.shortcutRecording);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      if (shortcutRecording) return;
+
       const target = e.target as HTMLElement | null;
       if (isEditableTarget(target) && !isTerminalInputTarget(target)) {
         return;
@@ -87,7 +90,7 @@ export function ShortcutHost({ context }: { context: CommandContext }) {
 
     window.addEventListener("keydown", onKeyDown, true);
     return () => window.removeEventListener("keydown", onKeyDown, true);
-  }, [context, shortcuts]);
+  }, [context, shortcutRecording, shortcuts]);
 
   return null;
 }

@@ -10,6 +10,7 @@ describe("SettingsSheet confirmations", () => {
     useSettingsStore.setState({
       settingsOpen: true,
       settingsTab: "shortcuts",
+      shortcutRecording: false,
       confirmTerminalClose: true,
       confirmWorkspaceClose: true,
     });

@@ -48,6 +48,7 @@ describe("ShortcutHost", () => {
   beforeEach(() => {
     useSettingsStore.setState({
       shortcuts: { ...DEFAULT_SHORTCUTS },
+      shortcutRecording: false,
     });
   });
 

@@ -20,12 +20,14 @@ const CONFIRM_WORKSPACE_CLOSE_KEY = "confirmClose.workspace";
 
 export interface SettingsStoreState {
   shortcuts: ShortcutMap;
+  shortcutRecording: boolean;
   settingsOpen: boolean;
   settingsTab: "profiles" | "shortcuts" | "confirmations" | "appearance";
   focusMode: boolean;
   confirmTerminalClose: boolean;
   confirmWorkspaceClose: boolean;
   setApi: (api: SettingsApi) => void;
+  setShortcutRecording: (recording: boolean) => void;
   hydrateFromBootstrap: (settings: Record<string, unknown>) => void;
   setSettingsOpen: (open: boolean) => void;
   setSettingsTab: (tab: SettingsStoreState["settingsTab"]) => void;
@@ -44,6 +46,7 @@ let api: SettingsApi = tauriSettingsApi;
 
 export const useSettingsStore = create<SettingsStoreState>((set, get) => ({
   shortcuts: { ...DEFAULT_SHORTCUTS },
+  shortcutRecording: false,
   settingsOpen: false,
   settingsTab: "shortcuts",
   focusMode: false,
@@ -53,6 +56,7 @@ export const useSettingsStore = create<SettingsStoreState>((set, get) => ({
   setApi: (next) => {
     api = next;
   },
+  setShortcutRecording: (recording) => set({ shortcutRecording: recording }),
 
   hydrateFromBootstrap: (settings) => {
     const parsed = parseShortcutMap(settings[SHORTCUTS_KEY]);

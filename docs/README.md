@@ -16,7 +16,8 @@ When documents disagree, use this precedence:
 | Path | Purpose |
 |------|---------|
 | `docs/plans/` | Design + detailed implementation plans |
-| `docs/phases/` | Process overview and phase gate checklist |
+| `docs/phases/` | Process overview, phase gate checklist, **v0.1 completion evidence** |
+| `docs/security/` | RustSec / audit policy for release gates |
 | `docs/research/` | Firecrawl / peer landscape notes |
 | `legacy/docs/` | Superseded PRD, old roadmap, old peer research |
 
@@ -36,3 +37,6 @@ Local macOS terminal workspace: **projects → workspaces → stable split panes
 
 - Root agent guide: `CLAUDE.md`  
 - Short repo guidelines: `AGENTS.md`  
+- v0.1 completion evidence (automated vs human): `docs/phases/02-v0.1-completion-evidence.md`  
+- RustSec policy: `docs/security/2026-07-25-rustsec-policy.md`  
+- Release gates: `pnpm verify:v01`, `pnpm audit:rust`  

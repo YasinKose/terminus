@@ -68,24 +68,26 @@ Use with `docs/plans/2026-07-23-terminus-terminal-core.md`. Check boxes only wit
 | Task | Title | Done |
 |------|-------|------|
 | 20 | Regression tests | [x] |
-| 21 | Tauri smoke matrix | [x] |
-| 22 | Perf + local bundle + security | [x] |
+| 21 | Tauri smoke matrix | [ ] human packaged `.app` from DMG — see evidence §3 |
+| 22 | Perf + local bundle + security | [ ] M2 medians + full audit + fresh bundle — evidence §4 |
 
-**Gate:** Final DoD 14/14.
+**Gate:** Final DoD only when `docs/phases/02-v0.1-completion-evidence.md` has PASS for smoke + M2 + recovery. Automated green alone is not enough.
 
 ## Final DoD (summary)
 
-1. legacy out of build/types  
-2. project opens to usable shell  
-3. SQLite layout persistence  
-4. lazy workspaces + stay mounted after first use  
-5. layout ops preserve live terminal identity  
-6. no unmount/nav path closes PTY  
-7. close always confirms and tears down correctly  
-8. exited panels restartable  
-9. activity + OSC title/cwd  
-10. profiles, shortcuts, palette, presets  
-11. protected DB recovery  
-12. automated + smoke + perf + bundle  
-13. no scope leak  
-14. security reviews clean  
+1. legacy out of build/types — automated  
+2. project opens to usable shell — **human smoke**  
+3. SQLite layout persistence — automated + **human smoke**  
+4. lazy workspaces + stay mounted after first use — automated + **human smoke**  
+5. layout ops preserve live terminal identity — automated  
+6. no unmount/nav path closes PTY — automated  
+7. close always confirms and tears down correctly — automated + **human smoke**  
+8. exited panels restartable — automated + **human smoke**  
+9. activity + OSC title/cwd (+ OSC 9/777 attention) — automated + **human smoke**  
+10. profiles (incl. per-pane), shortcuts, palette, presets — automated + **human smoke**  
+11. protected DB recovery — **human recovery drill**  
+12. automated + smoke + perf + bundle — **partial** (automated green; smoke/M2/bundle human)  
+13. no scope leak — design/process  
+14. security reviews clean — re-run audit on release commit  
+
+Evidence log: `docs/phases/02-v0.1-completion-evidence.md`.

@@ -1357,10 +1357,10 @@ Run the security gates after the functional gates:
 ```bash
 pnpm audit --audit-level high
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
-cargo audit --deny warnings
+./scripts/audit-rust.sh
 ```
 
-If `cargo-audit` is unavailable, install the current locked release before this gate. Use the repository Grep tool across the new `src/`, `src-tauri/`, manifests, and configuration files to inspect credential patterns, `dangerouslySetInnerHTML`, `eval`, generic shell execution, SQL interpolation, and broad Tauri capabilities. Expected profile spawning is the only process-execution surface; every call site must validate executable, argument, environment, and cwd bounds. Exclude `legacy/` from findings because it is not shipped, but confirm it is absent from the build graph.
+`./scripts/audit-rust.sh` fails on vulnerabilities, yanked crates, and new unsound findings. The only documented target-excluded unsound exception is `RUSTSEC-2024-0429` (`glib` not reachable on `aarch64-apple-darwin`); see `docs/security/2026-07-25-rustsec-policy.md`. If `cargo-audit` is unavailable, install the current locked release before this gate. Use the repository Grep tool across the new `src/`, `src-tauri/`, manifests, and configuration files to inspect credential patterns, `dangerouslySetInnerHTML`, `eval`, generic shell execution, SQL interpolation, and broad Tauri capabilities. Expected profile spawning is the only process-execution surface; every call site must validate executable, argument, environment, and cwd bounds. Exclude `legacy/` from findings because it is not shipped, but confirm it is absent from the build graph.
 
 **Step 4: Build the daily-driver artifacts**
 

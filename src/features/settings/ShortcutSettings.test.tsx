@@ -18,6 +18,7 @@ function SettingsWithShortcutHost() {
       openSettings: () => undefined,
       toggleSidebar: () => undefined,
       toggleFocus: () => undefined,
+      toggleGitPanel: () => undefined,
       openPalette: () => setLastCommand("palette"),
       newWorkspace: () => undefined,
       newTerminal: () => undefined,

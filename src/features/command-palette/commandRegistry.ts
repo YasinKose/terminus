@@ -11,6 +11,7 @@ export type CommandContext = {
   openSettings: () => void;
   toggleSidebar: () => void;
   toggleFocus: () => void;
+  toggleGitPanel: () => void;
   openPalette: () => void;
   newWorkspace: () => void | Promise<void>;
   newTerminal: () => void | Promise<void>;
@@ -48,6 +49,12 @@ export function buildCommands(ctx: CommandContext): CommandDefinition[] {
       id: "toggleFocus",
       label: "Toggle focus mode",
       run: () => ctx.toggleFocus(),
+    },
+    {
+      id: "toggleGitPanel",
+      label: "Toggle git panel",
+      keywords: ["source control", "scm", "commit"],
+      run: () => ctx.toggleGitPanel(),
     },
     {
       id: "newWorkspace",

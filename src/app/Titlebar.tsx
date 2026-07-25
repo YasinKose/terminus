@@ -1,5 +1,6 @@
 import {
   Command,
+  GitBranch,
   PanelLeft,
   Settings,
   SquareTerminal,
@@ -24,6 +25,8 @@ function chordLabel(shortcuts: ShortcutMap, id: keyof ShortcutMap): string {
 export function Titlebar({ onOpenSettings, onOpenPalette }: TitlebarProps) {
   const toggleSidebar = useUiStore((s) => s.toggleSidebar);
   const sidebarCollapsed = useUiStore((s) => s.sidebarCollapsed);
+  const gitPanelOpen = useUiStore((s) => s.gitPanelOpen);
+  const toggleGitPanel = useUiStore((s) => s.toggleGitPanel);
   const setSettingsOpen = useSettingsStore((s) => s.setSettingsOpen);
   const shortcuts = useSettingsStore((s) => s.shortcuts);
 
@@ -73,6 +76,14 @@ export function Titlebar({ onOpenSettings, onOpenPalette }: TitlebarProps) {
       </div>
       <div className="flex-1" data-tauri-drag-region />
       <div className="flex items-center gap-1 pr-2" data-no-drag>
+        <ToolbarIconButton
+          label={gitPanelOpen ? "Hide git panel" : "Show git panel"}
+          pressed={gitPanelOpen}
+          onClick={toggleGitPanel}
+          data-testid="titlebar-git-panel"
+        >
+          <GitBranch aria-hidden className="size-4" />
+        </ToolbarIconButton>
         <ToolbarIconButton
           label="Command palette"
           shortcut={chordLabel(shortcuts, "commandPalette")}

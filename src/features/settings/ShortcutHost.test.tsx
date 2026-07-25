@@ -13,6 +13,7 @@ function ShortcutHarness() {
       openSettings: () => undefined,
       toggleSidebar: () => undefined,
       toggleFocus: () => undefined,
+      toggleGitPanel: () => undefined,
       openPalette: () => undefined,
       newWorkspace: () => undefined,
       newTerminal: () => undefined,

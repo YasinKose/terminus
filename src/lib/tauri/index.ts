@@ -22,4 +22,13 @@ export type {
 } from "./pty";
 export { tauriSettingsApi } from "./settings";
 export type { SettingsApi } from "./settings";
+export { tauriGitApi } from "./git";
+export type {
+  GitApi,
+  GitBranchInfo,
+  GitDiffResult,
+  GitFileEntry,
+  GitStashInfo,
+  GitStatusSnapshot,
+} from "./git";
 export * from "./recovery";

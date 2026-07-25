@@ -16,6 +16,7 @@ import { useSettingsStore } from "@/features/settings/settingsStore";
 import { useUiStore } from "@/features/ui/uiStore";
 import { collectTerminalIds } from "@/features/panes/tree";
 import type { PaneNode } from "@/features/panes/model";
+import { GitPanel } from "@/features/git/GitPanel";
 import { WorkspaceArea } from "@/features/workspaces/WorkspaceArea";
 import { WorkspaceTabs } from "@/features/workspaces/WorkspaceTabs";
 import { useWorkspaceStore } from "@/features/workspaces/workspaceStore";
@@ -63,6 +64,8 @@ export function AppShell({
   const listForProject = useWorkspaceStore((s) => s.listForProject);
 
   const sidebarCollapsed = useUiStore((s) => s.sidebarCollapsed);
+  const gitPanelOpen = useUiStore((s) => s.gitPanelOpen);
+  const setGitPanelOpen = useUiStore((s) => s.setGitPanelOpen);
   const focusMode = useSettingsStore((s) => s.focusMode);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const commandContext = useCommandActions({ setPaletteOpen });
@@ -255,11 +258,18 @@ export function AppShell({
                     actionsDisabled={!activeWorkspaceId}
                   />
                 )}
-                <div className="min-h-0 flex-1">
-                  <WorkspaceArea
+                <div className="flex min-h-0 flex-1">
+                  <div className="min-h-0 min-w-0 flex-1">
+                    <WorkspaceArea
+                      projectId={activeProjectId}
+                      workspaces={projectWorkspaces}
+                      activeWorkspaceId={activeWorkspaceId}
+                    />
+                  </div>
+                  <GitPanel
                     projectId={activeProjectId}
-                    workspaces={projectWorkspaces}
-                    activeWorkspaceId={activeWorkspaceId}
+                    open={gitPanelOpen}
+                    onClose={() => setGitPanelOpen(false)}
                   />
                 </div>
               </>

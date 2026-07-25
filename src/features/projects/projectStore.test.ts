@@ -304,6 +304,24 @@ describe("projectStore", () => {
     ).toBe(false);
   });
 
+  it("selectWorkspace initializes the workspace and persists both selections", async () => {
+    const p = project({ id: "p1", canonicalPath: "/tmp/p1" });
+    const w = workspace({ id: "w1", projectId: "p1", name: "One" });
+    const api = createMockApi({ projects: [p], workspaces: [w] });
+    useProjectStore.getState().setApi(api);
+    useWorkspaceStore.getState().setApi(api);
+    useProjectStore.getState().hydrate([p]);
+    useWorkspaceStore.getState().hydrateFromBootstrap([w]);
+
+    await useProjectStore.getState().selectWorkspace("p1", "w1");
+
+    expect(useWorkspaceStore.getState().activeWorkspaceId).toBe("w1");
+    expect(api.setLastActiveWorkspace).toHaveBeenCalledWith("p1", "w1");
+    expect(useProjectStore.getState().projects[0]?.lastActiveWorkspaceId).toBe(
+      "w1",
+    );
+  });
+
   it("selecting project with no workspace creates Workspace 1", async () => {
     const p = project({ id: "p1", canonicalPath: "/tmp/a" });
     const api = createMockApi({ projects: [p], workspaces: [] });

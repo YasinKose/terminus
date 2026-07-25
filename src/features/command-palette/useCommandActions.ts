@@ -26,10 +26,10 @@ export function useCommandActions(options: {
   const projects = useProjectStore((s) => s.projects);
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
   const selectProject = useProjectStore((s) => s.selectProject);
+  const selectWorkspace = useProjectStore((s) => s.selectWorkspace);
 
   const workspaces = useWorkspaceStore((s) => s.workspaces);
   const activeWorkspaceId = useWorkspaceStore((s) => s.activeWorkspaceId);
-  const activateWorkspace = useWorkspaceStore((s) => s.activateWorkspace);
   const saveWorkspace = useWorkspaceStore((s) => s.saveWorkspace);
   const listForProject = useWorkspaceStore((s) => s.listForProject);
 
@@ -56,8 +56,8 @@ export function useCommandActions(options: {
       updatedAt: Date.now(),
     };
     const saved = await saveWorkspace(record);
-    await activateWorkspace(saved.id);
-  }, [activeProjectId, activateWorkspace, listForProject, saveWorkspace]);
+    await selectWorkspace(activeProjectId, saved.id);
+  }, [activeProjectId, listForProject, saveWorkspace, selectWorkspace]);
 
   const mutateActiveTree = useCallback(
     async (
@@ -141,8 +141,8 @@ export function useCommandActions(options: {
     if (list.length === 0) return;
     const idx = list.findIndex((w) => w.id === activeWorkspaceId);
     const next = list[(idx + 1) % list.length];
-    if (next) await activateWorkspace(next.id);
-  }, [activeProjectId, activeWorkspaceId, activateWorkspace, listForProject]);
+    if (next) await selectWorkspace(activeProjectId, next.id);
+  }, [activeProjectId, activeWorkspaceId, listForProject, selectWorkspace]);
 
   const prevWorkspace = useCallback(async () => {
     if (!activeProjectId) return;
@@ -150,8 +150,8 @@ export function useCommandActions(options: {
     if (list.length === 0) return;
     const idx = list.findIndex((w) => w.id === activeWorkspaceId);
     const prev = list[(idx - 1 + list.length) % list.length];
-    if (prev) await activateWorkspace(prev.id);
-  }, [activeProjectId, activeWorkspaceId, activateWorkspace, listForProject]);
+    if (prev) await selectWorkspace(activeProjectId, prev.id);
+  }, [activeProjectId, activeWorkspaceId, listForProject, selectWorkspace]);
 
   return useMemo(
     () => ({
@@ -167,7 +167,10 @@ export function useCommandActions(options: {
       nextWorkspace,
       prevWorkspace,
       selectProject: (projectId: string) => selectProject(projectId),
-      selectWorkspace: (workspaceId: string) => activateWorkspace(workspaceId),
+      selectWorkspace: (workspaceId: string) =>
+        activeProjectId
+          ? selectWorkspace(activeProjectId, workspaceId)
+          : Promise.resolve(),
       projects: projects.map((p) => ({
         id: p.id,
         displayName: p.displayName,
@@ -180,7 +183,6 @@ export function useCommandActions(options: {
       activeProjectId,
     }),
     [
-      activateWorkspace,
       activeProjectId,
       closePane,
       newTerminal,
@@ -189,6 +191,7 @@ export function useCommandActions(options: {
       prevWorkspace,
       projects,
       selectProject,
+      selectWorkspace,
       setPaletteOpen,
       setSettingsOpen,
       splitInDirection,

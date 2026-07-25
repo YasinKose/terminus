@@ -21,7 +21,6 @@ import type { WorkspaceRecord } from "@/lib/tauri/contracts";
 import type { DialogApi } from "@/lib/tauri/dialog";
 import { tauriDialogApi } from "@/lib/tauri/dialog";
 import type { WorkspaceApi } from "@/lib/tauri/workspaces";
-import { tauriWorkspaceApi } from "@/lib/tauri/workspaces";
 import { useCloseRequestStore } from "@/stores/closeRequestStore";
 import { FolderOpen, Layers3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -46,16 +45,15 @@ export type AppShellProps = {
 
 export function AppShell({
   dialogApi = tauriDialogApi,
-  workspaceApi = tauriWorkspaceApi,
 }: AppShellProps) {
   const projects = useProjectStore((s) => s.projects);
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
   const addProject = useProjectStore((s) => s.addProject);
   const selectProject = useProjectStore((s) => s.selectProject);
+  const selectWorkspace = useProjectStore((s) => s.selectWorkspace);
 
   const workspaces = useWorkspaceStore((s) => s.workspaces);
   const activeWorkspaceId = useWorkspaceStore((s) => s.activeWorkspaceId);
-  const activateWorkspace = useWorkspaceStore((s) => s.activateWorkspace);
   const saveWorkspace = useWorkspaceStore((s) => s.saveWorkspace);
   const listForProject = useWorkspaceStore((s) => s.listForProject);
 
@@ -80,23 +78,9 @@ export function AppShell({
   const handleSelectWorkspace = useCallback(
     async (workspaceId: string) => {
       if (!activeProjectId) return;
-      const ws = workspaces.find((w) => w.id === workspaceId);
-      if (!ws) return;
-      await activateWorkspace(workspaceId);
-      try {
-        const updated = await workspaceApi.setLastActiveWorkspace(
-          activeProjectId,
-          workspaceId,
-        );
-        useProjectStore.setState((s) => ({
-          projects: s.projects.map((p) =>
-            p.id === updated.id ? updated : p,
-          ),
-        }));
-      } catch {
-      }
+      await selectWorkspace(activeProjectId, workspaceId);
     },
-    [activateWorkspace, activeProjectId, workspaceApi, workspaces],
+    [activeProjectId, selectWorkspace],
   );
 
   const handleRenameWorkspace = useCallback(
@@ -137,23 +121,12 @@ export function AppShell({
       updatedAt: Date.now(),
     };
     const saved = await saveWorkspace(record);
-    await activateWorkspace(saved.id);
-    try {
-      const updated = await workspaceApi.setLastActiveWorkspace(
-        activeProjectId,
-        saved.id,
-      );
-      useProjectStore.setState((s) => ({
-        projects: s.projects.map((p) => (p.id === updated.id ? updated : p)),
-      }));
-    } catch {
-    }
+    await selectWorkspace(activeProjectId, saved.id);
   }, [
     activeProjectId,
-    activateWorkspace,
     listForProject,
     saveWorkspace,
-    workspaceApi,
+    selectWorkspace,
   ]);
 
   const handleCloseWorkspace = useCallback(

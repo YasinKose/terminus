@@ -276,6 +276,61 @@ describe("App shell", () => {
     ).toHaveAttribute("aria-selected", "true");
   });
 
+  it("persists workspace selection from a workspace tab", async () => {
+    const p1 = project("p1", "/a", "w1");
+    const w1 = workspace("w1", "p1", "One", 0);
+    const w2 = workspace("w2", "p1", "Two", 1);
+    const api = createMockApi({ projects: [p1], workspaces: [w1, w2] });
+    const persistSelection = vi.spyOn(api, "setLastActiveWorkspace");
+    resetStores(api);
+    useProjectStore.getState().hydrate([p1]);
+    useWorkspaceStore.getState().hydrateFromBootstrap([w1, w2]);
+    await useProjectStore.getState().selectProject("p1");
+    persistSelection.mockClear();
+
+    const user = userEvent.setup();
+    const { container } = render(
+      <AppShell
+        dialogApi={{ openDirectory: async () => null }}
+        workspaceApi={api}
+      />,
+    );
+
+    await user.click(within(container).getByRole("tab", { name: "Two" }));
+
+    await waitFor(() => {
+      expect(persistSelection).toHaveBeenCalledWith("p1", "w2");
+    });
+  });
+
+  it("persists workspace selection from the chrome create button", async () => {
+    const p1 = project("p1", "/a", "w1");
+    const w1 = workspace("w1", "p1", "One", 0);
+    const api = createMockApi({ projects: [p1], workspaces: [w1] });
+    const persistSelection = vi.spyOn(api, "setLastActiveWorkspace");
+    resetStores(api);
+    useProjectStore.getState().hydrate([p1]);
+    useWorkspaceStore.getState().hydrateFromBootstrap([w1]);
+    await useProjectStore.getState().selectProject("p1");
+    persistSelection.mockClear();
+
+    const user = userEvent.setup();
+    const { container } = render(
+      <AppShell
+        dialogApi={{ openDirectory: async () => null }}
+        workspaceApi={api}
+      />,
+    );
+
+    await user.click(
+      within(container).getByRole("button", { name: /new workspace/i }),
+    );
+
+    await waitFor(() => {
+      expect(persistSelection).toHaveBeenCalledWith("p1", "term-leaf-1");
+    });
+  });
+
   it("creates Workspace 1 when project has no workspace", async () => {
     const p1 = project("p1", "/solo", null);
     const api = createMockApi({ projects: [p1], workspaces: [] });

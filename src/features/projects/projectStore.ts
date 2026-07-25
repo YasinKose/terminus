@@ -31,6 +31,10 @@ export interface ProjectStoreState {
     color?: string;
   }) => Promise<ProjectRecord>;
   selectProject: (projectId: string) => Promise<void>;
+  selectWorkspace: (
+    projectId: string,
+    workspaceId: string,
+  ) => Promise<void>;
   removeProject: (projectId: string) => Promise<void>;
   renameProject: (projectId: string, displayName: string) => Promise<void>;
 }
@@ -129,37 +133,39 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     if (!project) {
       throw new Error(`project not found: ${projectId}`);
     }
-    set({ activeProjectId: projectId });
 
-    let workspaceId = project.lastActiveWorkspaceId;
-    let workspace: WorkspaceRecord | null = workspaceId
-      ? workspaceBridge().getWorkspace(workspaceId)
+    let workspace: WorkspaceRecord | null = project.lastActiveWorkspaceId
+      ? workspaceBridge().getWorkspace(project.lastActiveWorkspaceId)
       : null;
 
     if (!workspace) {
       const workspaces = workspaceBridge().listForProject(projectId);
       if (workspaces.length > 0) {
         workspace = workspaces[0]!;
-        workspaceId = workspace.id;
       }
     }
 
     if (!workspace) {
       workspace = await api.ensureDefaultWorkspace(projectId);
-      workspaceBridge().upsertWorkspace(workspace, { initialize: true });
-      workspaceId = workspace.id;
-      const updated = await api.setLastActiveWorkspace(projectId, workspaceId);
-      set((s) => ({
-        projects: s.projects.map((p) => (p.id === updated.id ? updated : p)),
-      }));
-      await workspaceBridge().activateWorkspace(workspace.id);
-    } else {
-      const updated = await api.setLastActiveWorkspace(projectId, workspace.id);
-      set((s) => ({
-        projects: s.projects.map((p) => (p.id === updated.id ? updated : p)),
-      }));
-      await workspaceBridge().activateWorkspace(workspace.id);
+      workspaceBridge().upsertWorkspace(workspace);
     }
+
+    await get().selectWorkspace(projectId, workspace.id);
+  },
+
+  selectWorkspace: async (projectId, workspaceId) => {
+    const workspace = workspaceBridge().getWorkspace(workspaceId);
+    if (!workspace || workspace.projectId !== projectId) {
+      throw new Error("workspace does not belong to project");
+    }
+    await workspaceBridge().activateWorkspace(workspaceId);
+    const updated = await api.setLastActiveWorkspace(projectId, workspaceId);
+    set((state) => ({
+      activeProjectId: projectId,
+      projects: state.projects.map((project) =>
+        project.id === updated.id ? updated : project,
+      ),
+    }));
   },
 
   removeProject: async (projectId) => {

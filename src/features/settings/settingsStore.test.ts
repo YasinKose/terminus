@@ -10,6 +10,8 @@ describe("settingsStore", () => {
       settingsOpen: false,
       settingsTab: "shortcuts",
       focusMode: false,
+      confirmTerminalClose: true,
+      confirmWorkspaceClose: true,
     });
   });
 
@@ -26,6 +28,58 @@ describe("settingsStore", () => {
       },
     });
     expect(useSettingsStore.getState().shortcuts.commandPalette.key).toBe("p");
+  });
+
+  it("hydrates terminal and workspace close confirmations independently", () => {
+    useSettingsStore.getState().hydrateFromBootstrap({
+      "confirmClose.terminal": false,
+      "confirmClose.workspace": true,
+    });
+
+    expect(useSettingsStore.getState().confirmTerminalClose).toBe(false);
+    expect(useSettingsStore.getState().confirmWorkspaceClose).toBe(true);
+  });
+
+  it("persists the terminal close confirmation without changing workspace confirmation", async () => {
+    const api: SettingsApi = {
+      saveProfile: vi.fn(async (p) => p),
+      deleteProfile: vi.fn(async () => {}),
+      saveSetting: vi.fn(async () => {}),
+    };
+    useSettingsStore.getState().setApi(api);
+
+    const setConfirmTerminalClose =
+      useSettingsStore.getState().setConfirmTerminalClose;
+    expect(setConfirmTerminalClose).toBeTypeOf("function");
+    await setConfirmTerminalClose?.(false);
+
+    expect(api.saveSetting).toHaveBeenCalledWith(
+      "confirmClose.terminal",
+      false,
+    );
+    expect(useSettingsStore.getState().confirmTerminalClose).toBe(false);
+    expect(useSettingsStore.getState().confirmWorkspaceClose).toBe(true);
+  });
+
+  it("persists the workspace close confirmation without changing terminal confirmation", async () => {
+    const api: SettingsApi = {
+      saveProfile: vi.fn(async (p) => p),
+      deleteProfile: vi.fn(async () => {}),
+      saveSetting: vi.fn(async () => {}),
+    };
+    useSettingsStore.getState().setApi(api);
+
+    const setConfirmWorkspaceClose =
+      useSettingsStore.getState().setConfirmWorkspaceClose;
+    expect(setConfirmWorkspaceClose).toBeTypeOf("function");
+    await setConfirmWorkspaceClose?.(false);
+
+    expect(api.saveSetting).toHaveBeenCalledWith(
+      "confirmClose.workspace",
+      false,
+    );
+    expect(useSettingsStore.getState().confirmWorkspaceClose).toBe(false);
+    expect(useSettingsStore.getState().confirmTerminalClose).toBe(true);
   });
 
   it("refuses unmodified terminal keystrokes", async () => {

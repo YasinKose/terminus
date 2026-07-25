@@ -144,7 +144,7 @@ The n-ary tree is intentional. The legacy implementation proved that collapsing 
 
 ### Close behavior
 
-Every close action asks for confirmation: terminal pane, workspace, project, main window, and application quit. Aggregated closes display the number of affected terminals. Exited panels still require confirmation because the user explicitly selected confirmation for every close.
+Close confirmation is required by default for terminal panes, workspaces, projects, the main window, and application quit. Terminal and workspace dialogs independently offer “Don’t ask again”; the persisted choices can be changed separately in Settings. Disabling one of these prompts is standing approval only for that close type. Project, window, and application closes always ask. Workspace tabs support both the close button and middle-click as equivalent close-request sources. Aggregated closes display the number of affected terminals.
 
 After confirmation, Rust closes the PTY gracefully, waits for a bounded period, then terminates the child/process group if needed. No confirmation is implemented in Rust; UI approval and backend teardown are separate responsibilities.
 

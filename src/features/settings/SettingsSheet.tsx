@@ -7,9 +7,10 @@ import {
 } from "@/components/ui/sheet";
 import { AppearanceSettings } from "@/features/appearance/AppearanceSettings";
 import { ProfileSettings } from "@/features/profiles/ProfileSettings";
+import { ConfirmationSettings } from "./ConfirmationSettings";
 import { ShortcutSettings } from "./ShortcutSettings";
 import { useSettingsStore } from "./settingsStore";
-import { Keyboard, Palette, UserRound } from "lucide-react";
+import { Keyboard, Palette, ShieldCheck, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 const SETTINGS_TABS = [
@@ -24,6 +25,12 @@ const SETTINGS_TABS = [
     label: "Shortcuts",
     description: "Keyboard controls",
     icon: Keyboard,
+  },
+  {
+    id: "confirmations",
+    label: "Confirmations",
+    description: "Close prompts",
+    icon: ShieldCheck,
   },
   {
     id: "appearance",
@@ -50,12 +57,13 @@ export function SettingsSheet() {
             Settings
           </SheetTitle>
           <SheetDescription>
-            Configure local shells, keyboard controls, and workspace appearance.
+            Configure local shells, keyboard controls, close confirmations, and
+            workspace appearance.
           </SheetDescription>
         </SheetHeader>
         <div className="flex min-h-0 flex-1 flex-col sm:flex-row">
           <nav
-            className="grid shrink-0 grid-cols-3 gap-1 border-b border-border/80 bg-chrome p-2 sm:flex sm:w-48 sm:flex-col sm:border-r sm:border-b-0"
+            className="grid shrink-0 grid-cols-2 gap-1 border-b border-border/80 bg-chrome p-2 sm:flex sm:w-48 sm:flex-col sm:border-r sm:border-b-0"
             aria-label="Settings categories"
           >
             {SETTINGS_TABS.map(({ id, label, description, icon: Icon }) => (
@@ -92,6 +100,7 @@ export function SettingsSheet() {
           <div className="min-h-0 min-w-0 flex-1 overflow-hidden p-4 sm:p-5">
             {tab === "profiles" && <ProfileSettings />}
             {tab === "shortcuts" && <ShortcutSettings />}
+            {tab === "confirmations" && <ConfirmationSettings />}
             {tab === "appearance" && <AppearanceSettings />}
           </div>
         </div>

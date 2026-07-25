@@ -15,18 +15,24 @@ import {
 } from "./shortcutModel";
 
 const SHORTCUTS_KEY = "shortcuts";
+const CONFIRM_TERMINAL_CLOSE_KEY = "confirmClose.terminal";
+const CONFIRM_WORKSPACE_CLOSE_KEY = "confirmClose.workspace";
 
 export interface SettingsStoreState {
   shortcuts: ShortcutMap;
   settingsOpen: boolean;
-  settingsTab: "profiles" | "shortcuts" | "appearance";
+  settingsTab: "profiles" | "shortcuts" | "confirmations" | "appearance";
   focusMode: boolean;
+  confirmTerminalClose: boolean;
+  confirmWorkspaceClose: boolean;
   setApi: (api: SettingsApi) => void;
   hydrateFromBootstrap: (settings: Record<string, unknown>) => void;
   setSettingsOpen: (open: boolean) => void;
   setSettingsTab: (tab: SettingsStoreState["settingsTab"]) => void;
   setFocusMode: (on: boolean) => void;
   toggleFocusMode: () => void;
+  setConfirmTerminalClose: (confirm: boolean) => Promise<void>;
+  setConfirmWorkspaceClose: (confirm: boolean) => Promise<void>;
   setShortcut: (
     id: ShortcutCommandId,
     chord: ShortcutChord,
@@ -41,6 +47,8 @@ export const useSettingsStore = create<SettingsStoreState>((set, get) => ({
   settingsOpen: false,
   settingsTab: "shortcuts",
   focusMode: false,
+  confirmTerminalClose: true,
+  confirmWorkspaceClose: true,
 
   setApi: (next) => {
     api = next;
@@ -48,15 +56,33 @@ export const useSettingsStore = create<SettingsStoreState>((set, get) => ({
 
   hydrateFromBootstrap: (settings) => {
     const parsed = parseShortcutMap(settings[SHORTCUTS_KEY]);
-    if (parsed) {
-      set({ shortcuts: parsed });
-    }
+    const confirmTerminalClose = settings[CONFIRM_TERMINAL_CLOSE_KEY];
+    const confirmWorkspaceClose = settings[CONFIRM_WORKSPACE_CLOSE_KEY];
+    set({
+      ...(parsed ? { shortcuts: parsed } : {}),
+      confirmTerminalClose:
+        typeof confirmTerminalClose === "boolean"
+          ? confirmTerminalClose
+          : true,
+      confirmWorkspaceClose:
+        typeof confirmWorkspaceClose === "boolean"
+          ? confirmWorkspaceClose
+          : true,
+    });
   },
 
   setSettingsOpen: (open) => set({ settingsOpen: open }),
   setSettingsTab: (tab) => set({ settingsTab: tab }),
   setFocusMode: (on) => set({ focusMode: on }),
   toggleFocusMode: () => set((s) => ({ focusMode: !s.focusMode })),
+  setConfirmTerminalClose: async (confirm) => {
+    await api.saveSetting(CONFIRM_TERMINAL_CLOSE_KEY, confirm);
+    set({ confirmTerminalClose: confirm });
+  },
+  setConfirmWorkspaceClose: async (confirm) => {
+    await api.saveSetting(CONFIRM_WORKSPACE_CLOSE_KEY, confirm);
+    set({ confirmWorkspaceClose: confirm });
+  },
 
   setShortcut: async (id, chord) => {
     if (isUnmodifiedTerminalKeystroke(chord)) {

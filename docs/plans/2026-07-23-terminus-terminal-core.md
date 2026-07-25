@@ -1020,19 +1020,20 @@ git commit -m "feat: add terminal pane drag and movement"
 **Files:**
 - Create: `src/features/terminal/CloseTerminalDialog.tsx`
 - Create: `src/features/workspaces/CloseWorkspaceDialog.tsx`
+- Create: `src/features/settings/ConfirmationSettings.tsx`
 - Create: `src/features/projects/CloseProjectDialog.tsx`
 - Create: `src/app/CloseApplicationDialog.tsx`
 - Create: `src/stores/closeRequestStore.ts`
 - Create: tests for every close source
-- Modify: Tauri app/window lifecycle
+- Modify: `WorkspaceTabs.tsx`, settings store, Tauri app/window lifecycle
 
 **Step 1: Write confirmation tests**
 
-Every pane, workspace, project, window, and app close request must open a confirmation, including exited/empty targets. Aggregated dialogs show affected terminal counts.
+Every pane, workspace, project, window, and app close request requires confirmation by default, including exited/empty targets. Terminal and workspace confirmations can be disabled independently from their dialogs and restored independently in Settings. Aggregated dialogs show affected terminal counts.
 
 **Step 2: Implement one close-request model**
 
-Represent requests as a tagged union. UI confirmation resolves the request; domain operations execute only after approval. Avoid scattered boolean modal state.
+Represent requests as a tagged union. UI confirmation or a persisted per-type terminal/workspace preference resolves the request; domain operations execute only after approval. Avoid scattered boolean modal state. Treat middle-clicking a workspace tab as the same workspace close request used by its close button.
 
 **Step 3: Intercept macOS close and quit**
 
@@ -1044,7 +1045,7 @@ Display exit code and Restart in the pane header/body. Restart uses the last val
 
 **Step 5: Verify**
 
-Exercise all confirmation sources and cancel/confirm paths. Confirm cancel never closes a PTY or mutates SQLite.
+Exercise all confirmation sources, including workspace middle-click, and all cancel/confirm paths. Verify terminal and workspace “Don’t ask again” preferences persist and remain independent. Confirm cancel never closes a PTY or mutates SQLite.
 
 **Step 6: Commit**
 
@@ -1055,7 +1056,7 @@ git commit -m "feat: add explicit terminal close lifecycle"
 
 ### Phase 4 gate
 
-All layout operations work around a running full-screen TUI without process or renderer reset. Every close path confirms. Exited panes stay visible and restartable.
+All layout operations work around a running full-screen TUI without process or renderer reset. Every close path has confirmation or explicit persisted approval. Exited panes stay visible and restartable.
 
 ---
 

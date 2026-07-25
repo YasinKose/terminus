@@ -1,6 +1,7 @@
 mod app_error;
 mod commands;
 pub mod persistence;
+pub mod pty;
 mod state;
 
 pub use app_error::{AppError, ErrorPayload};

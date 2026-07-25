@@ -15,11 +15,17 @@ pub enum AppError {
     Message(String),
     #[error("{0}")]
     PersistenceCorrupt(String),
+    #[error("{0}")]
+    ProfileInvalid(String),
 }
 
 impl AppError {
     pub fn persistence_corrupt(message: impl Into<String>) -> Self {
         AppError::PersistenceCorrupt(message.into())
+    }
+
+    pub fn profile_invalid(message: impl Into<String>) -> Self {
+        AppError::ProfileInvalid(message.into())
     }
 
     pub fn into_payload(self) -> ErrorPayload {
@@ -32,6 +38,12 @@ impl AppError {
             },
             AppError::PersistenceCorrupt(message) => ErrorPayload {
                 code: "PERSISTENCE_CORRUPT",
+                message,
+                details: None,
+                recoverable: true,
+            },
+            AppError::ProfileInvalid(message) => ErrorPayload {
+                code: "PROFILE_INVALID",
                 message,
                 details: None,
                 recoverable: true,
@@ -49,6 +61,12 @@ impl AppError {
             },
             AppError::PersistenceCorrupt(message) => ErrorPayload {
                 code: "PERSISTENCE_CORRUPT",
+                message: message.clone(),
+                details: None,
+                recoverable: true,
+            },
+            AppError::ProfileInvalid(message) => ErrorPayload {
+                code: "PROFILE_INVALID",
                 message: message.clone(),
                 details: None,
                 recoverable: true,
@@ -102,6 +120,13 @@ mod tests {
     fn persistence_corrupt_is_recoverable() {
         let payload = AppError::persistence_corrupt("bad json").into_payload();
         assert_eq!(payload.code, "PERSISTENCE_CORRUPT");
+        assert!(payload.recoverable);
+    }
+
+    #[test]
+    fn profile_invalid_is_recoverable() {
+        let payload = AppError::profile_invalid("bad exe").into_payload();
+        assert_eq!(payload.code, "PROFILE_INVALID");
         assert!(payload.recoverable);
     }
 }

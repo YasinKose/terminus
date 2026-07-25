@@ -130,6 +130,13 @@ export class TerminalRuntime implements TerminalRuntimeHandle {
     return this.adapter.getProposedSize?.() ?? { cols: 80, rows: 24 };
   }
 
+  applyTheme(theme: Record<string, string>): void {
+    if (this.disposed) {
+      return;
+    }
+    this.adapter.applyTheme?.(theme);
+  }
+
   handleWebglContextLoss(): void {
     if (this.disposed) {
       return;

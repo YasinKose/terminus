@@ -4,6 +4,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { AppearanceSettings } from "@/features/appearance/AppearanceSettings";
 import { ProfileSettings } from "@/features/profiles/ProfileSettings";
 import { ShortcutSettings } from "./ShortcutSettings";
 import { useSettingsStore } from "./settingsStore";
@@ -45,11 +46,7 @@ export function SettingsSheet() {
         <div className="mt-3 min-h-0 flex-1">
           {tab === "profiles" && <ProfileSettings />}
           {tab === "shortcuts" && <ShortcutSettings />}
-          {tab === "appearance" && (
-            <p className="text-sm text-muted-foreground">
-              Appearance presets arrive in the next phase.
-            </p>
-          )}
+          {tab === "appearance" && <AppearanceSettings />}
         </div>
       </SheetContent>
     </Sheet>

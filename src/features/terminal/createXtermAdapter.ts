@@ -2,6 +2,10 @@ import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import type { TerminalAdapter } from "@/features/terminal/runtime";
 import { parseOsc7Cwd } from "./osc";
+import {
+  DEFAULT_APPEARANCE,
+  xtermThemeFromPreset,
+} from "@/features/appearance/presets";
 
 export type XtermAdapterHooks = {
   onData?: (data: string) => void;
@@ -16,6 +20,7 @@ export type LiveXtermHandle = TerminalAdapter & {
   setOnTitleChange: (handler: (title: string) => void) => void;
   setOnBell: (handler: () => void) => void;
   setOnCwdChange: (handler: (cwd: string) => void) => void;
+  applyTheme: (theme: Record<string, string>) => void;
 };
 
 const MONO_STACK =
@@ -48,11 +53,13 @@ export function createLiveXtermAdapter(
       throw new Error("xterm adapter disposed");
     }
     if (!term) {
+      const initialTheme = xtermThemeFromPreset(DEFAULT_APPEARANCE.presetId);
       term = new Terminal({
         scrollback,
         cursorBlink: true,
         fontFamily: MONO_STACK,
         allowProposedApi: true,
+        theme: initialTheme,
       });
       fitAddon = new FitAddon();
       term.loadAddon(fitAddon);
@@ -175,6 +182,10 @@ export function createLiveXtermAdapter(
     },
     setOnCwdChange(handler: (cwd: string) => void) {
       onCwdHandler = handler;
+    },
+    applyTheme(theme: Record<string, string>) {
+      if (disposed || !term) return;
+      term.options.theme = theme;
     },
   };
 }

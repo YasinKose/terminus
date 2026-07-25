@@ -11,6 +11,7 @@ export type TerminalAdapter = {
   setOnBell?: (handler: () => void) => void;
   setOnCwdChange?: (handler: (cwd: string) => void) => void;
   getProposedSize?: () => { cols: number; rows: number };
+  applyTheme?: (theme: Record<string, string>) => void;
 };
 
 export type TerminalAdapterFactory = (sessionId: string) => TerminalAdapter;
@@ -33,6 +34,7 @@ export type TerminalRuntimeHandle = {
   setOnBell: (handler: () => void) => void;
   setOnCwdChange: (handler: (cwd: string) => void) => void;
   getProposedSize: () => { cols: number; rows: number };
+  applyTheme: (theme: Record<string, string>) => void;
   readonly usingWebgl: boolean;
   readonly openCount: number;
 };

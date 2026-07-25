@@ -121,13 +121,14 @@ function TerminalLeafView({
       ref={hostRef}
       data-testid={`pane-leaf-${leaf.id}`}
       data-pane-id={leaf.id}
-      className="relative h-full min-h-0 w-full min-w-0"
+      data-active-pane={focused ? "true" : "false"}
+      className="terminus-pane relative h-full min-h-0 w-full min-w-0"
       onMouseDown={() => onActivate?.(leaf.id)}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerCancel}
     >
-      <div className="flex h-full min-h-0 flex-col">
+      <div className="flex h-full min-h-0 flex-col overflow-hidden">
         <div className="flex h-6 shrink-0 items-center gap-1 border-b border-border px-1">
           <button
             type="button"

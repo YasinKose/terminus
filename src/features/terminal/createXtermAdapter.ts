@@ -1,7 +1,7 @@
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import type { TerminalAdapter } from "@/features/terminal/runtime";
-import { parseOsc7Cwd } from "./osc";
+import { isSupportedOscNotification, parseOsc7Cwd } from "./osc";
 import {
   DEFAULT_APPEARANCE,
   xtermThemeFromPreset,
@@ -12,6 +12,7 @@ export type XtermAdapterHooks = {
   onTitleChange?: (title: string) => void;
   onBell?: () => void;
   onCwdChange?: (cwd: string) => void;
+  onAttention?: () => void;
 };
 
 export type LiveXtermHandle = TerminalAdapter & {
@@ -20,6 +21,7 @@ export type LiveXtermHandle = TerminalAdapter & {
   setOnTitleChange: (handler: (title: string) => void) => void;
   setOnBell: (handler: () => void) => void;
   setOnCwdChange: (handler: (cwd: string) => void) => void;
+  setOnAttention: (handler: () => void) => void;
   applyTheme: (theme: Record<string, string>) => void;
 };
 
@@ -46,6 +48,7 @@ export function createLiveXtermAdapter(
   let onBellHandler: (() => void) | null = options.onBell ?? null;
   let onCwdHandler: ((cwd: string) => void) | null =
     options.onCwdChange ?? null;
+  let onAttentionHandler: (() => void) | null = options.onAttention ?? null;
   const disposables: Array<{ dispose: () => void }> = [];
 
   const ensure = (): Terminal => {
@@ -88,6 +91,22 @@ export function createLiveXtermAdapter(
         return true;
       });
       disposables.push(oscDisposable);
+      disposables.push(
+        term.parser.registerOscHandler(9, (data) => {
+          if (isSupportedOscNotification(9, data)) {
+            onAttentionHandler?.();
+          }
+          return true;
+        }),
+      );
+      disposables.push(
+        term.parser.registerOscHandler(777, (data) => {
+          if (isSupportedOscNotification(777, data)) {
+            onAttentionHandler?.();
+          }
+          return true;
+        }),
+      );
     }
     return term;
   };
@@ -182,6 +201,9 @@ export function createLiveXtermAdapter(
     },
     setOnCwdChange(handler: (cwd: string) => void) {
       onCwdHandler = handler;
+    },
+    setOnAttention(handler: () => void) {
+      onAttentionHandler = handler;
     },
     applyTheme(theme: Record<string, string>) {
       if (disposed || !term) return;

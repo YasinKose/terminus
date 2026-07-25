@@ -95,6 +95,7 @@ export function createActivityTracker(
         ...state,
         focused,
         unread: focused ? false : state.unread,
+        attention: focused ? false : state.attention,
       };
       emit();
     },

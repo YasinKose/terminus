@@ -73,6 +73,16 @@ describe("createActivityTracker", () => {
     expect(tracker.getState().attention).toBe(true);
   });
 
+  it("clears explicit attention when the pane receives focus", () => {
+    const tracker = createActivityTracker();
+    tracker.noteAttention();
+    expect(tracker.getState().attention).toBe(true);
+
+    tracker.setFocused(true);
+
+    expect(tracker.getState().attention).toBe(false);
+  });
+
   it("marks exited as quiet and clears attention", () => {
     const tracker = createActivityTracker();
     tracker.noteOutput();

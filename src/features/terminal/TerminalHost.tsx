@@ -121,6 +121,10 @@ export function TerminalHost({
       tracker.noteBell();
     });
 
+    runtime.setOnAttention(() => {
+      tracker.noteAttention();
+    });
+
     runtime.setOnCwdChange((cwd) => {
       void (async () => {
         try {
@@ -133,6 +137,7 @@ export function TerminalHost({
             setCwd(sessionId, validated);
           }
         } catch {
+          // A stale OSC cwd is ignored; restart keeps the previous validated cwd.
         }
       })();
     });

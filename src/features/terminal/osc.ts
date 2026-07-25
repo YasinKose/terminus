@@ -29,3 +29,25 @@ export function sanitizeTitle(title: string, maxLen = 200): string {
   if (cleaned.length <= maxLen) return cleaned;
   return cleaned.slice(0, maxLen);
 }
+
+const MAX_OSC_NOTIFICATION_LENGTH = 512;
+
+function validNotificationText(value: string): boolean {
+  return (
+    value.length > 0 &&
+    value.length <= MAX_OSC_NOTIFICATION_LENGTH &&
+    !Array.from(value).some((char) => {
+      const code = char.charCodeAt(0);
+      return code < 0x20 && char !== "\t";
+    })
+  );
+}
+
+export function isSupportedOscNotification(
+  code: 9 | 777,
+  data: string,
+): boolean {
+  if (code === 9) return validNotificationText(data);
+  const [kind, ...parts] = data.split(";");
+  return kind === "notify" && validNotificationText(parts.join(";"));
+}

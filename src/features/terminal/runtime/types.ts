@@ -10,6 +10,7 @@ export type TerminalAdapter = {
   setOnTitleChange?: (handler: (title: string) => void) => void;
   setOnBell?: (handler: () => void) => void;
   setOnCwdChange?: (handler: (cwd: string) => void) => void;
+  setOnAttention?: (handler: () => void) => void;
   getProposedSize?: () => { cols: number; rows: number };
   applyTheme?: (theme: Record<string, string>) => void;
 };
@@ -33,6 +34,7 @@ export type TerminalRuntimeHandle = {
   setOnTitleChange: (handler: (title: string) => void) => void;
   setOnBell: (handler: () => void) => void;
   setOnCwdChange: (handler: (cwd: string) => void) => void;
+  setOnAttention: (handler: () => void) => void;
   getProposedSize: () => { cols: number; rows: number };
   applyTheme: (theme: Record<string, string>) => void;
   readonly usingWebgl: boolean;

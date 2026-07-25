@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { parseOsc7Cwd, sanitizeTitle } from "./osc";
+import {
+  isSupportedOscNotification,
+  parseOsc7Cwd,
+  sanitizeTitle,
+} from "./osc";
 
 describe("parseOsc7Cwd", () => {
   it("parses file:// absolute paths", () => {
@@ -30,5 +34,21 @@ describe("sanitizeTitle", () => {
     expect(sanitizeTitle("  hello\x1bworld  ")).toBe("helloworld");
     expect(sanitizeTitle("a".repeat(250)).length).toBe(200);
     expect(sanitizeTitle("\x00")).toBe("Terminal");
+  });
+});
+
+describe("OSC notifications", () => {
+  it("accepts bounded OSC 9 and OSC 777 notify payloads", () => {
+    expect(isSupportedOscNotification(9, "Build finished")).toBe(true);
+    expect(isSupportedOscNotification(777, "notify;Build;Finished")).toBe(
+      true,
+    );
+  });
+
+  it("rejects empty, control-character, oversized, and unsupported 777 payloads", () => {
+    expect(isSupportedOscNotification(9, "")).toBe(false);
+    expect(isSupportedOscNotification(9, "bad\u0000payload")).toBe(false);
+    expect(isSupportedOscNotification(9, "x".repeat(513))).toBe(false);
+    expect(isSupportedOscNotification(777, "other;value")).toBe(false);
   });
 });

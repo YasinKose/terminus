@@ -116,6 +116,13 @@ export class TerminalRuntime implements TerminalRuntimeHandle {
     this.adapter.setOnBell?.(handler);
   }
 
+  setOnAttention(handler: () => void): void {
+    if (this.disposed) {
+      return;
+    }
+    this.adapter.setOnAttention?.(handler);
+  }
+
   setOnCwdChange(handler: (cwd: string) => void): void {
     if (this.disposed) {
       return;

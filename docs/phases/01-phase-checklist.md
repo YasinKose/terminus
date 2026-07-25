@@ -68,10 +68,12 @@ Use with `docs/plans/2026-07-23-terminus-terminal-core.md`. Check boxes only wit
 | Task | Title | Done |
 |------|-------|------|
 | 20 | Regression tests | [x] |
-| 21 | Tauri smoke matrix | [ ] human packaged `.app` from DMG — see evidence §3 |
-| 22 | Perf + local bundle + security | [ ] M2 medians + full audit + fresh bundle — evidence §4 |
+| 21 | Tauri smoke matrix | [ ] human interactive packaged smoke — evidence §3 (bundle built/inspected; launch matrix NOT RUN) |
+| 22 | Perf + local bundle + security | [~] local `tauri:build` + audit PASS (evidence §1/§1b); M2 medians still NOT RUN (§4) |
 
-**Gate:** Final DoD only when `docs/phases/02-v0.1-completion-evidence.md` has PASS for smoke + M2 + recovery. Automated green alone is not enough.
+**Gate:** Final DoD **claim** only when `docs/phases/02-v0.1-completion-evidence.md` has PASS for smoke + M2 + recovery. Automated green + local bundle artifacts alone is not enough for daily-driver claim.
+
+**Agent track:** v0.1 code + automated gates + local package artifacts are closed. Residual Task 21 / M2 / recovery are human. New product work follows v0.2 design/roadmap.
 
 ## Final DoD (summary)
 
@@ -86,7 +88,7 @@ Use with `docs/plans/2026-07-23-terminus-terminal-core.md`. Check boxes only wit
 9. activity + OSC title/cwd (+ OSC 9/777 attention) — automated + **human smoke**  
 10. profiles (incl. per-pane), shortcuts, palette, presets — automated + **human smoke**  
 11. protected DB recovery — **human recovery drill**  
-12. automated + smoke + perf + bundle — **partial** (automated green; smoke/M2/bundle human)  
+12. automated + smoke + perf + bundle — **partial** (automated + local bundle inspect DONE; interactive smoke/M2 human)  
 13. no scope leak — design/process  
 14. security reviews clean — re-run audit on release commit  
 

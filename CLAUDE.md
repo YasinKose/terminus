@@ -2,36 +2,45 @@
 
 Instructions for AI agents working in this repository.
 
-## What Terminus is (v0.1)
+## What Terminus is
 
-Terminus is a **macOS-first local terminal workspace**: project folders → workspaces → split terminal panes. Compact, keyboard-first, daily-driver quality.
+**v0.1 (agent-closed core):** macOS-first **local** terminal workspace — project folders → workspaces → split terminal panes. Compact, keyboard-first. Not an IDE, remote orchestrator, or AI platform.
 
-It is **not** an IDE, remote orchestrator, or AI agent platform.
+**v0.2 (active product direction):** multi-OS runtime + light Git UI + tasks + snippets + optional tmux bridge. See v0.2 scope design.
 
 **Authoritative product docs (read these first):**
 
 | Doc | Role |
 |-----|------|
-| `docs/plans/2026-07-23-terminus-terminal-core-design.md` | Approved design (SoT for product/architecture) |
-| `docs/plans/2026-07-23-terminus-terminal-core.md` | Implementation plan (phases 0–6, tasks 1–22) |
-| `docs/phases/00-process-overview.md` | How we run the project (process, gates, roles) |
+| `docs/plans/2026-07-25-terminus-v0.2-scope-design.md` | **v0.2 product SoT** (new features) |
+| `docs/plans/2026-07-25-terminus-roadmap-v0.2-v0.3.md` | Version sequencing + parking lot |
+| `docs/plans/2026-07-23-terminus-terminal-core-design.md` | Frozen v0.1 design (terminal core architecture) |
+| `docs/plans/2026-07-23-terminus-terminal-core.md` | Frozen v0.1 implementation plan (phases 0–6) |
+| `docs/phases/02-v0.1-completion-evidence.md` | v0.1 automated vs human residual |
+| `docs/phases/00-process-overview.md` | Process, gates, roles |
 | `docs/research/2026-07-25-peer-landscape.md` | Peer research notes (absorb / skip) |
 | `docs/README.md` | Docs index and precedence |
 
-If any other doc (including `legacy/**` or an outdated `AGENTS.md` fragment) conflicts with the approved design, **the approved design wins**.
+If docs conflict: **v0.2 SoT wins for new features**; **v0.1 design wins for terminal-core invariants**.
 
-## Explicit non-goals for v0.1
+## Explicit non-goals
 
-Do **not** implement or scope-creep into:
+### Still out of v0.2 (park → v0.3+)
 
-- SSH / VDS / remote execution
-- tmux or a custom background daemon
-- AI agent orchestration, chat, or “agent IDE”
-- Git UI / worktrees UI
-- Tasks, snippets, Makefile import, editor surfaces
-- Signing, notarization, updater, Homebrew distribution
+- SSH / VDS / remote execution  
+- AI agent orchestration, chat, or “agent IDE”  
+- Custom Terminus background daemon (product)  
+- Signing, notarization, updater, Homebrew distribution  
+- Plugin marketplace, editor/IDE surfaces  
 
-`legacy/` is a **read-only behavioral reference**. Never import from it into the new app graph.
+### In v0.2 (allowed — design first)
+
+- Multi-OS runtime  
+- Git UI (light workbench)  
+- Tasks, snippets (+ optional Makefile import)  
+- Optional tmux **bridge** (user’s tmux; not a Terminus daemon)
+
+`legacy/` is a **read-only behavioral reference**. Never import from it into the app graph.
 
 ## Stack (approved)
 
@@ -118,14 +127,14 @@ pnpm check               # TS / frontend checks
 pnpm test:run
 pnpm build
 pnpm tauri:build         # local .app / .dmg
+pnpm verify:v01          # full FE + Rust + static release gate
+pnpm audit:rust          # cargo-audit policy gate
 
 cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
 cargo test --manifest-path src-tauri/Cargo.toml
 cargo check --manifest-path src-tauri/Cargo.toml
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 ```
-
-Until Phase 0 lands, the working tree may be archival-only (`legacy/` + plans). Do not invent a second scaffold outside the plan.
 
 ## Coding conventions
 
@@ -163,12 +172,13 @@ Closest peer stack: **Dispatcher** (Tauri + React + xterm, project sidebar, spli
 
 ## Agent anti-patterns
 
-- Implementing from `legacy/docs/prd.md` “agent-native fleet” vision for v0.1  
+- Implementing from `legacy/docs/prd.md` “agent-native fleet” vision without a dated design  
 - Treating old Svelte `AGENTS.md` layout as current target  
 - Closing PTYs on React unmount / workspace hide  
 - Using Zustand or global events for PTY byte stream  
-- Adding “just a small” Git/task/SSH/agent feature mid-phase  
-- Declaring a phase complete without the phase gate evidence  
+- Pulling v0.3 park-lot items (SSH/AI/signing/updater) into v0.2  
+- Claiming v0.1 Final DoD / daily-driver without evidence §3–§4 PASS  
+- Declaring a phase complete without gate evidence  
 
 ## When stuck
 

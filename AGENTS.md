@@ -1,10 +1,19 @@
 # Repository Guidelines
 
-## Product (v0.1)
+## Product
 
-Terminus is a **macOS-first local terminal workspace** (projects → workspaces → split panes). Not an IDE; no SSH, tmux daemon, AI agents, Git UI, tasks, or snippets in v0.1.
+**v0.1 (agent-closed core):** macOS-first local terminal workspace (projects → workspaces → split panes). Not an IDE.
 
-**Authoritative docs:** `docs/plans/2026-07-23-terminus-terminal-core-design.md` and `docs/plans/2026-07-23-terminus-terminal-core.md`. Agent deep-dive: `CLAUDE.md`. Process: `docs/phases/00-process-overview.md`.
+**v0.2 (active):** multi-OS + Git UI (light) + tasks + snippets + optional tmux bridge.  
+**v0.3+:** SSH/remote, AI, signing/updater/Homebrew, etc. — park until designed.
+
+**Authoritative docs:**
+
+- v0.2 scope: `docs/plans/2026-07-25-terminus-v0.2-scope-design.md`
+- Roadmap: `docs/plans/2026-07-25-terminus-roadmap-v0.2-v0.3.md`
+- v0.1 frozen design/plan: `docs/plans/2026-07-23-terminus-terminal-core-*.md`
+- Evidence: `docs/phases/02-v0.1-completion-evidence.md`
+- Agent deep-dive: `CLAUDE.md` · Process: `docs/phases/00-process-overview.md`
 
 ## Project structure
 
@@ -14,16 +23,17 @@ Terminus is a **macOS-first local terminal workspace** (projects → workspaces 
 | `src-tauri/` | Tauri v2 Rust: PTY, persistence, commands |
 | `docs/` | Design, implementation plans, phase process, research |
 | `legacy/` | Frozen previous app + old docs — **read-only**, never import |
+| `scripts/` | `verify-v01.sh`, `audit-rust.sh` |
 
-Until Phase 0 completes, the tree may be archival-only (`legacy/` + docs). Scaffold per the implementation plan (pnpm + Tauri v2).
-
-## Commands (target)
+## Commands
 
 ```bash
 pnpm install
 pnpm dev / pnpm tauri:dev
 pnpm check / pnpm test:run / pnpm build
 pnpm tauri:build
+pnpm verify:v01
+pnpm audit:rust
 cargo check --manifest-path src-tauri/Cargo.toml
 cargo test --manifest-path src-tauri/Cargo.toml
 ```
@@ -39,8 +49,9 @@ cargo test --manifest-path src-tauri/Cargo.toml
 
 - Unit: Vitest + Cargo for domain/PTY/SQL
 - Lifecycle: real Tauri smoke (jsdom is not enough)
-- Phase gates and final DoD: implementation plan + `docs/phases/`
-- Pre-claim: automated checks + smoke evidence
+- Release gate: `pnpm verify:v01` + `pnpm audit:rust`
+- v0.1 daily-driver claim: automated + human packaged smoke/M2 (evidence doc)
+- Do not claim Final DoD without evidence §3–§4 PASS
 
 ## Security
 
@@ -51,4 +62,5 @@ cargo test --manifest-path src-tauri/Cargo.toml
 
 ## Scope discipline
 
-If a change is not in the approved design / plan, do not add it. Park future ideas as dated docs under `docs/plans/`, do not merge into v0.1 core.
+- v0.2 work must match `docs/plans/2026-07-25-terminus-v0.2-scope-design.md`
+- Park non-v0.2 ideas as dated docs under `docs/plans/`; do not merge into frozen v0.1 core

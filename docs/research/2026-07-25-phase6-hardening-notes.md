@@ -10,6 +10,10 @@ Branch: `feat/react-terminal-core` (or current integration branch)
 This research note summarizes automated coverage and engineering intent. It does
 **not** replace human packaged-app smoke or M2 measurements.
 
+**2026-07-25 update:** local `pnpm tauri:build` + artifact inspect recorded in
+evidence §1b (`.app` + DMG, `hdiutil verify` VALID). Interactive matrix / M2
+still NOT RUN. Post-v0.1 product track: `docs/plans/2026-07-25-terminus-v0.2-scope-design.md`.
+
 ## Task 21 — Smoke matrix coverage
 
 Interactive packaged `.app` / DMG walkthrough is **human-owned** and recorded in

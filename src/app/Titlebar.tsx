@@ -1,8 +1,38 @@
+import {
+  Command,
+  PanelLeft,
+  Settings,
+} from "lucide-react";
+import { ToolbarIconButton } from "@/components/chrome/ToolbarIconButton";
+import { useSettingsStore } from "@/features/settings/settingsStore";
+import {
+  formatChordMac,
+  type ShortcutMap,
+} from "@/features/settings/shortcutModel";
 import { useUiStore } from "@/features/ui/uiStore";
 
-export function Titlebar() {
+export type TitlebarProps = {
+  onOpenSettings?: () => void;
+  onOpenPalette?: () => void;
+};
+
+function chordLabel(shortcuts: ShortcutMap, id: keyof ShortcutMap): string {
+  return formatChordMac(shortcuts[id]);
+}
+
+export function Titlebar({ onOpenSettings, onOpenPalette }: TitlebarProps) {
   const toggleSidebar = useUiStore((s) => s.toggleSidebar);
   const sidebarCollapsed = useUiStore((s) => s.sidebarCollapsed);
+  const setSettingsOpen = useSettingsStore((s) => s.setSettingsOpen);
+  const shortcuts = useSettingsStore((s) => s.shortcuts);
+
+  const handleSettings = () => {
+    if (onOpenSettings) {
+      onOpenSettings();
+      return;
+    }
+    setSettingsOpen(true);
+  };
 
   return (
     <header
@@ -15,22 +45,37 @@ export function Titlebar() {
         data-tauri-drag-region
         data-traffic-light-inset
       />
-      <button
-        type="button"
-        className="ml-1 inline-flex h-7 items-center rounded-md px-2 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-        onClick={toggleSidebar}
-        aria-label={sidebarCollapsed ? "Show sidebar" : "Hide sidebar"}
-        aria-pressed={!sidebarCollapsed}
-      >
-        {sidebarCollapsed ? "Show sidebar" : "Hide sidebar"}
-      </button>
+      <div className="flex items-center gap-0.5 pl-1" data-no-drag>
+        <ToolbarIconButton
+          label={sidebarCollapsed ? "Show sidebar" : "Hide sidebar"}
+          shortcut={chordLabel(shortcuts, "toggleSidebar")}
+          pressed={!sidebarCollapsed}
+          onClick={toggleSidebar}
+          data-testid="titlebar-toggle-sidebar"
+        >
+          <PanelLeft aria-hidden className="size-4" />
+        </ToolbarIconButton>
+      </div>
       <div className="flex-1" data-tauri-drag-region />
-      <span
-        className="pr-3 text-xs font-medium tracking-tight text-muted-foreground"
-        data-tauri-drag-region
-      >
-        Terminus
-      </span>
+      <div className="flex items-center gap-0.5 pr-2" data-no-drag>
+        <ToolbarIconButton
+          label="Command palette"
+          shortcut={chordLabel(shortcuts, "commandPalette")}
+          onClick={() => onOpenPalette?.()}
+          data-testid="titlebar-command-palette"
+          disabled={!onOpenPalette}
+        >
+          <Command aria-hidden className="size-4" />
+        </ToolbarIconButton>
+        <ToolbarIconButton
+          label="Settings"
+          shortcut={chordLabel(shortcuts, "openSettings")}
+          onClick={handleSettings}
+          data-testid="titlebar-settings"
+        >
+          <Settings aria-hidden className="size-4" />
+        </ToolbarIconButton>
+      </div>
     </header>
   );
 }

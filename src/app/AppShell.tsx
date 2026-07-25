@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { Titlebar } from "@/app/Titlebar";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { CommandPalette } from "@/features/command-palette/CommandPalette";
 import { useCommandActions } from "@/features/command-palette/useCommandActions";
 import { ProjectSidebar } from "@/features/projects/ProjectSidebar";
@@ -186,75 +187,90 @@ export function AppShell({
   );
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-background text-foreground">
-      <Titlebar />
-      <div className="flex min-h-0 flex-1">
-        {!focusMode && (
-          <ProjectSidebar
-            projects={projects}
-            activeProjectId={activeProjectId}
-            collapsed={sidebarCollapsed}
-            onOpenProject={() => {
-              void handleOpenProject();
-            }}
-            onSelectProject={(id) => {
-              void selectProject(id);
-            }}
-            onCloseProject={handleCloseProject}
-          />
-        )}
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          {activeProjectId ? (
-            <>
-              {!focusMode && (
-                <WorkspaceTabs
-                  workspaces={projectWorkspaces}
-                  activeWorkspaceId={activeWorkspaceId}
-                  onSelectWorkspace={(id) => {
-                    void handleSelectWorkspace(id);
-                  }}
-                  onRenameWorkspace={(id, name) => {
-                    void handleRenameWorkspace(id, name);
-                  }}
-                  onCreateWorkspace={() => {
-                    void handleCreateWorkspace();
-                  }}
-                  onCloseWorkspace={handleCloseWorkspace}
-                />
-              )}
-              <div className="min-h-0 flex-1">
-                <WorkspaceArea
-                  projectId={activeProjectId}
-                  workspaces={projectWorkspaces}
-                  activeWorkspaceId={activeWorkspaceId}
-                />
-              </div>
-            </>
-          ) : (
-            <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
-              <p className="text-sm text-muted-foreground">
-                Select a project or open a folder.
-              </p>
-              <button
-                type="button"
-                className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90"
-                onClick={() => {
-                  void handleOpenProject();
-                }}
-              >
-                Open project
-              </button>
-            </div>
+    <TooltipProvider delayDuration={300}>
+      <div className="flex h-full min-h-0 flex-col bg-background text-foreground">
+        <Titlebar
+          onOpenSettings={() => commandContext.openSettings()}
+          onOpenPalette={() => commandContext.openPalette()}
+        />
+        <div className="flex min-h-0 flex-1">
+          {!focusMode && (
+            <ProjectSidebar
+              projects={projects}
+              activeProjectId={activeProjectId}
+              collapsed={sidebarCollapsed}
+              onOpenProject={() => {
+                void handleOpenProject();
+              }}
+              onSelectProject={(id) => {
+                void selectProject(id);
+              }}
+              onCloseProject={handleCloseProject}
+            />
           )}
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+            {activeProjectId ? (
+              <>
+                {!focusMode && (
+                  <WorkspaceTabs
+                    workspaces={projectWorkspaces}
+                    activeWorkspaceId={activeWorkspaceId}
+                    onSelectWorkspace={(id) => {
+                      void handleSelectWorkspace(id);
+                    }}
+                    onRenameWorkspace={(id, name) => {
+                      void handleRenameWorkspace(id, name);
+                    }}
+                    onCreateWorkspace={() => {
+                      void handleCreateWorkspace();
+                    }}
+                    onCloseWorkspace={handleCloseWorkspace}
+                    onNewTerminal={() => {
+                      void commandContext.newTerminal();
+                    }}
+                    onSplitHorizontal={() => {
+                      void commandContext.splitHorizontal();
+                    }}
+                    onSplitVertical={() => {
+                      void commandContext.splitVertical();
+                    }}
+                    actionsDisabled={!activeWorkspaceId}
+                  />
+                )}
+                <div className="min-h-0 flex-1">
+                  <WorkspaceArea
+                    projectId={activeProjectId}
+                    workspaces={projectWorkspaces}
+                    activeWorkspaceId={activeWorkspaceId}
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
+                <p className="text-sm text-muted-foreground">
+                  Select a project or open a folder.
+                </p>
+                <button
+                  type="button"
+                  className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground outline-none hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring/50"
+                  onClick={() => {
+                    void handleOpenProject();
+                  }}
+                >
+                  Open project
+                </button>
+              </div>
+            )}
+          </div>
         </div>
+        <SettingsSheet />
+        <CommandPalette
+          open={paletteOpen}
+          onOpenChange={setPaletteOpen}
+          context={commandContext}
+        />
+        <ShortcutHost context={commandContext} />
       </div>
-      <SettingsSheet />
-      <CommandPalette
-        open={paletteOpen}
-        onOpenChange={setPaletteOpen}
-        context={commandContext}
-      />
-      <ShortcutHost context={commandContext} />
-    </div>
+    </TooltipProvider>
   );
 }

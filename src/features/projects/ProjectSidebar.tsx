@@ -1,3 +1,4 @@
+import { FolderOpen, X } from "lucide-react";
 import type { ProjectRecord } from "@/lib/tauri/contracts";
 
 export type ProjectSidebarProps = {
@@ -32,10 +33,12 @@ export function ProjectSidebar({
         </span>
         <button
           type="button"
-          className="inline-flex h-7 items-center rounded-md bg-primary px-2 text-xs font-medium text-primary-foreground hover:opacity-90"
+          className="inline-flex h-7 items-center gap-1 rounded-md bg-primary px-2 text-xs font-medium text-primary-foreground outline-none hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring/50"
           onClick={onOpenProject}
+          aria-label="Open project"
         >
-          Open project
+          <FolderOpen aria-hidden className="size-3.5" />
+          Open
         </button>
       </div>
       <ul className="min-h-0 flex-1 overflow-y-auto p-1">
@@ -69,14 +72,14 @@ export function ProjectSidebar({
                   <button
                     type="button"
                     data-testid={`close-project-${project.id}`}
-                    className="mr-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded text-xs text-muted-foreground opacity-0 hover:bg-accent hover:text-foreground group-hover:opacity-100"
+                    className="mr-1 inline-flex size-7 shrink-0 items-center justify-center rounded text-muted-foreground opacity-70 outline-none hover:bg-accent hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/50 group-hover:opacity-100 group-focus-within:opacity-100"
                     aria-label={`Close ${project.displayName}`}
                     onClick={(e) => {
                       e.stopPropagation();
                       onCloseProject(project.id);
                     }}
                   >
-                    ×
+                    <X aria-hidden className="size-3.5" />
                   </button>
                 ) : null}
               </li>

@@ -1,4 +1,5 @@
 import { useCallback, useRef } from "react";
+import { GripVertical, X } from "lucide-react";
 import { TerminalPane } from "@/features/terminal/TerminalPane";
 import { TerminalStatus } from "@/features/terminal/TerminalStatus";
 import { useTerminalStore } from "@/features/terminal/terminalStore";
@@ -133,11 +134,11 @@ function TerminalLeafView({
           <button
             type="button"
             data-testid={`pane-drag-handle-${leaf.id}`}
-            className="inline-flex h-5 cursor-grab items-center rounded px-1 text-[10px] text-muted-foreground hover:bg-accent active:cursor-grabbing"
+            className="inline-flex size-6 cursor-grab items-center justify-center rounded text-muted-foreground outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring/50 active:cursor-grabbing"
             onPointerDown={onPointerDownHandle}
             aria-label="Drag pane"
           >
-            ⋮⋮
+            <GripVertical aria-hidden className="size-3.5" />
           </button>
           <TerminalStatus
             status={session?.status ?? "starting"}
@@ -150,7 +151,7 @@ function TerminalLeafView({
           <button
             type="button"
             data-testid={`close-pane-${leaf.id}`}
-            className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded text-[12px] text-muted-foreground hover:bg-accent hover:text-foreground"
+            className="inline-flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
             aria-label="Close terminal"
             onClick={(e) => {
               e.stopPropagation();
@@ -165,7 +166,7 @@ function TerminalLeafView({
               });
             }}
           >
-            ×
+            <X aria-hidden className="size-3.5" />
           </button>
         </div>
         <div className="min-h-0 flex-1">

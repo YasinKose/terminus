@@ -104,7 +104,11 @@ impl Repository {
         })
     }
 
-    pub fn rename_project(&self, project_id: &str, display_name: &str) -> Result<(), AppError> {
+    pub fn rename_project(
+        &self,
+        project_id: &str,
+        display_name: &str,
+    ) -> Result<ProjectRecord, AppError> {
         self.db.with_conn(|conn| {
             let n = conn
                 .execute(
@@ -117,8 +121,125 @@ impl Repository {
                     "project not found: {project_id}"
                 )));
             }
-            Ok(())
+            load_project_by_id(conn, project_id)?.ok_or_else(|| {
+                AppError::Message(format!("project not found after rename: {project_id}"))
+            })
         })
+    }
+
+    pub fn set_last_active_workspace(
+        &self,
+        project_id: &str,
+        workspace_id: &str,
+    ) -> Result<ProjectRecord, AppError> {
+        self.db.with_conn(|conn| {
+            let workspace = load_workspace_by_id(conn, workspace_id)?.ok_or_else(|| {
+                AppError::Message(format!("workspace not found: {workspace_id}"))
+            })?;
+            if workspace.project_id != project_id {
+                return Err(AppError::Message(
+                    "workspace does not belong to project".into(),
+                ));
+            }
+
+            let n = conn
+                .execute(
+                    "UPDATE projects SET last_active_workspace_id = ?1, updated_at = ?2 WHERE id = ?3",
+                    params![workspace_id, now_ms(), project_id],
+                )
+                .map_err(sql_err)?;
+            if n == 0 {
+                return Err(AppError::Message(format!(
+                    "project not found: {project_id}"
+                )));
+            }
+
+            load_project_by_id(conn, project_id)?.ok_or_else(|| {
+                AppError::Message(format!("project not found after update: {project_id}"))
+            })
+        })
+    }
+
+    pub fn create_default_workspace(
+        &self,
+        project_id: &str,
+    ) -> Result<WorkspaceRecord, AppError> {
+        self.db.with_conn(|conn| {
+            let _project = load_project_by_id(conn, project_id)?.ok_or_else(|| {
+                AppError::Message(format!("project not found: {project_id}"))
+            })?;
+
+            let position = next_workspace_position(conn, project_id)?;
+            let now = now_ms();
+            let record = WorkspaceRecord {
+                id: Uuid::new_v4().to_string(),
+                project_id: project_id.to_string(),
+                name: default_workspace_name().to_string(),
+                root_json: None,
+                active_pane_id: None,
+                position,
+                created_at: now,
+                updated_at: now,
+            };
+            upsert_workspace(conn, &record)?;
+
+            conn.execute(
+                "UPDATE projects SET last_active_workspace_id = ?1, updated_at = ?2 WHERE id = ?3",
+                params![record.id, now, project_id],
+            )
+            .map_err(sql_err)?;
+
+            Ok(record)
+        })
+    }
+
+    pub fn ensure_default_workspace(
+        &self,
+        project_id: &str,
+    ) -> Result<WorkspaceRecord, AppError> {
+        self.db.with_conn(|conn| {
+            let existing = load_workspaces_for_project(conn, project_id)?;
+            if let Some(first) = existing.into_iter().next() {
+                return Ok(first);
+            }
+            let position = next_workspace_position(conn, project_id)?;
+            let now = now_ms();
+            let record = WorkspaceRecord {
+                id: Uuid::new_v4().to_string(),
+                project_id: project_id.to_string(),
+                name: default_workspace_name().to_string(),
+                root_json: None,
+                active_pane_id: None,
+                position,
+                created_at: now,
+                updated_at: now,
+            };
+            upsert_workspace(conn, &record)?;
+            conn.execute(
+                "UPDATE projects SET last_active_workspace_id = ?1, updated_at = ?2 WHERE id = ?3",
+                params![record.id, now, project_id],
+            )
+            .map_err(sql_err)?;
+            Ok(record)
+        })
+    }
+
+    pub fn get_project(&self, project_id: &str) -> Result<Option<ProjectRecord>, AppError> {
+        self.db
+            .with_conn(|conn| load_project_by_id(conn, project_id))
+    }
+
+    pub fn get_workspace(&self, workspace_id: &str) -> Result<Option<WorkspaceRecord>, AppError> {
+        self.db
+            .with_conn(|conn| load_workspace_by_id(conn, workspace_id))
+    }
+
+    pub fn list_workspaces_for_project(
+        &self,
+        project_id: &str,
+    ) -> Result<Vec<WorkspaceRecord>, AppError> {
+        self.db
+            .with_conn(|conn| load_workspaces_for_project(conn, project_id))
     }
 
     pub fn save_workspace(&self, workspace: &WorkspaceRecord) -> Result<(), AppError> {
@@ -427,6 +548,112 @@ fn canonicalize_project_path(path: &Path) -> Result<PathBuf, AppError> {
         ));
     }
     Ok(canonical)
+}
+
+pub fn default_workspace_name() -> &'static str {
+    "Workspace 1"
+}
+
+fn load_project_by_id(
+    conn: &Connection,
+    project_id: &str,
+) -> Result<Option<ProjectRecord>, AppError> {
+    conn.query_row(
+        "SELECT id, canonical_path, display_name, color, last_active_workspace_id,
+                created_at, updated_at
+         FROM projects WHERE id = ?1",
+        params![project_id],
+        |row| {
+            Ok(ProjectRecord {
+                id: row.get(0)?,
+                canonical_path: row.get(1)?,
+                display_name: row.get(2)?,
+                color: row.get(3)?,
+                last_active_workspace_id: row.get(4)?,
+                created_at: row.get(5)?,
+                updated_at: row.get(6)?,
+            })
+        },
+    )
+    .optional()
+    .map_err(sql_err)
+}
+
+fn load_workspace_by_id(
+    conn: &Connection,
+    workspace_id: &str,
+) -> Result<Option<WorkspaceRecord>, AppError> {
+    conn.query_row(
+        "SELECT id, project_id, name, root_json, active_pane_id, position,
+                created_at, updated_at
+         FROM workspaces WHERE id = ?1",
+        params![workspace_id],
+        |row| {
+            Ok(WorkspaceRecord {
+                id: row.get(0)?,
+                project_id: row.get(1)?,
+                name: row.get(2)?,
+                root_json: row.get(3)?,
+                active_pane_id: row.get(4)?,
+                position: row.get(5)?,
+                created_at: row.get(6)?,
+                updated_at: row.get(7)?,
+            })
+        },
+    )
+    .optional()
+    .map_err(sql_err)
+}
+
+fn load_workspaces_for_project(
+    conn: &Connection,
+    project_id: &str,
+) -> Result<Vec<WorkspaceRecord>, AppError> {
+    let mut stmt = conn
+        .prepare(
+            "SELECT id, project_id, name, root_json, active_pane_id, position,
+                    created_at, updated_at
+             FROM workspaces
+             WHERE project_id = ?1
+             ORDER BY position ASC",
+        )
+        .map_err(sql_err)?;
+    let rows = stmt
+        .query_map(params![project_id], |row| {
+            Ok(WorkspaceRecord {
+                id: row.get(0)?,
+                project_id: row.get(1)?,
+                name: row.get(2)?,
+                root_json: row.get(3)?,
+                active_pane_id: row.get(4)?,
+                position: row.get(5)?,
+                created_at: row.get(6)?,
+                updated_at: row.get(7)?,
+            })
+        })
+        .map_err(sql_err)?;
+    let mut workspaces = Vec::new();
+    for row in rows {
+        let ws = row.map_err(sql_err)?;
+        if let Some(ref json) = ws.root_json {
+            validate_root_json(json)?;
+        }
+        workspaces.push(ws);
+    }
+    Ok(workspaces)
+}
+
+fn next_workspace_position(conn: &Connection, project_id: &str) -> Result<i64, AppError> {
+    let max: Option<i64> = conn
+        .query_row(
+            "SELECT MAX(position) FROM workspaces WHERE project_id = ?1",
+            params![project_id],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(sql_err)?
+        .flatten();
+    Ok(max.map(|m| m + 1).unwrap_or(0))
 }
 
 fn now_ms() -> i64 {

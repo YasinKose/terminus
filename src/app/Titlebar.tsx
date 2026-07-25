@@ -1,5 +1,7 @@
 import {
+  CheckSquare,
   Command,
+  FileCode2,
   GitBranch,
   PanelLeft,
   Settings,
@@ -25,8 +27,10 @@ function chordLabel(shortcuts: ShortcutMap, id: keyof ShortcutMap): string {
 export function Titlebar({ onOpenSettings, onOpenPalette }: TitlebarProps) {
   const toggleSidebar = useUiStore((s) => s.toggleSidebar);
   const sidebarCollapsed = useUiStore((s) => s.sidebarCollapsed);
-  const gitPanelOpen = useUiStore((s) => s.gitPanelOpen);
+  const sidePanel = useUiStore((s) => s.sidePanel);
   const toggleGitPanel = useUiStore((s) => s.toggleGitPanel);
+  const toggleSnippetsPanel = useUiStore((s) => s.toggleSnippetsPanel);
+  const toggleTasksPanel = useUiStore((s) => s.toggleTasksPanel);
   const setSettingsOpen = useSettingsStore((s) => s.setSettingsOpen);
   const shortcuts = useSettingsStore((s) => s.shortcuts);
 
@@ -77,12 +81,30 @@ export function Titlebar({ onOpenSettings, onOpenPalette }: TitlebarProps) {
       <div className="flex-1" data-tauri-drag-region />
       <div className="flex items-center gap-1 pr-2" data-no-drag>
         <ToolbarIconButton
-          label={gitPanelOpen ? "Hide git panel" : "Show git panel"}
-          pressed={gitPanelOpen}
+          label={sidePanel === "git" ? "Hide git panel" : "Show git panel"}
+          pressed={sidePanel === "git"}
           onClick={toggleGitPanel}
           data-testid="titlebar-git-panel"
         >
           <GitBranch aria-hidden className="size-4" />
+        </ToolbarIconButton>
+        <ToolbarIconButton
+          label={
+            sidePanel === "snippets" ? "Hide snippets" : "Show snippets"
+          }
+          pressed={sidePanel === "snippets"}
+          onClick={toggleSnippetsPanel}
+          data-testid="titlebar-snippets-panel"
+        >
+          <FileCode2 aria-hidden className="size-4" />
+        </ToolbarIconButton>
+        <ToolbarIconButton
+          label={sidePanel === "tasks" ? "Hide tasks" : "Show tasks"}
+          pressed={sidePanel === "tasks"}
+          onClick={toggleTasksPanel}
+          data-testid="titlebar-tasks-panel"
+        >
+          <CheckSquare aria-hidden className="size-4" />
         </ToolbarIconButton>
         <ToolbarIconButton
           label="Command palette"

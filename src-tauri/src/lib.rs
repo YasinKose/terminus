@@ -4,6 +4,8 @@ pub mod git;
 pub mod persistence;
 pub mod platform;
 pub mod pty;
+pub mod snippets;
+pub mod tasks;
 mod state;
 
 pub use app_error::{AppError, ErrorPayload};
@@ -70,6 +72,14 @@ pub fn run() {
             commands::git_stash_list,
             commands::git_stash_push,
             commands::git_stash_pop,
+            commands::snippets_list,
+            commands::snippets_create,
+            commands::snippets_update,
+            commands::snippets_delete,
+            commands::snippets_scan_makefile,
+            commands::snippets_import_makefile,
+            commands::tasks_load_board,
+            commands::tasks_save_board,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Terminus");

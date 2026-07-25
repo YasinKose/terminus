@@ -17,6 +17,8 @@ import { useUiStore } from "@/features/ui/uiStore";
 import { collectTerminalIds } from "@/features/panes/tree";
 import type { PaneNode } from "@/features/panes/model";
 import { GitPanel } from "@/features/git/GitPanel";
+import { SnippetsPanel } from "@/features/snippets/SnippetsPanel";
+import { TasksPanel } from "@/features/tasks/TasksPanel";
 import { WorkspaceArea } from "@/features/workspaces/WorkspaceArea";
 import { WorkspaceTabs } from "@/features/workspaces/WorkspaceTabs";
 import { useWorkspaceStore } from "@/features/workspaces/workspaceStore";
@@ -64,8 +66,8 @@ export function AppShell({
   const listForProject = useWorkspaceStore((s) => s.listForProject);
 
   const sidebarCollapsed = useUiStore((s) => s.sidebarCollapsed);
-  const gitPanelOpen = useUiStore((s) => s.gitPanelOpen);
-  const setGitPanelOpen = useUiStore((s) => s.setGitPanelOpen);
+  const sidePanel = useUiStore((s) => s.sidePanel);
+  const setSidePanel = useUiStore((s) => s.setSidePanel);
   const focusMode = useSettingsStore((s) => s.focusMode);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const commandContext = useCommandActions({ setPaletteOpen });
@@ -268,8 +270,18 @@ export function AppShell({
                   </div>
                   <GitPanel
                     projectId={activeProjectId}
-                    open={gitPanelOpen}
-                    onClose={() => setGitPanelOpen(false)}
+                    open={sidePanel === "git"}
+                    onClose={() => setSidePanel(null)}
+                  />
+                  <SnippetsPanel
+                    projectId={activeProjectId}
+                    open={sidePanel === "snippets"}
+                    onClose={() => setSidePanel(null)}
+                  />
+                  <TasksPanel
+                    projectId={activeProjectId}
+                    open={sidePanel === "tasks"}
+                    onClose={() => setSidePanel(null)}
                   />
                 </div>
               </>

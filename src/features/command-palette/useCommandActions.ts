@@ -35,6 +35,8 @@ export function useCommandActions(options: {
 
   const toggleSidebar = useUiStore((s) => s.toggleSidebar);
   const toggleGitPanel = useUiStore((s) => s.toggleGitPanel);
+  const toggleSnippetsPanel = useUiStore((s) => s.toggleSnippetsPanel);
+  const toggleTasksPanel = useUiStore((s) => s.toggleTasksPanel);
   const setSettingsOpen = useSettingsStore((s) => s.setSettingsOpen);
   const toggleFocusMode = useSettingsStore((s) => s.toggleFocusMode);
 
@@ -160,6 +162,8 @@ export function useCommandActions(options: {
       toggleSidebar,
       toggleFocus: toggleFocusMode,
       toggleGitPanel,
+      toggleSnippetsPanel,
+      toggleTasksPanel,
       openPalette: () => setPaletteOpen(true),
       newWorkspace,
       newTerminal,
@@ -199,6 +203,8 @@ export function useCommandActions(options: {
       splitInDirection,
       toggleFocusMode,
       toggleGitPanel,
+      toggleSnippetsPanel,
+      toggleTasksPanel,
       toggleSidebar,
       workspaces,
     ],

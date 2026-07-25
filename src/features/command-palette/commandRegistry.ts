@@ -12,6 +12,8 @@ export type CommandContext = {
   toggleSidebar: () => void;
   toggleFocus: () => void;
   toggleGitPanel: () => void;
+  toggleSnippetsPanel: () => void;
+  toggleTasksPanel: () => void;
   openPalette: () => void;
   newWorkspace: () => void | Promise<void>;
   newTerminal: () => void | Promise<void>;
@@ -55,6 +57,18 @@ export function buildCommands(ctx: CommandContext): CommandDefinition[] {
       label: "Toggle git panel",
       keywords: ["source control", "scm", "commit"],
       run: () => ctx.toggleGitPanel(),
+    },
+    {
+      id: "toggleSnippetsPanel",
+      label: "Toggle snippets panel",
+      keywords: ["snippet", "makefile", "insert"],
+      run: () => ctx.toggleSnippetsPanel(),
+    },
+    {
+      id: "toggleTasksPanel",
+      label: "Toggle tasks panel",
+      keywords: ["board", "todo", "kanban"],
+      run: () => ctx.toggleTasksPanel(),
     },
     {
       id: "newWorkspace",

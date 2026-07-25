@@ -18,6 +18,8 @@ const ctx = {
   toggleSidebar: vi.fn(),
   toggleFocus: vi.fn(),
   toggleGitPanel: vi.fn(),
+  toggleSnippetsPanel: vi.fn(),
+  toggleTasksPanel: vi.fn(),
   openPalette: vi.fn(),
   newWorkspace: vi.fn(),
   newTerminal: vi.fn(),

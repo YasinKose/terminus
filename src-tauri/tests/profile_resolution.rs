@@ -46,6 +46,24 @@ fn empty_profile_resolves_to_shell_login() {
 }
 
 #[test]
+fn empty_profile_uses_shell_from_login_environment_without_override() {
+    let root = project_root();
+    let mut vars = HashMap::new();
+    vars.insert("SHELL".into(), "/bin/sh".into());
+
+    let resolved = resolve_profile(ResolveProfileInput {
+        profile: &empty_profile(),
+        project_root: &root,
+        login_env: &login_env_with(vars),
+        shell_override: None,
+    })
+    .expect("resolve from captured SHELL");
+
+    assert_eq!(resolved.executable, "/bin/sh");
+    assert_eq!(resolved.args, vec!["-l".to_string()]);
+}
+
+#[test]
 fn missing_shell_falls_back_to_zsh() {
     let root = project_root();
     let resolved = resolve_profile(ResolveProfileInput {

@@ -63,7 +63,11 @@ pub fn capture_login_environment() -> LoginEnvironment {
 }
 
 pub fn resolve_profile(input: ResolveProfileInput<'_>) -> Result<ResolvedProfile, AppError> {
-    let executable = resolve_executable(input.profile, input.shell_override.as_deref())?;
+    let executable = resolve_executable(
+        input.profile,
+        input.login_env,
+        input.shell_override.as_deref(),
+    )?;
     let args = resolve_args(input.profile)?;
     let env = resolve_env(input.profile, input.login_env)?;
     let cwd = resolve_cwd(input.profile, input.project_root)?;
@@ -78,15 +82,29 @@ pub fn resolve_profile(input: ResolveProfileInput<'_>) -> Result<ResolvedProfile
 
 fn resolve_executable(
     profile: &ProfileRecord,
+    login_env: &LoginEnvironment,
     shell_override: Option<&str>,
 ) -> Result<String, AppError> {
-    let candidate = match profile.executable.as_deref() {
-        Some(path) if !path.trim().is_empty() => path.to_string(),
-        _ => match shell_override {
-            Some(shell) if !shell.is_empty() => shell.to_string(),
-            None | Some(_) => "/bin/zsh".to_string(),
-        },
-    };
+    let candidate = profile
+        .executable
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_string)
+        .or_else(|| {
+            shell_override
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(str::to_string)
+        })
+        .or_else(|| {
+            login_env
+                .get("SHELL")
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(str::to_string)
+        })
+        .unwrap_or_else(|| "/bin/zsh".to_string());
 
     validate_executable(&candidate)?;
     Ok(candidate)

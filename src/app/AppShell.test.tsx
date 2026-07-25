@@ -1,4 +1,11 @@
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "@/app/App";
@@ -16,6 +23,11 @@ import type {
 } from "@/lib/tauri/contracts";
 import type { WorkspaceApi } from "@/lib/tauri/workspaces";
 import { useRecoveryStore } from "@/features/settings/recoveryStore";
+import { useSettingsStore } from "@/features/settings/settingsStore";
+import {
+  DEFAULT_NAVIGATOR_MODIFIERS,
+  DEFAULT_SHORTCUTS,
+} from "@/features/settings/shortcutModel";
 import type { RecoveryApi } from "@/lib/tauri/recovery";
 
 vi.mock("@/features/terminal/TerminalPane", () => ({
@@ -168,6 +180,13 @@ function resetStores(api: WorkspaceApi) {
     activeWorkspaceId: null,
   });
   useUiStore.setState({ sidebarCollapsed: false });
+  useSettingsStore.setState({
+    shortcuts: { ...DEFAULT_SHORTCUTS },
+    navigatorModifiers: { ...DEFAULT_NAVIGATOR_MODIFIERS },
+    shortcutRecording: false,
+    settingsOpen: false,
+    focusMode: false,
+  });
   useRecoveryStore.setState({
     status: { kind: "idle" },
     busy: false,
@@ -274,6 +293,68 @@ describe("App shell", () => {
     expect(
       within(container).getByRole("tab", { name: "Beta" }),
     ).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("switches to the navigator preview when hold modifiers are released", async () => {
+    const p1 = project("p1", "/alpha", "w1");
+    const p2 = project("p2", "/beta", "w2");
+    const w1 = workspace("w1", "p1", "Main", 0);
+    const w2 = workspace("w2", "p2", "API", 0);
+    const w3 = workspace("w3", "p2", "Tests", 1);
+    const api = createMockApi({
+      projects: [p1, p2],
+      workspaces: [w1, w2, w3],
+    });
+    const persistSelection = vi.spyOn(api, "setLastActiveWorkspace");
+    resetStores(api);
+    await useProjectStore.getState().bootstrap();
+    persistSelection.mockClear();
+    render(
+      <AppShell
+        dialogApi={{ openDirectory: async () => null }}
+        workspaceApi={api}
+      />,
+    );
+
+    fireEvent.keyDown(window, { key: "Control", ctrlKey: true });
+    fireEvent.keyDown(window, {
+      key: "Alt",
+      ctrlKey: true,
+      altKey: true,
+    });
+    fireEvent.keyDown(window, {
+      key: "Shift",
+      ctrlKey: true,
+      altKey: true,
+      shiftKey: true,
+    });
+    fireEvent.keyDown(window, {
+      key: "ArrowDown",
+      ctrlKey: true,
+      altKey: true,
+      shiftKey: true,
+    });
+    fireEvent.keyDown(window, {
+      key: "ArrowRight",
+      ctrlKey: true,
+      altKey: true,
+      shiftKey: true,
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent("beta — Tests");
+
+    fireEvent.keyUp(window, {
+      key: "Shift",
+      ctrlKey: true,
+      altKey: true,
+      shiftKey: false,
+    });
+
+    await waitFor(() => {
+      expect(useProjectStore.getState().activeProjectId).toBe("p2");
+      expect(useWorkspaceStore.getState().activeWorkspaceId).toBe("w3");
+      expect(persistSelection).toHaveBeenCalledWith("p2", "w3");
+    });
   });
 
   it("persists workspace selection from a workspace tab", async () => {

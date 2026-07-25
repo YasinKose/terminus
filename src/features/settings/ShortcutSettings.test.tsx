@@ -5,7 +5,10 @@ import type { CommandContext } from "@/features/command-palette/commandRegistry"
 import type { SettingsApi } from "@/lib/tauri/settings";
 import { ShortcutHost } from "./ShortcutHost";
 import { ShortcutSettings } from "./ShortcutSettings";
-import { DEFAULT_SHORTCUTS } from "./shortcutModel";
+import {
+  DEFAULT_NAVIGATOR_MODIFIERS,
+  DEFAULT_SHORTCUTS,
+} from "./shortcutModel";
 import { useSettingsStore } from "./settingsStore";
 
 function SettingsWithShortcutHost() {
@@ -51,6 +54,7 @@ describe("ShortcutSettings", () => {
     useSettingsStore.getState().setApi(api);
     useSettingsStore.setState({
       shortcuts: { ...DEFAULT_SHORTCUTS },
+      navigatorModifiers: { ...DEFAULT_NAVIGATOR_MODIFIERS },
       shortcutRecording: false,
     });
   });
@@ -134,6 +138,77 @@ describe("ShortcutSettings", () => {
     ).toHaveTextContent("none");
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Shortcut conflicts with another command",
+    );
+  });
+
+  it("records a modifier-only workspace navigator shortcut", async () => {
+    render(<ShortcutSettings />);
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Change workspace navigator shortcut",
+      }),
+    );
+    expect(screen.getByText("Press modifiers…")).toBeInTheDocument();
+
+    fireEvent.keyDown(document.body, {
+      key: "Meta",
+      metaKey: true,
+    });
+    fireEvent.keyDown(document.body, {
+      key: "Shift",
+      metaKey: true,
+      shiftKey: true,
+    });
+    fireEvent.keyUp(document.body, {
+      key: "Shift",
+      metaKey: true,
+      shiftKey: false,
+    });
+
+    await waitFor(() => {
+      expect(useSettingsStore.getState().navigatorModifiers).toEqual({
+        meta: true,
+        ctrl: false,
+        alt: false,
+        shift: true,
+      });
+    });
+  });
+
+  it("shows a recovery message when the navigator shortcut cannot be saved", async () => {
+    const api: SettingsApi = {
+      saveProfile: vi.fn(async (profile) => profile),
+      deleteProfile: vi.fn(async () => {}),
+      saveSetting: vi.fn(async () => {
+        throw new Error("disk unavailable");
+      }),
+    };
+    useSettingsStore.getState().setApi(api);
+    render(<ShortcutSettings />);
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Change workspace navigator shortcut",
+      }),
+    );
+    fireEvent.keyDown(document.body, {
+      key: "Meta",
+      metaKey: true,
+    });
+    fireEvent.keyDown(document.body, {
+      key: "Shift",
+      metaKey: true,
+      shiftKey: true,
+    });
+    fireEvent.keyUp(document.body, {
+      key: "Shift",
+      metaKey: true,
+      shiftKey: false,
+    });
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Could not save navigator shortcut. Try again.",
     );
   });
 });

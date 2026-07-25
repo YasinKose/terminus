@@ -19,7 +19,16 @@ export type ShortcutChord = {
   shift: boolean;
 };
 
+export type ModifierChord = Omit<ShortcutChord, "key">;
+
 export type ShortcutMap = Record<ShortcutCommandId, ShortcutChord>;
+
+export const DEFAULT_NAVIGATOR_MODIFIERS: ModifierChord = {
+  meta: false,
+  ctrl: true,
+  alt: true,
+  shift: true,
+};
 
 export const SHORTCUT_COMMANDS: {
   id: ShortcutCommandId;
@@ -109,6 +118,72 @@ export function formatChordMac(chord: ShortcutChord): string {
         : chord.key.charAt(0).toUpperCase() + chord.key.slice(1);
   parts.push(keyLabel);
   return parts.join("");
+}
+
+export function formatModifierChordMac(chord: ModifierChord): string {
+  const parts: string[] = [];
+  if (chord.ctrl) parts.push("⌃");
+  if (chord.alt) parts.push("⌥");
+  if (chord.shift) parts.push("⇧");
+  if (chord.meta) parts.push("⌘");
+  return parts.join("");
+}
+
+export function isModifierKey(key: string): boolean {
+  return (
+    key === "Control" || key === "Alt" || key === "Shift" || key === "Meta"
+  );
+}
+
+export function modifierChordFromKeyboardEvent(event: {
+  key: string;
+  metaKey: boolean;
+  ctrlKey: boolean;
+  altKey: boolean;
+  shiftKey: boolean;
+}): ModifierChord {
+  return {
+    meta: event.metaKey || event.key === "Meta",
+    ctrl: event.ctrlKey || event.key === "Control",
+    alt: event.altKey || event.key === "Alt",
+    shift: event.shiftKey || event.key === "Shift",
+  };
+}
+
+export function isValidModifierChord(chord: ModifierChord): boolean {
+  return [chord.meta, chord.ctrl, chord.alt, chord.shift].filter(Boolean)
+    .length >= 2;
+}
+
+export function matchesModifierChord(
+  event: {
+    key: string;
+    metaKey: boolean;
+    ctrlKey: boolean;
+    altKey: boolean;
+    shiftKey: boolean;
+  },
+  chord: ModifierChord,
+): boolean {
+  const pressed = modifierChordFromKeyboardEvent(event);
+  return (
+    pressed.meta === chord.meta &&
+    pressed.ctrl === chord.ctrl &&
+    pressed.alt === chord.alt &&
+    pressed.shift === chord.shift
+  );
+}
+
+export function parseModifierChord(value: unknown): ModifierChord | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const raw = value as Record<string, unknown>;
+  const chord: ModifierChord = {
+    meta: Boolean(raw.meta),
+    ctrl: Boolean(raw.ctrl),
+    alt: Boolean(raw.alt),
+    shift: Boolean(raw.shift),
+  };
+  return isValidModifierChord(chord) ? chord : null;
 }
 
 export function isUnmodifiedTerminalKeystroke(chord: ShortcutChord): boolean {

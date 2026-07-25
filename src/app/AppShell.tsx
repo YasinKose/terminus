@@ -4,6 +4,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { CommandPalette } from "@/features/command-palette/CommandPalette";
 import { useCommandActions } from "@/features/command-palette/useCommandActions";
 import { ProjectSidebar } from "@/features/projects/ProjectSidebar";
+import { WorkspaceNavigatorHost } from "@/features/navigation/WorkspaceNavigatorHost";
+import type { NavigatorSelection } from "@/features/navigation/workspaceNavigatorModel";
 import {
   DEFAULT_PROJECT_COLOR,
   useProjectStore,
@@ -81,6 +83,17 @@ export function AppShell({
       await selectWorkspace(activeProjectId, workspaceId);
     },
     [activeProjectId, selectWorkspace],
+  );
+
+  const handleNavigatorCommit = useCallback(
+    async ({ projectId, workspaceId }: NavigatorSelection) => {
+      if (workspaceId) {
+        await selectWorkspace(projectId, workspaceId);
+        return;
+      }
+      await selectProject(projectId);
+    },
+    [selectProject, selectWorkspace],
   );
 
   const handleRenameWorkspace = useCallback(
@@ -258,6 +271,13 @@ export function AppShell({
           context={commandContext}
         />
         <ShortcutHost context={commandContext} />
+        <WorkspaceNavigatorHost
+          projects={projects}
+          workspaces={workspaces}
+          activeProjectId={activeProjectId}
+          activeWorkspaceId={activeWorkspaceId}
+          onCommit={handleNavigatorCommit}
+        />
       </div>
     </TooltipProvider>
   );

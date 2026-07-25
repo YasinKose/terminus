@@ -1,12 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SettingsApi } from "@/lib/tauri/settings";
-import { DEFAULT_SHORTCUTS } from "./shortcutModel";
+import {
+  DEFAULT_NAVIGATOR_MODIFIERS,
+  DEFAULT_SHORTCUTS,
+} from "./shortcutModel";
 import { useSettingsStore } from "./settingsStore";
 
 describe("settingsStore", () => {
   beforeEach(() => {
     useSettingsStore.setState({
       shortcuts: { ...DEFAULT_SHORTCUTS },
+      navigatorModifiers: { ...DEFAULT_NAVIGATOR_MODIFIERS },
       shortcutRecording: false,
       settingsOpen: false,
       settingsTab: "shortcuts",
@@ -39,6 +43,24 @@ describe("settingsStore", () => {
 
     expect(useSettingsStore.getState().confirmTerminalClose).toBe(false);
     expect(useSettingsStore.getState().confirmWorkspaceClose).toBe(true);
+  });
+
+  it("hydrates the workspace navigator modifier chord", () => {
+    useSettingsStore.getState().hydrateFromBootstrap({
+      "shortcuts.navigatorModifiers": {
+        meta: true,
+        ctrl: true,
+        alt: false,
+        shift: false,
+      },
+    });
+
+    expect(useSettingsStore.getState().navigatorModifiers).toEqual({
+      meta: true,
+      ctrl: true,
+      alt: false,
+      shift: false,
+    });
   });
 
   it("persists the terminal close confirmation without changing workspace confirmation", async () => {
@@ -118,5 +140,85 @@ describe("settingsStore", () => {
     expect(result.ok).toBe(true);
     expect(api.saveSetting).toHaveBeenCalled();
     expect(useSettingsStore.getState().shortcuts.openSettings.key).toBe(";");
+  });
+
+  it("persists a valid workspace navigator trigger", async () => {
+    const api: SettingsApi = {
+      saveProfile: vi.fn(async (p) => p),
+      deleteProfile: vi.fn(async () => {}),
+      saveSetting: vi.fn(async () => {}),
+    };
+    useSettingsStore.getState().setApi(api);
+
+    const result = await useSettingsStore
+      .getState()
+      .setNavigatorModifiers({
+        meta: true,
+        ctrl: false,
+        alt: true,
+        shift: false,
+      });
+
+    expect(result).toEqual({ ok: true });
+    expect(api.saveSetting).toHaveBeenCalledWith(
+      "shortcuts.navigatorModifiers",
+      {
+        meta: true,
+        ctrl: false,
+        alt: true,
+        shift: false,
+      },
+    );
+  });
+
+  it("rejects a single-modifier navigator trigger", async () => {
+    const api: SettingsApi = {
+      saveProfile: vi.fn(async (p) => p),
+      deleteProfile: vi.fn(async () => {}),
+      saveSetting: vi.fn(async () => {}),
+    };
+    useSettingsStore.getState().setApi(api);
+
+    const result = await useSettingsStore
+      .getState()
+      .setNavigatorModifiers({
+        meta: false,
+        ctrl: false,
+        alt: true,
+        shift: false,
+      });
+
+    expect(result.ok).toBe(false);
+    expect(api.saveSetting).not.toHaveBeenCalled();
+    expect(useSettingsStore.getState().navigatorModifiers).toEqual(
+      DEFAULT_NAVIGATOR_MODIFIERS,
+    );
+  });
+
+  it("resets the workspace navigator trigger with all shortcuts", async () => {
+    const api: SettingsApi = {
+      saveProfile: vi.fn(async (p) => p),
+      deleteProfile: vi.fn(async () => {}),
+      saveSetting: vi.fn(async () => {}),
+    };
+    useSettingsStore.getState().setApi(api);
+    useSettingsStore.setState({
+      navigatorModifiers: {
+        meta: true,
+        ctrl: true,
+        alt: false,
+        shift: false,
+      },
+    });
+
+    await useSettingsStore.getState().resetAllShortcuts();
+
+    expect(useSettingsStore.getState().navigatorModifiers).toEqual(
+      DEFAULT_NAVIGATOR_MODIFIERS,
+    );
+    expect(api.saveSetting).toHaveBeenCalledWith(
+      "shortcuts.navigatorModifiers",
+      DEFAULT_NAVIGATOR_MODIFIERS,
+    );
   });
 });

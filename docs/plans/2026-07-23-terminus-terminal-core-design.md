@@ -277,6 +277,13 @@ Core commands are configurable:
 
 Shortcut editing detects conflicts, refuses ambiguous bindings, and supports reset to defaults. Full conditional keymaps, chord sequences, and JSON keybinding files are excluded.
 
+Workspace navigation also includes a modifier-hold navigator. Its default
+trigger is `Control + Option + Shift`; users may replace it with another
+modifier-only combination of at least two keys. While held, vertical arrows
+preview projects and horizontal arrows preview that project's workspaces.
+Releasing a configured modifier commits once, while `Escape` or loss of window
+focus cancels without changing the active selection.
+
 ## 12. Errors and security
 
 Rust commands return a structured error:

@@ -1,12 +1,18 @@
 import { describe, expect, it } from "vitest";
 import {
   chordFromKeyboardEvent,
+  DEFAULT_NAVIGATOR_MODIFIERS,
   DEFAULT_SHORTCUTS,
   findConflicts,
   formatChordMac,
+  formatModifierChordMac,
   isUnmodifiedTerminalKeystroke,
+  isValidModifierChord,
   matchCommand,
+  matchesModifierChord,
+  modifierChordFromKeyboardEvent,
   normalizeKey,
+  parseModifierChord,
   parseShortcutMap,
   resetShortcuts,
   type ShortcutMap,
@@ -142,5 +148,90 @@ describe("shortcutModel", () => {
     });
     expect(parsed?.commandPalette.key).toBe("p");
     expect(parsed?.newTerminal).toEqual(DEFAULT_SHORTCUTS.newTerminal);
+  });
+
+  it("uses Control+Option+Shift as the default navigator trigger", () => {
+    expect(DEFAULT_NAVIGATOR_MODIFIERS).toEqual({
+      meta: false,
+      ctrl: true,
+      alt: true,
+      shift: true,
+    });
+    expect(formatModifierChordMac(DEFAULT_NAVIGATOR_MODIFIERS)).toBe("⌃⌥⇧");
+  });
+
+  it("requires at least two modifiers for navigator mode", () => {
+    expect(
+      isValidModifierChord({
+        meta: false,
+        ctrl: true,
+        alt: false,
+        shift: false,
+      }),
+    ).toBe(false);
+    expect(
+      isValidModifierChord({
+        meta: true,
+        ctrl: false,
+        alt: false,
+        shift: true,
+      }),
+    ).toBe(true);
+  });
+
+  it("captures the modifier key currently being pressed", () => {
+    expect(
+      modifierChordFromKeyboardEvent({
+        key: "Shift",
+        metaKey: false,
+        ctrlKey: true,
+        altKey: true,
+        shiftKey: false,
+      }),
+    ).toEqual(DEFAULT_NAVIGATOR_MODIFIERS);
+  });
+
+  it("matches navigator modifiers exactly", () => {
+    expect(
+      matchesModifierChord(
+        {
+          key: "ArrowDown",
+          metaKey: false,
+          ctrlKey: true,
+          altKey: true,
+          shiftKey: true,
+        },
+        DEFAULT_NAVIGATOR_MODIFIERS,
+      ),
+    ).toBe(true);
+    expect(
+      matchesModifierChord(
+        {
+          key: "ArrowDown",
+          metaKey: true,
+          ctrlKey: true,
+          altKey: true,
+          shiftKey: true,
+        },
+        DEFAULT_NAVIGATOR_MODIFIERS,
+      ),
+    ).toBe(false);
+  });
+
+  it("falls back when a persisted navigator trigger is invalid", () => {
+    expect(parseModifierChord({ ctrl: true })).toBeNull();
+    expect(
+      parseModifierChord({
+        meta: true,
+        ctrl: false,
+        alt: true,
+        shift: false,
+      }),
+    ).toEqual({
+      meta: true,
+      ctrl: false,
+      alt: true,
+      shift: false,
+    });
   });
 });

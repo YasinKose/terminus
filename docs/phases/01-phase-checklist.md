@@ -6,9 +6,9 @@ Use with `docs/plans/2026-07-23-terminus-terminal-core.md`. Check boxes only wit
 
 | Task | Title | Done |
 |------|-------|------|
-| 1 | Archival baseline + worktree | [ ] |
-| 2 | React/Vite/Tailwind/Vitest/shadcn (pnpm) | [ ] |
-| 3 | Tauri v2 Rust scaffold | [ ] |
+| 1 | Archival baseline + worktree | [x] |
+| 2 | React/Vite/Tailwind/Vitest/shadcn (pnpm) | [x] |
+| 3 | Tauri v2 Rust scaffold | [x] |
 
 **Gate:** scaffold boots; cargo check; legacy out of graph.
 

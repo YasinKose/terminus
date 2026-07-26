@@ -1,13 +1,18 @@
 PNPM ?= pnpm
 CARGO ?= cargo
 TAURI_MANIFEST := src-tauri/Cargo.toml
+APP_NAME := Terminus
+APP_IDENTIFIER := com.yasinkose.terminus
+APPLICATIONS_DIR ?= /Applications
+TAURI_APP_BUNDLE := src-tauri/target/release/bundle/macos/$(APP_NAME).app
+INSTALLED_APP := $(APPLICATIONS_DIR)/$(APP_NAME).app
 
 .DEFAULT_GOAL := help
 
 .PHONY: help install dev tauri-dev check test test-watch build tauri-build \
 	tauri-build-ci verify verify-v01 verify-v02 audit audit-rust \
 	audit-frontend cargo-check cargo-test cargo-clippy cargo-fmt \
-	format-check ci
+	format-check ci app-build app-install app-update app-open
 
 # List the available development commands
 help:
@@ -44,6 +49,49 @@ build:
 # Build platform-native Tauri bundles
 tauri-build:
 	$(PNPM) tauri:build
+
+# Build only the native macOS .app bundle
+app-build:
+	@test "$$(uname -s)" = "Darwin" || { echo "app-build requires macOS" >&2; exit 1; }
+	$(PNPM) tauri build --bundles app
+
+# Install the previously built bundle into /Applications
+app-install:
+	@test "$$(uname -s)" = "Darwin" || { echo "app-install requires macOS" >&2; exit 1; }
+	@test -d "$(TAURI_APP_BUNDLE)" || { echo "Missing bundle: $(TAURI_APP_BUNDLE). Run 'make app-build' first." >&2; exit 1; }
+	@test "$$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' '$(TAURI_APP_BUNDLE)/Contents/Info.plist')" = "$(APP_IDENTIFIER)" || { echo "Unexpected application bundle identifier" >&2; exit 1; }
+	@if pgrep -x "$(APP_NAME)" >/dev/null; then \
+		echo "$(APP_NAME) is running. Quit it before updating the application." >&2; \
+		exit 1; \
+	fi
+	@set -eu; \
+	stage="$$(mktemp -d '$(APPLICATIONS_DIR)/.$(APP_NAME).install.XXXXXX')"; \
+	trap 'rm -rf "$$stage"' EXIT HUP INT TERM; \
+	/usr/bin/ditto "$(TAURI_APP_BUNDLE)" "$$stage/$(APP_NAME).app"; \
+	if ! /usr/bin/codesign --verify --deep --strict "$$stage/$(APP_NAME).app" 2>/dev/null; then \
+		/usr/bin/codesign --force --deep --sign - "$$stage/$(APP_NAME).app"; \
+	fi; \
+	/usr/bin/codesign --verify --deep --strict "$$stage/$(APP_NAME).app"; \
+	if test -e "$(INSTALLED_APP)"; then \
+		mv "$(INSTALLED_APP)" "$$stage/previous.app"; \
+	fi; \
+	if mv "$$stage/$(APP_NAME).app" "$(INSTALLED_APP)"; then \
+		rm -rf "$$stage/previous.app"; \
+	else \
+		rm -rf "$(INSTALLED_APP)"; \
+		if test -e "$$stage/previous.app"; then \
+			mv "$$stage/previous.app" "$(INSTALLED_APP)"; \
+		fi; \
+		exit 1; \
+	fi
+	@echo "Installed $(INSTALLED_APP)"
+
+# Build and replace the installed macOS application
+app-update: app-build app-install
+
+# Open the installed macOS application
+app-open:
+	@open "$(INSTALLED_APP)"
 
 # Build the optimized Tauri binary without packaging
 tauri-build-ci:

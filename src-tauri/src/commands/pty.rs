@@ -163,8 +163,14 @@ pub fn resize_pty(state: State<'_, SharedAppState>, input: ResizePtyInput) -> Re
 }
 
 #[tauri::command]
-pub fn close_pty(state: State<'_, SharedAppState>, input: ClosePtyInput) -> Result<(), AppError> {
-    state.sessions().close(&input.session_id)
+pub async fn close_pty(
+    state: State<'_, SharedAppState>,
+    input: ClosePtyInput,
+) -> Result<(), AppError> {
+    let state = Arc::clone(state.inner());
+    tauri::async_runtime::spawn_blocking(move || state.sessions().close(&input.session_id))
+        .await
+        .map_err(|error| AppError::Message(format!("close PTY task failed: {error}")))?
 }
 
 #[tauri::command]

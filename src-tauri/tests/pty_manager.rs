@@ -25,6 +25,24 @@ fn true_profile() -> ResolvedProfile {
     }
 }
 
+fn hup_resistant_child_tree_profile(marker: &std::path::Path) -> ResolvedProfile {
+    let mut env = HashMap::new();
+    env.insert(
+        "TERMINUS_CLOSE_TEST_MARKER".into(),
+        marker.to_string_lossy().to_string(),
+    );
+    ResolvedProfile {
+        executable: "/bin/sh".into(),
+        args: vec![
+            "-c".into(),
+            "trap '' HUP; (sleep 3; printf survived > \"$TERMINUS_CLOSE_TEST_MARKER\") & wait"
+                .into(),
+        ],
+        env,
+        cwd: std::env::temp_dir(),
+    }
+}
+
 type EventSinkFn = Arc<dyn Fn(PtyEvent) + Send + Sync>;
 type EventLog = Arc<Mutex<Vec<PtyEvent>>>;
 
@@ -245,6 +263,44 @@ fn close_is_graceful_and_bounded() {
 
     let err = manager.write("s-close", "x").expect_err("gone");
     assert_eq!(err.into_payload().code, "SESSION_NOT_FOUND");
+}
+
+#[test]
+fn close_terminates_hup_resistant_child_tree_within_bound() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let marker = dir.path().join("survived");
+    let manager = SessionManager::new();
+    let (sink, events) = collect_sink();
+    manager
+        .open(
+            OpenSessionRequest {
+                session_id: "s-stubborn".into(),
+                profile: hup_resistant_child_tree_profile(&marker),
+                cols: 80,
+                rows: 24,
+            },
+            sink,
+        )
+        .expect("open stubborn child tree");
+    wait_for_event(
+        &events,
+        Duration::from_secs(3),
+        |event| matches!(event, PtyEvent::Started { session_id } if session_id == "s-stubborn"),
+    )
+    .expect("Started event");
+
+    let started = Instant::now();
+    manager.close("s-stubborn").expect("close");
+
+    assert!(
+        started.elapsed() < Duration::from_secs(2),
+        "close must not wait for a HUP-resistant child tree"
+    );
+    std::thread::sleep(Duration::from_millis(3200));
+    assert!(
+        !marker.exists(),
+        "closing the terminal must terminate its child process tree"
+    );
 }
 
 #[test]

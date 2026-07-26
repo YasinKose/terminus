@@ -6,7 +6,7 @@ use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
 
 use parking_lot::RwLock;
-use portable_pty::{Child, MasterPty, PtySize};
+use portable_pty::{Child, ChildKiller, MasterPty, PtySize};
 
 use serde::Serialize;
 
@@ -16,6 +16,8 @@ use crate::AppError;
 const COALESCE_MAX_BYTES: usize = 32 * 1024;
 const COALESCE_MAX_WAIT: Duration = Duration::from_millis(16);
 const CLOSE_WAIT: Duration = Duration::from_millis(500);
+const FORCE_CLOSE_WAIT: Duration = Duration::from_millis(500);
+const THREAD_JOIN_WAIT: Duration = Duration::from_millis(250);
 
 pub type EventSink = Arc<dyn Fn(PtyEvent) + Send + Sync>;
 
@@ -44,7 +46,8 @@ pub struct PtySession {
     pub cwd: PathBuf,
     master: Mutex<Option<Box<dyn MasterPty + Send>>>,
     writer: Mutex<Option<Box<dyn Write + Send>>>,
-    child: Mutex<Option<Box<dyn Child + Send + Sync>>>,
+    child_killer: Mutex<Option<Box<dyn ChildKiller + Send + Sync>>>,
+    child_process_id: Option<u32>,
     lifecycle: RwLock<SessionLifecycle>,
     cols: AtomicU64,
     rows: AtomicU64,
@@ -69,12 +72,15 @@ impl PtySession {
         sink: EventSink,
         mut reader: Box<dyn Read + Send>,
     ) -> Arc<Self> {
+        let child_process_id = child.process_id();
+        let child_killer = child.clone_killer();
         let session = Arc::new(Self {
             session_id: session_id.clone(),
             cwd,
             master: Mutex::new(Some(master)),
             writer: Mutex::new(Some(writer)),
-            child: Mutex::new(Some(child)),
+            child_killer: Mutex::new(Some(child_killer)),
+            child_process_id,
             lifecycle: RwLock::new(SessionLifecycle::Starting),
             cols: AtomicU64::new(cols as u64),
             rows: AtomicU64::new(rows as u64),
@@ -106,7 +112,7 @@ impl PtySession {
         let waiter_handle = thread::Builder::new()
             .name(format!("pty-wait-{}", session_id))
             .spawn(move || {
-                waiter_session.wait_child();
+                waiter_session.wait_child(child);
             })
             .expect("spawn waiter");
 
@@ -174,7 +180,7 @@ impl PtySession {
             .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
             .is_err()
         {
-            self.join_threads();
+            self.join_threads_bounded(THREAD_JOIN_WAIT);
             return;
         }
 
@@ -183,6 +189,7 @@ impl PtySession {
             *life = SessionLifecycle::Closing;
         }
 
+        let foreground_process_group = self.foreground_process_group();
         {
             let mut writer = self.writer.lock().expect("writer");
             *writer = None;
@@ -192,61 +199,18 @@ impl PtySession {
             *master = None;
         }
 
-        let deadline = Instant::now() + CLOSE_WAIT;
-        loop {
-            let mut child_guard = self.child.lock().expect("child");
-            if let Some(child) = child_guard.as_mut() {
-                match child.try_wait() {
-                    Ok(Some(status)) => {
-                        let code = status.exit_code() as i32;
-                        *child_guard = None;
-                        drop(child_guard);
-                        self.finish_exit(Some(code));
-                        break;
-                    }
-                    Ok(None) => {
-                        if Instant::now() >= deadline {
-                            let _ = child.kill();
-                            if let Ok(status) = child.wait() {
-                                let code = status.exit_code() as i32;
-                                *child_guard = None;
-                                drop(child_guard);
-                                self.finish_exit(Some(code));
-                            } else {
-                                *child_guard = None;
-                                drop(child_guard);
-                                self.finish_exit(None);
-                            }
-                            break;
-                        }
-                        drop(child_guard);
-                        thread::sleep(Duration::from_millis(20));
-                    }
-                    Err(_) => {
-                        *child_guard = None;
-                        drop(child_guard);
-                        self.finish_exit(None);
-                        break;
-                    }
-                }
-            } else {
-                drop(child_guard);
-                break;
-            }
+        self.request_graceful_shutdown(foreground_process_group);
+        if !self.wait_for_waiter(CLOSE_WAIT) {
+            self.force_shutdown(foreground_process_group);
+            self.wait_for_waiter(FORCE_CLOSE_WAIT);
         }
 
-        self.join_threads();
+        self.join_threads_bounded(THREAD_JOIN_WAIT);
     }
 
-    fn wait_child(&self) {
-        let child = {
-            let mut child_guard = self.child.lock().expect("child");
-            child_guard.take()
-        };
-        let Some(mut child) = child else {
-            return;
-        };
+    fn wait_child(&self, mut child: Box<dyn Child + Send + Sync>) {
         let status = child.wait().ok();
+        *self.child_killer.lock().expect("child_killer") = None;
         if self.closing.load(Ordering::SeqCst) {
             return;
         }
@@ -335,12 +299,105 @@ impl PtySession {
         sink(event);
     }
 
-    fn join_threads(&self) {
-        if let Some(handle) = self.reader_join.lock().expect("reader_join").take() {
-            let _ = handle.join();
+    fn waiter_finished(&self) -> bool {
+        match self.waiter_join.lock().expect("waiter_join").as_ref() {
+            Some(handle) => handle.is_finished(),
+            None => true,
         }
-        if let Some(handle) = self.waiter_join.lock().expect("waiter_join").take() {
-            let _ = handle.join();
+    }
+
+    fn wait_for_waiter(&self, timeout: Duration) -> bool {
+        let deadline = Instant::now() + timeout;
+        while !self.waiter_finished() {
+            if Instant::now() >= deadline {
+                return false;
+            }
+            thread::sleep(Duration::from_millis(10));
+        }
+        true
+    }
+
+    fn foreground_process_group(&self) -> Option<i32> {
+        #[cfg(unix)]
+        {
+            return self
+                .master
+                .lock()
+                .expect("master")
+                .as_ref()
+                .and_then(|master| master.process_group_leader());
+        }
+        #[cfg(not(unix))]
+        {
+            None
+        }
+    }
+
+    fn request_graceful_shutdown(&self, foreground_process_group: Option<i32>) {
+        if self.waiter_finished() {
+            return;
+        }
+        #[cfg(unix)]
+        {
+            self.signal_process_groups(foreground_process_group, libc::SIGHUP);
+        }
+        if let Some(killer) = self.child_killer.lock().expect("child_killer").as_mut() {
+            let _ = killer.kill();
+        }
+    }
+
+    fn force_shutdown(&self, foreground_process_group: Option<i32>) {
+        if self.waiter_finished() {
+            return;
+        }
+        #[cfg(unix)]
+        {
+            self.signal_process_groups(foreground_process_group, libc::SIGKILL);
+        }
+        #[cfg(not(unix))]
+        if let Some(killer) = self.child_killer.lock().expect("child_killer").as_mut() {
+            let _ = killer.kill();
+        }
+    }
+
+    #[cfg(unix)]
+    fn signal_process_groups(&self, foreground_process_group: Option<i32>, signal: i32) {
+        // portable-pty starts the shell as a session leader. Interactive
+        // programs such as Codex may move into a separate foreground group,
+        // so both groups must receive the shutdown signal.
+        let shell_process_group = self
+            .child_process_id
+            .and_then(|pid| i32::try_from(pid).ok());
+        for process_group in [foreground_process_group, shell_process_group]
+            .into_iter()
+            .flatten()
+        {
+            if process_group <= 0 {
+                continue;
+            }
+            // SAFETY: a negative, validated PID asks kill(2) to signal the
+            // process group owned by this PTY session.
+            unsafe {
+                libc::kill(-process_group, signal);
+            }
+        }
+    }
+
+    fn join_threads_bounded(&self, timeout: Duration) {
+        let deadline = Instant::now() + timeout;
+        let handles = [
+            self.reader_join.lock().expect("reader_join").take(),
+            self.waiter_join.lock().expect("waiter_join").take(),
+        ];
+        for handle in handles.into_iter().flatten() {
+            while !handle.is_finished() && Instant::now() < deadline {
+                thread::sleep(Duration::from_millis(10));
+            }
+            if handle.is_finished() {
+                let _ = handle.join();
+            }
+            // Dropping an unfinished handle detaches it instead of freezing
+            // the application if a platform PTY fails to unblock.
         }
     }
 }

@@ -12,7 +12,7 @@ describe("desktop platform configuration", () => {
     const window = config.app.windows[0];
 
     expect(config.version).toBe("0.2.0");
-    expect(config.app.macOSPrivateApi).toBeUndefined();
+    expect(config.app.macOSPrivateApi).toBe(true);
     expect(window.titleBarStyle).toBeUndefined();
     expect(window.hiddenTitle).toBeUndefined();
     expect(window.trafficLightPosition).toBeUndefined();
@@ -26,6 +26,12 @@ describe("desktop platform configuration", () => {
 
     expect(mac.app.macOSPrivateApi).toBe(true);
     expect(mac.app.windows[0].titleBarStyle).toBe("Overlay");
+    expect(mac.app.windows[0].hiddenTitle).toBe(true);
+    expect(mac.app.windows[0].trafficLightPosition).toEqual({ x: 14, y: 18 });
+    expect(linux.app?.macOSPrivateApi).toBeUndefined();
+    expect(windows.app?.macOSPrivateApi).toBeUndefined();
+    expect(linux.app?.windows?.[0]?.titleBarStyle).toBeUndefined();
+    expect(windows.app?.windows?.[0]?.titleBarStyle).toBeUndefined();
     expect(mac.bundle.targets).toEqual(["app", "dmg"]);
     expect(linux.bundle.targets).toEqual(["deb", "appimage"]);
     expect(windows.bundle.targets).toEqual(["msi", "nsis"]);

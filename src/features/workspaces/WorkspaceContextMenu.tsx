@@ -6,6 +6,7 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import { useTranslation } from "react-i18next";
 
 export type WorkspaceContextMenuProps = {
   children: ReactNode;
@@ -24,26 +25,30 @@ export function WorkspaceContextMenu({
   onMove,
   onClose,
 }: WorkspaceContextMenuProps) {
+  const { t } = useTranslation();
+
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
       <ContextMenuContent className="min-w-44">
-        <ContextMenuItem onSelect={onRename}>Rename…</ContextMenuItem>
+        <ContextMenuItem onSelect={onRename}>
+          {t("workspaces.menu.rename")}
+        </ContextMenuItem>
         <ContextMenuItem
           disabled={!canMoveLeft}
           onSelect={() => onMove(-1)}
         >
-          Move left
+          {t("workspaces.menu.moveLeft")}
         </ContextMenuItem>
         <ContextMenuItem
           disabled={!canMoveRight}
           onSelect={() => onMove(1)}
         >
-          Move right
+          {t("workspaces.menu.moveRight")}
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem variant="destructive" onSelect={onClose}>
-          Close workspace…
+          {t("workspaces.menu.close")}
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>

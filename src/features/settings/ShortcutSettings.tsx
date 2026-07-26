@@ -22,10 +22,12 @@ import { Keyboard, Layers3, RotateCcw } from "lucide-react";
 import {
   detectDesktopPlatform,
 } from "@/platform/detection";
+import { useTranslation } from "react-i18next";
 
 type RecordingTarget = ShortcutCommandId | "workspaceNavigator";
 
 export function ShortcutSettings() {
+  const { t } = useTranslation();
   const shortcuts = useSettingsStore((s) => s.shortcuts);
   const navigatorModifiers = useSettingsStore((s) => s.navigatorModifiers);
   const setShortcut = useSettingsStore((s) => s.setShortcut);
@@ -56,7 +58,7 @@ export function ShortcutSettings() {
       const id = recording;
       finishRecording();
       if (!id || id === "workspaceNavigator" || !hotkey) {
-        setMessage("Shortcuts cannot be empty");
+        setMessage(t("settings.shortcuts.messages.empty"));
         return;
       }
 
@@ -77,7 +79,7 @@ export function ShortcutSettings() {
         shift: parsed.shift,
       };
       if (isUnmodifiedTerminalKeystroke(chord)) {
-        setMessage("Cannot bind unmodified terminal keystrokes");
+        setMessage(t("settings.shortcuts.messages.unmodified"));
         return;
       }
 
@@ -104,7 +106,7 @@ export function ShortcutSettings() {
         return;
       }
       if (!isModifierKey(event.key)) {
-        setMessage("Use modifier keys only");
+        setMessage(t("settings.shortcuts.messages.modifiersOnly"));
         return;
       }
 
@@ -123,7 +125,7 @@ export function ShortcutSettings() {
       if (!chord || !isValidModifierChord(chord)) {
         modifierCandidateRef.current = null;
         setModifierPreview(null);
-        setMessage("Use at least two modifier keys");
+        setMessage(t("settings.shortcuts.messages.twoModifiers"));
         return;
       }
 
@@ -133,7 +135,7 @@ export function ShortcutSettings() {
           setMessage(result.ok ? null : result.reason);
         })
         .catch(() => {
-          setMessage("Could not save navigator shortcut. Try again.");
+          setMessage(t("settings.shortcuts.messages.saveFailed"));
         });
     };
 
@@ -143,7 +145,7 @@ export function ShortcutSettings() {
       window.removeEventListener("keydown", onKeyDown, true);
       window.removeEventListener("keyup", onKeyUp, true);
     };
-  }, [finishRecording, recording, setNavigatorModifiers]);
+  }, [finishRecording, recording, setNavigatorModifiers, t]);
 
   useEffect(() => {
     return () => setShortcutRecording(false);
@@ -153,9 +155,11 @@ export function ShortcutSettings() {
     <div className="flex h-full min-h-0 flex-col gap-4">
       <div className="flex items-center justify-between gap-2">
         <div>
-          <h2 className="text-sm font-semibold">Keyboard shortcuts</h2>
+          <h2 className="text-sm font-semibold">
+            {t("settings.shortcuts.title")}
+          </h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Click a key chord, then press a new combination.
+            {t("settings.shortcuts.description")}
           </p>
         </div>
         <Button
@@ -167,7 +171,7 @@ export function ShortcutSettings() {
           }}
         >
           <RotateCcw aria-hidden className="size-3.5" />
-          Reset defaults
+          {t("settings.shortcuts.resetDefaults")}
         </Button>
       </div>
 
@@ -184,17 +188,16 @@ export function ShortcutSettings() {
               id="workspace-navigator-shortcut"
               className="block text-xs font-semibold"
             >
-              Workspace Navigator
+              {t("settings.shortcuts.navigator.title")}
             </h3>
             <span className="mt-0.5 block text-[11px] leading-4 text-muted-foreground text-pretty">
-              Hold the modifiers, then use arrow keys to move between projects
-              and workspaces.
+              {t("settings.shortcuts.navigator.description")}
             </span>
           </div>
         </div>
         <button
           type="button"
-          aria-label="Change workspace navigator shortcut"
+          aria-label={t("settings.shortcuts.navigator.change")}
           className={`min-h-9 min-w-24 rounded-lg border px-3 py-1.5 font-mono text-xs tabular-nums outline-none transition-[background-color,border-color,color,box-shadow] duration-150 focus-visible:ring-2 focus-visible:ring-ring/35 ${
             recording === "workspaceNavigator"
               ? "border-ring bg-primary/10 text-primary shadow-[0_0_0_1px_color-mix(in_oklab,var(--ring)_15%,transparent)]"
@@ -217,7 +220,7 @@ export function ShortcutSettings() {
                   modifierPreview,
                   detectDesktopPlatform(),
                 )
-              : "Press modifiers…"
+              : t("settings.shortcuts.navigator.pressModifiers")
             : formatModifierChord(
                 navigatorModifiers,
                 detectDesktopPlatform(),
@@ -236,11 +239,15 @@ export function ShortcutSettings() {
                 aria-hidden
                 className="size-3.5 shrink-0 text-muted-foreground"
               />
-              <span className="truncate text-xs font-medium">{cmd.label}</span>
+              <span className="truncate text-xs font-medium">
+                {t(`commands.${cmd.id}`)}
+              </span>
             </span>
             <button
               type="button"
-              aria-label={`Change shortcut for ${cmd.label}`}
+              aria-label={t("settings.shortcuts.changeCommand", {
+                command: t(`commands.${cmd.id}`),
+              })}
               className={`min-w-24 rounded-lg border px-2.5 py-1.5 font-mono text-[11px] tabular-nums outline-none transition-[background-color,border-color,color,box-shadow] duration-150 focus-visible:ring-2 focus-visible:ring-ring/35 ${
                 recording === cmd.id
                   ? "border-ring bg-primary/10 text-primary shadow-[0_0_0_1px_color-mix(in_oklab,var(--ring)_15%,transparent)]"
@@ -260,7 +267,7 @@ export function ShortcutSettings() {
               }}
             >
               {recording === cmd.id
-                ? "Press keys…"
+                ? t("settings.shortcuts.pressKeys")
                 : formatChord(shortcuts[cmd.id], detectDesktopPlatform())}
             </button>
           </li>

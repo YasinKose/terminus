@@ -20,12 +20,14 @@ import {
   ShieldAlert,
   Trash2,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export type RecoveryScreenProps = {
   onReady: (state: BootstrapState) => void | Promise<void>;
 };
 
 export function RecoveryScreen({ onReady }: RecoveryScreenProps) {
+  const { t } = useTranslation();
   const status = useRecoveryStore((s) => s.status);
   const busy = useRecoveryStore((s) => s.busy);
   const lastMessage = useRecoveryStore((s) => s.lastMessage);
@@ -88,16 +90,15 @@ export function RecoveryScreen({ onReady }: RecoveryScreenProps) {
           <DatabaseBackup aria-hidden className="size-5" />
         </div>
         <h1 className="text-xl font-semibold tracking-[-0.025em] text-pretty">
-          Workspace database recovery
+          {t("settings.recovery.title")}
         </h1>
         <p className="mt-2 max-w-lg text-sm leading-6 text-muted-foreground text-pretty">
-          Terminus could not open the local workspace database. Your original
-          file has not been reset or overwritten.
+          {t("settings.recovery.description")}
         </p>
         <div className="mt-5 rounded-xl border border-destructive/20 bg-destructive/7 p-4 text-left text-sm">
           <p className="flex items-center gap-2 font-medium text-destructive">
             <ShieldAlert aria-hidden className="size-4" />
-            Database error
+            {t("settings.recovery.databaseError")}
           </p>
           <p className="mt-2 break-words leading-5 text-muted-foreground">
             {status.error}
@@ -116,7 +117,9 @@ export function RecoveryScreen({ onReady }: RecoveryScreenProps) {
               }
               aria-hidden
             />
-            Backup {status.backupAvailable ? "available" : "not available"}
+            {status.backupAvailable
+              ? t("settings.recovery.backupAvailable")
+              : t("settings.recovery.backupUnavailable")}
           </p>
         </div>
         {lastMessage ? (
@@ -137,7 +140,7 @@ export function RecoveryScreen({ onReady }: RecoveryScreenProps) {
             }}
           >
             <RefreshCw aria-hidden className="size-4" />
-            Retry
+            {t("common.actions.retry")}
           </Button>
           <Button
             type="button"
@@ -148,7 +151,7 @@ export function RecoveryScreen({ onReady }: RecoveryScreenProps) {
             }}
           >
             <Archive aria-hidden className="size-4" />
-            Create backup
+            {t("settings.recovery.createBackup")}
           </Button>
           <Button
             type="button"
@@ -159,7 +162,7 @@ export function RecoveryScreen({ onReady }: RecoveryScreenProps) {
             }}
           >
             <FolderSearch aria-hidden className="size-4" />
-            Reveal in Finder
+            {t("settings.recovery.reveal")}
           </Button>
           <Button
             type="button"
@@ -171,12 +174,14 @@ export function RecoveryScreen({ onReady }: RecoveryScreenProps) {
             }}
             title={
               canReset()
-                ? "Reset after successful backup"
-                : "Create a backup first, or confirm force reset"
+                ? t("settings.recovery.resetAfterBackup")
+                : t("settings.recovery.resetWithoutBackupHint")
             }
           >
             <Trash2 aria-hidden className="size-4" />
-            {canReset() ? "Reset database" : "Reset without backup…"}
+            {canReset()
+              ? t("settings.recovery.resetDatabase")
+              : t("settings.recovery.resetWithoutBackup")}
           </Button>
         </div>
       </div>
@@ -187,15 +192,17 @@ export function RecoveryScreen({ onReady }: RecoveryScreenProps) {
             <AlertDialogMedia className="border-destructive/25 bg-destructive/10 text-destructive">
               <ShieldAlert aria-hidden />
             </AlertDialogMedia>
-            <AlertDialogTitle>Reset without backup?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t("settings.recovery.forceTitle")}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              This permanently deletes the corrupt database without creating a
-              backup copy. You will lose all projects, workspaces, and settings
-              stored in that file. Prefer Create backup first when possible.
+              {t("settings.recovery.forceDescription")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={busy}>
+              {t("common.actions.cancel")}
+            </AlertDialogCancel>
             <AlertDialogAction
               disabled={busy}
               onClick={(e) => {
@@ -203,7 +210,7 @@ export function RecoveryScreen({ onReady }: RecoveryScreenProps) {
                 void handleForceReset();
               }}
             >
-              Force reset
+              {t("settings.recovery.forceReset")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

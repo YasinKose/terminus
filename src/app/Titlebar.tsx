@@ -20,6 +20,7 @@ import {
   isAppleDesktop,
 } from "@/platform/detection";
 import { cn } from "@/lib/utils/cn";
+import { useTranslation } from "react-i18next";
 
 export type TitlebarProps = {
   onOpenSettings?: () => void;
@@ -31,6 +32,7 @@ function chordLabel(shortcuts: ShortcutMap, id: keyof ShortcutMap): string {
 }
 
 export function Titlebar({ onOpenSettings, onOpenPalette }: TitlebarProps) {
+  const { t } = useTranslation();
   const toggleSidebar = useUiStore((s) => s.toggleSidebar);
   const sidebarCollapsed = useUiStore((s) => s.sidebarCollapsed);
   const sidePanel = useUiStore((s) => s.sidePanel);
@@ -65,7 +67,11 @@ export function Titlebar({ onOpenSettings, onOpenPalette }: TitlebarProps) {
       />
       <div className="flex items-center gap-0.5 pl-1" data-no-drag>
         <ToolbarIconButton
-          label={sidebarCollapsed ? "Show sidebar" : "Hide sidebar"}
+          label={
+            sidebarCollapsed
+              ? t("titlebar.showSidebar")
+              : t("titlebar.hideSidebar")
+          }
           shortcut={chordLabel(shortcuts, "toggleSidebar")}
           pressed={!sidebarCollapsed}
           onClick={toggleSidebar}
@@ -91,7 +97,11 @@ export function Titlebar({ onOpenSettings, onOpenPalette }: TitlebarProps) {
       <div className="flex-1" data-tauri-drag-region />
       <div className="flex items-center gap-1 pr-2" data-no-drag>
         <ToolbarIconButton
-          label={sidePanel === "git" ? "Hide git panel" : "Show git panel"}
+          label={
+            sidePanel === "git"
+              ? t("titlebar.hideGit")
+              : t("titlebar.showGit")
+          }
           pressed={sidePanel === "git"}
           onClick={toggleGitPanel}
           data-testid="titlebar-git-panel"
@@ -100,7 +110,9 @@ export function Titlebar({ onOpenSettings, onOpenPalette }: TitlebarProps) {
         </ToolbarIconButton>
         <ToolbarIconButton
           label={
-            sidePanel === "snippets" ? "Hide snippets" : "Show snippets"
+            sidePanel === "snippets"
+              ? t("titlebar.hideSnippets")
+              : t("titlebar.showSnippets")
           }
           pressed={sidePanel === "snippets"}
           onClick={toggleSnippetsPanel}
@@ -109,7 +121,11 @@ export function Titlebar({ onOpenSettings, onOpenPalette }: TitlebarProps) {
           <FileCode2 aria-hidden className="size-4" />
         </ToolbarIconButton>
         <ToolbarIconButton
-          label={sidePanel === "tasks" ? "Hide tasks" : "Show tasks"}
+          label={
+            sidePanel === "tasks"
+              ? t("titlebar.hideTasks")
+              : t("titlebar.showTasks")
+          }
           pressed={sidePanel === "tasks"}
           onClick={toggleTasksPanel}
           data-testid="titlebar-tasks-panel"
@@ -117,7 +133,11 @@ export function Titlebar({ onOpenSettings, onOpenPalette }: TitlebarProps) {
           <CheckSquare aria-hidden className="size-4" />
         </ToolbarIconButton>
         <ToolbarIconButton
-          label={sidePanel === "tmux" ? "Hide tmux" : "Show tmux"}
+          label={
+            sidePanel === "tmux"
+              ? t("titlebar.hideTmux")
+              : t("titlebar.showTmux")
+          }
           pressed={sidePanel === "tmux"}
           onClick={toggleTmuxPanel}
           data-testid="titlebar-tmux-panel"
@@ -125,7 +145,7 @@ export function Titlebar({ onOpenSettings, onOpenPalette }: TitlebarProps) {
           <Layers aria-hidden className="size-4" />
         </ToolbarIconButton>
         <ToolbarIconButton
-          label="Command palette"
+          label={t("titlebar.commandPalette")}
           shortcut={chordLabel(shortcuts, "commandPalette")}
           onClick={() => onOpenPalette?.()}
           data-testid="titlebar-command-palette"
@@ -134,7 +154,7 @@ export function Titlebar({ onOpenSettings, onOpenPalette }: TitlebarProps) {
           <Command aria-hidden className="size-4" />
         </ToolbarIconButton>
         <ToolbarIconButton
-          label="Settings"
+          label={t("titlebar.settings")}
           shortcut={chordLabel(shortcuts, "openSettings")}
           onClick={handleSettings}
           data-testid="titlebar-settings"

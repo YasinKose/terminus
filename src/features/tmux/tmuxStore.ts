@@ -6,6 +6,7 @@ import {
   type TmuxDetect,
   type TmuxSession,
 } from "@/lib/tauri/tmux";
+import i18n from "@/i18n";
 
 export interface TmuxStoreState {
   detectInfo: TmuxDetect | null;
@@ -35,7 +36,7 @@ export const useTmuxStore = create<TmuxStoreState>((set) => ({
       set({ detectInfo, sessions, loading: false });
     } catch (error) {
       set({ loading: false, sessions: [] });
-      reportError("Could not load tmux sessions", error);
+      reportError(i18n.t("errors.loadTmux"), error);
     }
   },
 }));

@@ -8,6 +8,7 @@ import {
   type GitStashInfo,
   type GitStatusSnapshot,
 } from "@/lib/tauri/git";
+import i18n from "@/i18n";
 
 const emptyStatus = (): GitStatusSnapshot => ({
   isRepo: false,
@@ -141,7 +142,7 @@ export const useGitStore = create<GitStoreState>((set, get) => {
           branches: [],
           stashes: [],
         });
-        reportError("Could not load git status", error);
+        reportError(i18n.t("errors.loadGitStatus"), error);
       }
     },
     openDiff: async (path, staged) => {
@@ -156,7 +157,7 @@ export const useGitStore = create<GitStoreState>((set, get) => {
       } catch (error) {
         if (request !== diffSequence || get().projectId !== projectId) return;
         set({ diffLoading: false });
-        reportError("Could not load file diff", error);
+        reportError(i18n.t("errors.loadFileDiff"), error);
       }
     },
     closeDiff: () => {
@@ -166,7 +167,7 @@ export const useGitStore = create<GitStoreState>((set, get) => {
     stage: async (paths) => {
       if (paths.length === 0) return false;
       return mutate(
-        "Could not stage files",
+        i18n.t("errors.stageFiles"),
         (projectId) => api.stage(projectId, paths),
         () => set({ selectedDiff: null }),
       );
@@ -174,7 +175,7 @@ export const useGitStore = create<GitStoreState>((set, get) => {
     unstage: async (paths) => {
       if (paths.length === 0) return false;
       return mutate(
-        "Could not unstage files",
+        i18n.t("errors.unstageFiles"),
         (projectId) => api.unstage(projectId, paths),
         () => set({ selectedDiff: null }),
       );
@@ -183,7 +184,7 @@ export const useGitStore = create<GitStoreState>((set, get) => {
       const message = get().commitMessage.trim();
       if (!message) return false;
       return mutate(
-        "Could not commit",
+        i18n.t("errors.commit"),
         async (projectId) => {
           await api.commit(projectId, message);
         },
@@ -193,27 +194,27 @@ export const useGitStore = create<GitStoreState>((set, get) => {
     checkout: async (name) => {
       if (!name) return false;
       return mutate(
-        "Could not checkout branch",
+        i18n.t("errors.checkoutBranch"),
         (projectId) => api.checkout(projectId, name),
         () => set({ selectedDiff: null }),
       );
     },
     createBranch: async (name, checkout) => {
       if (!name.trim()) return false;
-      return mutate("Could not create branch", (projectId) =>
+      return mutate(i18n.t("errors.createBranch"), (projectId) =>
         api.createBranch(projectId, name.trim(), checkout),
       );
     },
     stashPush: async () => {
       return mutate(
-        "Could not stash",
+        i18n.t("errors.stash"),
         (projectId) => api.stashPush(projectId),
         () => set({ selectedDiff: null }),
       );
     },
     stashPop: async (index = 0) => {
       return mutate(
-        "Could not pop stash",
+        i18n.t("errors.popStash"),
         (projectId) => api.stashPop(projectId, index),
         () => set({ selectedDiff: null }),
       );

@@ -24,6 +24,7 @@ import {
   Save,
   Trash2,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 function emptyDraft(): ProfileDraft {
   return {
@@ -37,6 +38,7 @@ function emptyDraft(): ProfileDraft {
 }
 
 export function ProfileSettings() {
+  const { t } = useTranslation();
   const profiles = useProfileStore((s) => s.profiles);
   const saveDraft = useProfileStore((s) => s.saveDraft);
   const remove = useProfileStore((s) => s.remove);
@@ -87,7 +89,9 @@ export function ProfileSettings() {
       if (!trimmed) continue;
       const eq = trimmed.indexOf("=");
       if (eq <= 0) {
-        throw new Error(`invalid env line: ${trimmed}`);
+        throw new Error(t("settings.profiles.invalidEnvLine", {
+          line: trimmed,
+        }));
       }
       env[trimmed.slice(0, eq)] = trimmed.slice(eq + 1);
     }
@@ -137,9 +141,11 @@ export function ProfileSettings() {
     <div className="flex h-full min-h-0 flex-col gap-4">
       <div className="flex items-center justify-between gap-2">
         <div>
-          <h2 className="text-sm font-semibold">Terminal profiles</h2>
+          <h2 className="text-sm font-semibold">
+            {t("settings.profiles.title")}
+          </h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Define trusted local shells and their launch environment.
+            {t("settings.profiles.description")}
           </p>
         </div>
         <Button
@@ -149,18 +155,18 @@ export function ProfileSettings() {
           onClick={() => loadProfile(null)}
         >
           <Plus aria-hidden className="size-3.5" />
-          New profile
+          {t("settings.profiles.new")}
         </Button>
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col gap-4 sm:flex-row">
         <ul
           className="max-h-32 w-full shrink-0 space-y-1 overflow-auto rounded-xl border border-border bg-surface-sunken/45 p-1.5 sm:max-h-none sm:w-40"
-          aria-label="Terminal profiles"
+          aria-label={t("settings.profiles.listLabel")}
         >
           {profiles.length === 0 && (
             <li className="px-2 py-4 text-center text-xs leading-5 text-muted-foreground">
-              No custom profiles
+              {t("settings.profiles.empty")}
             </li>
           )}
           {profiles.map((p) => (
@@ -177,7 +183,7 @@ export function ProfileSettings() {
                 <span className="truncate">{p.name}</span>
                 {p.isDefault ? (
                   <Check
-                    aria-label="Default profile"
+                    aria-label={t("settings.profiles.defaultProfile")}
                     className="size-3 shrink-0 text-primary"
                   />
                 ) : null}
@@ -188,7 +194,9 @@ export function ProfileSettings() {
 
         <div className="min-w-0 flex-1 space-y-4 overflow-auto pr-1">
           <div className="space-y-1.5">
-            <Label htmlFor="profile-name">Name</Label>
+            <Label htmlFor="profile-name">
+              {t("settings.profiles.fields.name")}
+            </Label>
             <Input
               id="profile-name"
               name="profile-name"
@@ -198,13 +206,15 @@ export function ProfileSettings() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="profile-exe">Executable (optional)</Label>
+            <Label htmlFor="profile-exe">
+              {t("settings.profiles.fields.executable")}
+            </Label>
             <Input
               id="profile-exe"
               name="profile-executable"
               autoComplete="off"
               spellCheck={false}
-              placeholder="Example: /bin/zsh"
+              placeholder={t("settings.profiles.fields.executablePlaceholder")}
               value={draft.executable ?? ""}
               onChange={(e) =>
                 setDraft((d) => ({
@@ -214,11 +224,13 @@ export function ProfileSettings() {
               }
             />
             <p className="text-[10px] leading-4 text-muted-foreground">
-              Leave empty to use the resolved system login shell.
+              {t("settings.profiles.fields.executableHelp")}
             </p>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="profile-args">Args (space-separated, ordered)</Label>
+            <Label htmlFor="profile-args">
+              {t("settings.profiles.fields.args")}
+            </Label>
             <Input
               id="profile-args"
               name="profile-arguments"
@@ -226,11 +238,13 @@ export function ProfileSettings() {
               spellCheck={false}
               value={argsText}
               onChange={(e) => setArgsText(e.target.value)}
-              placeholder="Example: -l"
+              placeholder={t("settings.profiles.fields.argsPlaceholder")}
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="profile-env">Env overrides (KEY=value per line)</Label>
+            <Label htmlFor="profile-env">
+              {t("settings.profiles.fields.env")}
+            </Label>
             <textarea
               id="profile-env"
               name="profile-environment"
@@ -243,13 +257,15 @@ export function ProfileSettings() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="profile-cwd">Cwd override (absolute, optional)</Label>
+            <Label htmlFor="profile-cwd">
+              {t("settings.profiles.fields.cwd")}
+            </Label>
             <Input
               id="profile-cwd"
               name="profile-cwd"
               autoComplete="off"
               spellCheck={false}
-              placeholder="Example: /Users/me/Development"
+              placeholder={t("settings.profiles.fields.cwdPlaceholder")}
               value={draft.cwdOverride ?? ""}
               onChange={(e) =>
                 setDraft((d) => ({
@@ -264,9 +280,11 @@ export function ProfileSettings() {
             className="flex min-h-12 cursor-pointer items-center justify-between gap-3 rounded-xl border border-border bg-surface-sunken/45 px-3 py-2.5"
           >
             <span>
-              <span className="block text-xs font-medium">Global default</span>
+              <span className="block text-xs font-medium">
+                {t("settings.profiles.fields.globalDefault")}
+              </span>
               <span className="mt-0.5 block text-[10px] text-muted-foreground">
-                Use this profile for new terminals.
+                {t("settings.profiles.fields.globalDefaultHelp")}
               </span>
             </span>
             <Switch
@@ -296,7 +314,9 @@ export function ProfileSettings() {
               ) : (
                 <Save aria-hidden className="size-3.5" />
               )}
-              {busy ? "Saving…" : "Save profile"}
+              {busy
+                ? t("common.states.saving")
+                : t("settings.profiles.save")}
             </Button>
             {selected && (
               <Button
@@ -308,7 +328,7 @@ export function ProfileSettings() {
                 onClick={() => setDeleteConfirmOpen(true)}
               >
                 <Trash2 aria-hidden className="size-3.5" />
-                Delete profile
+                {t("settings.profiles.delete")}
               </Button>
             )}
           </div>
@@ -324,14 +344,19 @@ export function ProfileSettings() {
             <AlertDialogMedia className="border-destructive/25 bg-destructive/10 text-destructive">
               <Trash2 aria-hidden />
             </AlertDialogMedia>
-            <AlertDialogTitle>Delete profile?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t("settings.profiles.deleteTitle")}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Delete “{selected?.name}”? Existing terminal panes keep running,
-              but this profile will no longer be available for new terminals.
+              {t("settings.profiles.deleteDescription", {
+                name: selected?.name ?? "",
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={busy}>
+              {t("common.actions.cancel")}
+            </AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
               disabled={busy}
@@ -345,7 +370,9 @@ export function ProfileSettings() {
               ) : (
                 <Trash2 aria-hidden className="size-3.5" />
               )}
-              {busy ? "Deleting…" : "Delete profile"}
+              {busy
+                ? t("common.states.deleting")
+                : t("settings.profiles.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

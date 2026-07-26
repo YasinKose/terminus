@@ -4,11 +4,13 @@ import { App } from "./App";
 import { useProjectStore } from "@/features/projects/projectStore";
 import { useWorkspaceStore } from "@/features/workspaces/workspaceStore";
 import { useRecoveryStore } from "@/features/settings/recoveryStore";
+import i18n from "@/i18n";
 
 const bootstrap = useProjectStore.getState().bootstrap;
 
 describe("App", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
     useProjectStore.setState({
       projects: [],
       activeProjectId: null,
@@ -30,6 +32,20 @@ describe("App", () => {
   it("renders the empty project state", () => {
     render(<App autoBootstrap={false} />);
     expect(screen.getByRole("button", { name: /open project/i })).toBeVisible();
+  });
+
+  it("rerenders the empty project state in Turkish", async () => {
+    render(<App autoBootstrap={false} />);
+
+    await i18n.changeLanguage("tr");
+
+    expect(
+      await screen.findByRole("button", { name: "Proje aç" }),
+    ).toBeVisible();
+    expect(
+      screen.getByText("Yerel terminallerinizi proje, çalışma alanı ve bölmelere göre düzenleyin."),
+    ).toBeVisible();
+    expect(document.documentElement.lang).toBe("tr");
   });
 
   it("surfaces an unexpected bootstrap rejection as retryable recovery", async () => {

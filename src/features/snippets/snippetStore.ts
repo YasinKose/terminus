@@ -7,6 +7,7 @@ import {
   type SnippetsApi,
 } from "@/lib/tauri/snippets";
 import { tauriPtyApi, type PtyApi } from "@/lib/tauri/pty";
+import i18n from "@/i18n";
 
 export interface SnippetStoreState {
   projectId: string | null;
@@ -90,7 +91,7 @@ export const useSnippetStore = create<SnippetStoreState>((set, get) => ({
     } catch (error) {
       if (request !== refreshSequence || get().projectId !== projectId) return;
       set({ loading: false, snippets: [] });
-      reportError("Could not load snippets", error);
+      reportError(i18n.t("errors.loadSnippets"), error);
     }
   },
   create: async () => {
@@ -109,7 +110,7 @@ export const useSnippetStore = create<SnippetStoreState>((set, get) => ({
       }
       return true;
     } catch (error) {
-      reportError("Could not create snippet", error);
+      reportError(i18n.t("errors.createSnippet"), error);
       return false;
     } finally {
       set({ busy: false });
@@ -138,7 +139,7 @@ export const useSnippetStore = create<SnippetStoreState>((set, get) => ({
       }
       return true;
     } catch (error) {
-      reportError("Could not update snippet", error);
+      reportError(i18n.t("errors.updateSnippet"), error);
       return false;
     } finally {
       set({ busy: false });
@@ -158,7 +159,7 @@ export const useSnippetStore = create<SnippetStoreState>((set, get) => ({
       }
       return true;
     } catch (error) {
-      reportError("Could not delete snippet", error);
+      reportError(i18n.t("errors.deleteSnippet"), error);
       return false;
     } finally {
       set({ busy: false });
@@ -174,7 +175,7 @@ export const useSnippetStore = create<SnippetStoreState>((set, get) => ({
       set({ makefileTargets });
     } catch (error) {
       if (request !== makefileSequence || get().projectId !== projectId) return;
-      reportError("Could not scan Makefile", error);
+      reportError(i18n.t("errors.scanMakefile"), error);
     }
   },
   importMakefile: async () => {
@@ -189,7 +190,7 @@ export const useSnippetStore = create<SnippetStoreState>((set, get) => ({
       }
       return true;
     } catch (error) {
-      reportError("Could not import Makefile targets", error);
+      reportError(i18n.t("errors.importMakefile"), error);
       return false;
     } finally {
       set({ busy: false });
@@ -198,15 +199,15 @@ export const useSnippetStore = create<SnippetStoreState>((set, get) => ({
   insertIntoSession: async (sessionId, body) => {
     if (!sessionId) {
       reportError(
-        "Could not insert snippet",
-        new Error("No focused terminal. Focus a pane first."),
+        i18n.t("errors.insertSnippet"),
+        new Error(i18n.t("errors.noFocusedTerminal")),
       );
       return;
     }
     try {
       await ptyApi.writePty(sessionId, body);
     } catch (error) {
-      reportError("Could not insert snippet into terminal", error);
+      reportError(i18n.t("errors.insertSnippetTerminal"), error);
     }
   },
 }));

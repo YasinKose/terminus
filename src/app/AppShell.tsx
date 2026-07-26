@@ -29,6 +29,7 @@ import { useCloseRequestStore } from "@/stores/closeRequestStore";
 import { FolderOpen, Layers3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils/cn";
+import { useTranslation } from "react-i18next";
 
 const GitPanel = lazy(() =>
   import("@/features/git/GitPanel").then((module) => ({
@@ -77,6 +78,7 @@ export type AppShellProps = {
 export function AppShell({
   dialogApi = tauriDialogApi,
 }: AppShellProps) {
+  const { t } = useTranslation();
   const projects = useProjectStore((s) => s.projects);
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
   const addProject = useProjectStore((s) => s.addProject);
@@ -124,12 +126,12 @@ export function AppShell({
 
   const handleOpenProject = useCallback(async () => {
     const path = await dialogApi.openDirectory({
-      title: "Open project folder",
+      title: t("app.openProjectDialog"),
     });
     if (!path) return;
     const name = path.split(/[/\\]/).filter(Boolean).pop() ?? path;
     await addProject({ path, displayName: name, color: DEFAULT_PROJECT_COLOR });
-  }, [addProject, dialogApi]);
+  }, [addProject, dialogApi, t]);
 
   const handleSelectWorkspace = useCallback(
     async (workspaceId: string) => {
@@ -183,7 +185,7 @@ export function AppShell({
     const record: WorkspaceRecord = {
       id,
       projectId: activeProjectId,
-      name: `Workspace ${existing.length + 1}`,
+      name: t("workspaces.defaultName", { number: existing.length + 1 }),
       rootJson: null,
       activePaneId: null,
       position,
@@ -198,6 +200,7 @@ export function AppShell({
     listForProject,
     saveWorkspace,
     selectWorkspace,
+    t,
   ]);
 
   const handleCloseWorkspace = useCallback(
@@ -242,7 +245,7 @@ export function AppShell({
           href="#workspace-main"
           className="fixed left-3 top-2 z-[70] -translate-y-16 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground shadow-dialog outline-none transition-transform focus:translate-y-0"
         >
-          Skip to workspace
+          {t("app.shell.skipToWorkspace")}
         </a>
         <Titlebar
           onOpenSettings={() => commandContext.openSettings()}
@@ -255,15 +258,15 @@ export function AppShell({
               activeProjectId={activeProjectId}
               collapsed={sidebarCollapsed}
               onOpenProject={() => {
-                runAction("Could not open project", handleOpenProject);
+                runAction(t("errors.openProject"), handleOpenProject);
               }}
               onSelectProject={(id) => {
                 closeSource();
-                runAction("Could not select project", () => selectProject(id));
+                runAction(t("errors.selectProject"), () => selectProject(id));
               }}
               onCloseProject={handleCloseProject}
               onRenameProject={(projectId, name) => {
-                runAction("Could not rename project", () =>
+                runAction(t("errors.renameProject"), () =>
                   renameProject(projectId, name),
                 );
               }}
@@ -277,24 +280,24 @@ export function AppShell({
                     workspaces={projectWorkspaces}
                     activeWorkspaceId={activeWorkspaceId}
                     onSelectWorkspace={(id) => {
-                      runAction("Could not select workspace", () =>
+                      runAction(t("errors.selectWorkspace"), () =>
                         handleSelectWorkspace(id),
                       );
                     }}
                     onRenameWorkspace={(id, name) => {
-                      runAction("Could not rename workspace", () =>
+                      runAction(t("errors.renameWorkspace"), () =>
                         handleRenameWorkspace(id, name),
                       );
                     }}
                     onCreateWorkspace={() => {
                       runAction(
-                        "Could not create workspace",
+                        t("errors.createWorkspace"),
                         handleCreateWorkspace,
                       );
                     }}
                     onCloseWorkspace={handleCloseWorkspace}
                     onMoveWorkspace={(workspaceId, direction) => {
-                      runAction("Could not reorder workspace", () =>
+                      runAction(t("errors.reorderWorkspace"), () =>
                         reorderWorkspace(workspaceId, direction),
                       );
                     }}
@@ -393,22 +396,21 @@ export function AppShell({
                     <Layers3 aria-hidden className="size-5" />
                   </div>
                   <h1 className="text-lg font-semibold tracking-[-0.015em]">
-                    Choose a project
+                    {t("app.shell.chooseProject")}
                   </h1>
                   <p className="mt-1.5 text-sm leading-6 text-muted-foreground text-pretty">
-                    Select a project from the sidebar or open a local folder to
-                    create a new workspace.
+                    {t("app.shell.chooseProjectDescription")}
                   </p>
                 </div>
                 <Button
                   type="button"
                   className="mt-5"
                   onClick={() => {
-                    runAction("Could not open project", handleOpenProject);
+                    runAction(t("errors.openProject"), handleOpenProject);
                   }}
                 >
                   <FolderOpen aria-hidden className="size-4" />
-                  Open project
+                  {t("app.empty.openProject")}
                 </Button>
               </main>
             )}
@@ -434,10 +436,12 @@ export function AppShell({
 }
 
 function SidePanelFallback() {
+  const { t } = useTranslation();
+
   return (
     <aside
       className="absolute inset-y-0 right-0 z-30 flex h-full w-[min(22rem,100%)] shrink-0 flex-col border-l border-border/90 bg-chrome shadow-dialog @4xl/workbench:static @4xl/workbench:z-auto @4xl/workbench:shadow-none"
-      aria-label="Loading workbench panel"
+      aria-label={t("app.shell.loadingWorkbenchPanel")}
       aria-busy="true"
     >
       <div className="flex h-11 items-center gap-2 border-b border-border/80 px-3">
@@ -449,16 +453,18 @@ function SidePanelFallback() {
         <span className="block h-16 animate-pulse rounded-lg bg-surface-raised" />
         <span className="block h-16 animate-pulse rounded-lg bg-surface-raised" />
       </div>
-      <span className="sr-only">Loading panel…</span>
+      <span className="sr-only">{t("app.shell.loadingPanel")}</span>
     </aside>
   );
 }
 
 function SourcePreviewFallback() {
+  const { t } = useTranslation();
+
   return (
     <div
       className="grid h-full grid-rows-[3.5rem_1fr_1.75rem] overflow-hidden bg-background"
-      aria-label="Loading source preview"
+      aria-label={t("app.shell.loadingSourcePreview")}
       role="status"
     >
       <div className="flex items-center gap-2.5 border-b border-border/80 bg-chrome px-4">

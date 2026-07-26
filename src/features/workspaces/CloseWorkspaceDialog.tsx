@@ -12,6 +12,7 @@ import {
 import type { CloseRequest } from "@/stores/closeRequestStore";
 import { PanelsTopLeft } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export type CloseWorkspaceDialogProps = {
   request: Extract<CloseRequest, { kind: "workspace" }>;
@@ -24,7 +25,9 @@ export function CloseWorkspaceDialog({
   onConfirm,
   onCancel,
 }: CloseWorkspaceDialogProps) {
+  const { t } = useTranslation();
   const [dontAskAgain, setDontAskAgain] = useState(false);
+  const terminals = t("common.terminals", { count: request.terminalCount });
 
   return (
     <AlertDialog
@@ -38,13 +41,14 @@ export function CloseWorkspaceDialog({
           <AlertDialogMedia className="border-destructive/25 bg-destructive/10 text-destructive">
             <PanelsTopLeft aria-hidden />
           </AlertDialogMedia>
-          <AlertDialogTitle>Close workspace?</AlertDialogTitle>
+          <AlertDialogTitle>
+            {t("closeDialogs.workspace.title")}
+          </AlertDialogTitle>
           <AlertDialogDescription>
-            Close “{request.name}”? This will terminate{" "}
-            {request.terminalCount === 1
-              ? "1 terminal"
-              : `${request.terminalCount} terminals`}
-            .
+            {t("closeDialogs.workspace.description", {
+              name: request.name,
+              terminals,
+            })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border/80 bg-surface-sunken/70 px-3 py-2.5">
@@ -56,21 +60,23 @@ export function CloseWorkspaceDialog({
           />
           <span className="min-w-0">
             <span className="block text-sm font-medium text-foreground">
-              Don&apos;t ask again
+              {t("closeDialogs.dontAskAgain")}
             </span>
             <span className="mt-0.5 block text-xs leading-5 text-muted-foreground">
-              You can restore workspace confirmations in Settings.
+              {t("closeDialogs.workspacePreference")}
             </span>
           </span>
         </label>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onCancel}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel onClick={onCancel}>
+            {t("common.actions.cancel")}
+          </AlertDialogCancel>
           <AlertDialogAction
             variant="destructive"
             onClick={() => onConfirm(dontAskAgain)}
             data-testid="close-workspace-confirm"
           >
-            Close workspace
+            {t("closeDialogs.workspace.action")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

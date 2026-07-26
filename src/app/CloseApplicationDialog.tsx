@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { CloseRequest } from "@/stores/closeRequestStore";
 import { Power } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export type CloseApplicationDialogProps = {
   request: Extract<CloseRequest, { kind: "application" }>;
@@ -23,6 +24,9 @@ export function CloseApplicationDialog({
   onConfirm,
   onCancel,
 }: CloseApplicationDialogProps) {
+  const { t } = useTranslation();
+  const terminals = t("common.terminals", { count: request.terminalCount });
+
   return (
     <AlertDialog
       open
@@ -35,23 +39,23 @@ export function CloseApplicationDialog({
           <AlertDialogMedia className="border-destructive/25 bg-destructive/10 text-destructive">
             <Power aria-hidden />
           </AlertDialogMedia>
-          <AlertDialogTitle>Quit Terminus?</AlertDialogTitle>
+          <AlertDialogTitle>
+            {t("closeDialogs.application.title")}
+          </AlertDialogTitle>
           <AlertDialogDescription>
-            Quit and terminate{" "}
-            {request.terminalCount === 1
-              ? "1 running terminal"
-              : `${request.terminalCount} running terminals`}
-            ? Layout is saved; shells are not restored on next launch.
+            {t("closeDialogs.application.description", { terminals })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onCancel}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel onClick={onCancel}>
+            {t("common.actions.cancel")}
+          </AlertDialogCancel>
           <AlertDialogAction
             variant="destructive"
             onClick={onConfirm}
             data-testid="close-application-confirm"
           >
-            Quit
+            {t("closeDialogs.application.action")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -12,6 +12,7 @@ import {
 import type { CloseRequest } from "@/stores/closeRequestStore";
 import { SquareTerminal } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export type CloseTerminalDialogProps = {
   request: Extract<CloseRequest, { kind: "terminal" }>;
@@ -24,6 +25,7 @@ export function CloseTerminalDialog({
   onConfirm,
   onCancel,
 }: CloseTerminalDialogProps) {
+  const { t } = useTranslation();
   const [dontAskAgain, setDontAskAgain] = useState(false);
 
   return (
@@ -38,11 +40,13 @@ export function CloseTerminalDialog({
           <AlertDialogMedia className="border-destructive/25 bg-destructive/10 text-destructive">
             <SquareTerminal aria-hidden />
           </AlertDialogMedia>
-          <AlertDialogTitle>Close terminal?</AlertDialogTitle>
+          <AlertDialogTitle>{t("closeDialogs.terminal.title")}</AlertDialogTitle>
           <AlertDialogDescription>
-            Close “{request.title}”? The shell process will be terminated.
+            {t("closeDialogs.terminal.description", { name: request.title })}
             {request.terminalCount > 1
-              ? ` This action affects ${request.terminalCount} terminals.`
+              ? ` ${t("closeDialogs.terminal.affects", {
+                  count: request.terminalCount,
+                })}`
               : null}
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -55,21 +59,23 @@ export function CloseTerminalDialog({
           />
           <span className="min-w-0">
             <span className="block text-sm font-medium text-foreground">
-              Don&apos;t ask again
+              {t("closeDialogs.dontAskAgain")}
             </span>
             <span className="mt-0.5 block text-xs leading-5 text-muted-foreground">
-              You can restore terminal confirmations in Settings.
+              {t("closeDialogs.terminalPreference")}
             </span>
           </span>
         </label>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onCancel}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel onClick={onCancel}>
+            {t("common.actions.cancel")}
+          </AlertDialogCancel>
           <AlertDialogAction
             variant="destructive"
             onClick={() => onConfirm(dontAskAgain)}
             data-testid="close-terminal-confirm"
           >
-            Close terminal
+            {t("closeDialogs.terminal.action")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

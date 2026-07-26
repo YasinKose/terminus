@@ -42,6 +42,7 @@ import { detectDesktopPlatform } from "@/platform/detection";
 import type { WorkspaceView } from "@/lib/tauri/contracts";
 import { cn } from "@/lib/utils/cn";
 import { WorkspaceContextMenu } from "./WorkspaceContextMenu";
+import { useTranslation } from "react-i18next";
 
 export type WorkspaceTabsProps = {
   workspaces: WorkspaceView[];
@@ -149,6 +150,7 @@ export function WorkspaceTabs({
   onSplitVertical,
   actionsDisabled = false,
 }: WorkspaceTabsProps) {
+  const { t } = useTranslation();
   const shortcuts = useSettingsStore((s) => s.shortcuts);
   const [renameTarget, setRenameTarget] = useState<{
     id: string;
@@ -251,7 +253,7 @@ export function WorkspaceTabs({
       <div
         className="flex h-11 shrink-0 items-center gap-2 border-b border-border/90 bg-surface-sunken px-2"
         role="tablist"
-        aria-label="Workspaces"
+        aria-label={t("workspaces.tabsLabel")}
       >
         <div
           ref={viewportRef}
@@ -351,7 +353,9 @@ export function WorkspaceTabs({
                       type="button"
                       data-testid={`close-workspace-${ws.id}`}
                       className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground opacity-0 outline-none transition-[background-color,color,opacity] duration-150 hover:bg-accent hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/35 group-hover/tab:opacity-75"
-                      aria-label={`Close ${ws.name}`}
+                      aria-label={t("workspaces.closeNamed", {
+                        name: ws.name,
+                      })}
                       onClick={(e) => {
                         e.stopPropagation();
                         onCloseWorkspace(ws.id);
@@ -366,7 +370,7 @@ export function WorkspaceTabs({
           })}
           {onCreateWorkspace ? (
             <ToolbarIconButton
-              label="New workspace"
+              label={t("workspaces.new")}
               shortcut={chordLabel(shortcuts, "newWorkspace")}
               onClick={onCreateWorkspace}
               data-testid="workspace-new-tab"
@@ -383,11 +387,9 @@ export function WorkspaceTabs({
                   variant="ghost"
                   size="icon-sm"
                   className="size-8 gap-0.5 text-muted-foreground hover:text-foreground"
-                  aria-label={`Show ${hiddenWorkspaces.length} more ${
-                    hiddenWorkspaces.length === 1
-                      ? "workspace"
-                      : "workspaces"
-                  }`}
+                  aria-label={t("workspaces.overflow", {
+                    count: hiddenWorkspaces.length,
+                  })}
                   data-testid="workspace-overflow-trigger"
                 >
                   <span className="text-[11px] leading-none tabular-nums">
@@ -402,7 +404,7 @@ export function WorkspaceTabs({
                 className="min-w-52"
               >
                 <DropdownMenuLabel className="text-xs text-muted-foreground">
-                  More workspaces
+                  {t("workspaces.more")}
                 </DropdownMenuLabel>
                 {hiddenWorkspaces.map((workspace) => {
                   const active = workspace.id === activeWorkspaceId;
@@ -440,12 +442,12 @@ export function WorkspaceTabs({
           <div
             className="flex shrink-0 items-center gap-1 border-l border-border/80 pl-2"
             role="toolbar"
-            aria-label="Workspace actions"
+            aria-label={t("workspaces.actions")}
             data-testid="workspace-action-toolbar"
           >
             {onNewTerminal ? (
               <ToolbarIconButton
-                label="New terminal"
+                label={t("commands.newTerminal")}
                 shortcut={chordLabel(shortcuts, "newTerminal")}
                 onClick={onNewTerminal}
                 disabled={actionsDisabled}
@@ -456,7 +458,7 @@ export function WorkspaceTabs({
             ) : null}
             {onSplitHorizontal ? (
               <ToolbarIconButton
-                label="Split horizontal"
+                label={t("commands.splitHorizontal")}
                 shortcut={chordLabel(shortcuts, "splitHorizontal")}
                 onClick={onSplitHorizontal}
                 disabled={actionsDisabled}
@@ -467,7 +469,7 @@ export function WorkspaceTabs({
             ) : null}
             {onSplitVertical ? (
               <ToolbarIconButton
-                label="Split vertical"
+                label={t("commands.splitVertical")}
                 shortcut={chordLabel(shortcuts, "splitVertical")}
                 onClick={onSplitVertical}
                 disabled={actionsDisabled}
@@ -488,9 +490,9 @@ export function WorkspaceTabs({
       >
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Rename workspace</DialogTitle>
+            <DialogTitle>{t("workspaces.renameTitle")}</DialogTitle>
             <DialogDescription>
-              Choose a short name that identifies this terminal layout.
+              {t("workspaces.renameDescription")}
             </DialogDescription>
           </DialogHeader>
           <form
@@ -501,7 +503,7 @@ export function WorkspaceTabs({
             }}
           >
             <div className="space-y-1.5">
-              <Label htmlFor="workspace-rename">Workspace name</Label>
+              <Label htmlFor="workspace-rename">{t("workspaces.name")}</Label>
               <Input
                 id="workspace-rename"
                 name="workspace-name"
@@ -517,7 +519,7 @@ export function WorkspaceTabs({
                 variant="outline"
                 onClick={() => setRenameTarget(null)}
               >
-                Cancel
+                {t("common.actions.cancel")}
               </Button>
               <Button
                 type="submit"
@@ -526,7 +528,7 @@ export function WorkspaceTabs({
                   renameValue.trim() === renameTarget?.name
                 }
               >
-                Rename workspace
+                {t("workspaces.rename")}
               </Button>
             </DialogFooter>
           </form>

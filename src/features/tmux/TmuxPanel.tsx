@@ -17,6 +17,7 @@ import {
   Link2,
   SquareTerminal,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export type TmuxPanelProps = {
   projectId: string | null;
@@ -34,6 +35,7 @@ function parseRoot(rootJson: string | null): PaneNode | null {
 }
 
 export function TmuxPanel({ projectId, open, onClose }: TmuxPanelProps) {
+  const { t } = useTranslation();
   const detectInfo = useTmuxStore((s) => s.detectInfo);
   const sessions = useTmuxStore((s) => s.sessions);
   const loading = useTmuxStore((s) => s.loading);
@@ -52,12 +54,12 @@ export function TmuxPanel({ projectId, open, onClose }: TmuxPanelProps) {
 
   const attach = async (session: TmuxSession) => {
     if (!activeWorkspaceId) {
-      reportError("Could not attach tmux session", "No active workspace");
+      reportError(t("errors.attachTmux"), t("errors.noActiveWorkspace"));
       return;
     }
     const ws = workspaces.find((w) => w.id === activeWorkspaceId);
     if (!ws) {
-      reportError("Could not attach tmux session", "Workspace not found");
+      reportError(t("errors.attachTmux"), t("errors.workspaceNotFound"));
       return;
     }
     try {
@@ -89,7 +91,7 @@ export function TmuxPanel({ projectId, open, onClose }: TmuxPanelProps) {
       }
       const split = splitPane(root, targetId, "row", leaf, crypto.randomUUID());
       if (!split.ok) {
-        reportError("Could not attach tmux session", split.error);
+        reportError(t("errors.attachTmux"), split.error);
         return;
       }
       await saveWorkspace({
@@ -99,7 +101,7 @@ export function TmuxPanel({ projectId, open, onClose }: TmuxPanelProps) {
         updatedAt: Date.now(),
       });
     } catch (error) {
-      reportError("Could not attach tmux session", error);
+      reportError(t("errors.attachTmux"), error);
     }
   };
 
@@ -115,25 +117,23 @@ export function TmuxPanel({ projectId, open, onClose }: TmuxPanelProps) {
       {!projectId ? (
         <WorkbenchEmptyState
           icon={<FolderOpen className="size-4" aria-hidden />}
-          title="No project selected"
-          body="Open a project to attach tmux sessions into a workspace pane."
+          title={t("tmux.noProjectTitle")}
+          body={t("tmux.noProjectBody")}
         />
       ) : detectInfo && !detectInfo.available ? (
         <WorkbenchEmptyState
           icon={<SquareTerminal className="size-4" aria-hidden />}
-          title="tmux not found"
-          body="Install tmux and ensure it is on PATH, or set TMUX_BIN."
+          title={t("tmux.notFoundTitle")}
+          body={t("tmux.notFoundBody")}
         />
       ) : (
         <>
           <div className="border-b border-border/70 px-3 py-2">
             <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-              Local attach only
+              {t("tmux.localOnly")}
             </p>
             <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
-              Opt-in: opens a pane with{" "}
-              <span className="font-mono text-foreground/80">tmux attach -t</span>
-              . No Terminus daemon.
+              {t("tmux.description")}
             </p>
             {detectInfo?.path ? (
               <p className="mt-1.5 truncate font-mono text-[10px] text-muted-foreground">
@@ -144,18 +144,16 @@ export function TmuxPanel({ projectId, open, onClose }: TmuxPanelProps) {
           <div className="min-h-0 flex-1 overflow-y-auto">
             <section>
               <WorkbenchSectionHeader
-                title="Sessions"
+                title={t("tmux.sessions")}
                 count={sessions.length}
               />
               {sessions.length === 0 ? (
                 <div className="flex flex-col items-center justify-center gap-2 p-6 text-center">
-                  <p className="text-sm font-medium">No sessions</p>
+                  <p className="text-sm font-medium">
+                    {t("tmux.noSessions")}
+                  </p>
                   <p className="text-xs leading-5 text-muted-foreground">
-                    Start one with{" "}
-                    <span className="font-mono text-foreground/80">
-                      tmux new -s name
-                    </span>
-                    .
+                    {t("tmux.noSessionsHelp")}
                   </p>
                 </div>
               ) : (
@@ -168,7 +166,10 @@ export function TmuxPanel({ projectId, open, onClose }: TmuxPanelProps) {
                             {session.name}
                           </div>
                           <div className="mt-0.5 font-mono text-[10px] text-muted-foreground">
-                            {session.windows} win · {session.attached} attached
+                            {t("tmux.sessionMeta", {
+                              windows: session.windows,
+                              attached: session.attached,
+                            })}
                           </div>
                         </div>
                         <Button
@@ -180,7 +181,7 @@ export function TmuxPanel({ projectId, open, onClose }: TmuxPanelProps) {
                           disabled={!activeWorkspaceId || loading}
                         >
                           <Link2 className="size-3.5" aria-hidden />
-                          Attach
+                          {t("tmux.attach")}
                         </Button>
                       </div>
                     </li>

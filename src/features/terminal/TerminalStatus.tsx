@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import type { ActivityLevel } from "./activity";
 import type { TerminalSessionStatus } from "./terminalStore";
+import { useTranslation } from "react-i18next";
 
 export type TerminalStatusProps = {
   status: TerminalSessionStatus;
@@ -17,21 +18,6 @@ export type TerminalStatusProps = {
   className?: string;
 };
 
-function statusLabel(status: TerminalSessionStatus): string {
-  switch (status) {
-    case "starting":
-      return "starting";
-    case "running":
-      return "running";
-    case "exited":
-      return "exited";
-    case "error":
-      return "error";
-    case "closing":
-      return "closing";
-  }
-}
-
 export function TerminalStatus({
   status,
   activity,
@@ -40,6 +26,7 @@ export function TerminalStatus({
   title,
   className,
 }: TerminalStatusProps) {
+  const { t } = useTranslation();
   const running = status === "running";
   const indicator: {
     Icon: LucideIcon;
@@ -48,25 +35,25 @@ export function TerminalStatus({
   } | null = attention
     ? {
         Icon: BellDot,
-        label: "Terminal needs attention",
+        label: t("terminal.indicators.attention"),
         className: "text-amber-400",
       }
     : unread
       ? {
           Icon: CircleDot,
-          label: "Terminal has unread output",
+          label: t("terminal.indicators.unread"),
           className: "text-sky-400",
         }
       : running && activity === "active"
         ? {
             Icon: Activity,
-            label: "Terminal is producing output",
+            label: t("terminal.indicators.active"),
             className: "text-emerald-400",
           }
         : status === "error"
           ? {
               Icon: CircleAlert,
-              label: "Terminal encountered an error",
+              label: t("terminal.indicators.error"),
               className: "text-destructive",
             }
           : null;
@@ -82,7 +69,7 @@ export function TerminalStatus({
         className ??
         "inline-flex min-w-0 items-center gap-1.5 text-[10px] text-muted-foreground"
       }
-      title={`${title} · ${statusLabel(status)}`}
+      title={`${title} · ${t(`terminal.status.${status}`)}`}
     >
       {indicator ? (
         <span

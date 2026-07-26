@@ -1,0 +1,561 @@
+{
+  "common": {
+    "actions": {
+      "add": "Add",
+      "attach": "Attach",
+      "cancel": "Cancel",
+      "close": "Close",
+      "commit": "Commit",
+      "create": "Create",
+      "delete": "Delete",
+      "importAll": "Import all",
+      "open": "Open",
+      "rename": "Rename",
+      "reset": "Reset",
+      "retry": "Retry",
+      "run": "Run",
+      "save": "Save"
+    },
+    "states": {
+      "adding": "Adding…",
+      "committing": "Committing…",
+      "deleting": "Deleting…",
+      "loading": "Loading…",
+      "saving": "Saving…"
+    },
+    "languages": {
+      "en": "English",
+      "tr": "Türkçe"
+    },
+    "terminal": "Terminal",
+    "workspace": "Workspace",
+    "workspaces_one": "{{count}} workspace",
+    "workspaces_other": "{{count}} workspaces",
+    "terminals_one": "{{count}} terminal",
+    "terminals_other": "{{count}} terminals"
+  },
+  "app": {
+    "loading": "Loading…",
+    "openProjectDialog": "Open project folder",
+    "empty": {
+      "eyebrow": "LOCAL WORKSPACE",
+      "description": "Keep local terminals organized by project, workspace, and pane. Open a folder to begin.",
+      "descriptionLead": "Keep local terminals organized by project, workspace, and pane.",
+      "openFolderHint": "Open a folder to begin.",
+      "openProject": "Open project",
+      "localOnly": "Your projects and layouts stay on this device."
+    },
+    "shell": {
+      "skipToWorkspace": "Skip to workspace",
+      "chooseProject": "Choose a project",
+      "chooseProjectDescription": "Select a project from the sidebar or open a local folder to create a new workspace.",
+      "loadingWorkbenchPanel": "Loading workbench panel",
+      "loadingPanel": "Loading panel…",
+      "loadingSourcePreview": "Loading source preview"
+    }
+  },
+  "titlebar": {
+    "showSidebar": "Show sidebar",
+    "hideSidebar": "Hide sidebar",
+    "showGit": "Show git panel",
+    "hideGit": "Hide git panel",
+    "showSnippets": "Show snippets",
+    "hideSnippets": "Hide snippets",
+    "showTasks": "Show tasks",
+    "hideTasks": "Hide tasks",
+    "showTmux": "Show tmux",
+    "hideTmux": "Hide tmux",
+    "commandPalette": "Command palette",
+    "settings": "Settings"
+  },
+  "settings": {
+    "sheet": {
+      "title": "Settings",
+      "description": "Configure local shells, keyboard controls, close confirmations, language, and workspace appearance.",
+      "categories": "Settings categories"
+    },
+    "tabs": {
+      "profiles": {
+        "label": "Profiles",
+        "description": "Shells & environments"
+      },
+      "shortcuts": {
+        "label": "Shortcuts",
+        "description": "Keyboard controls"
+      },
+      "confirmations": {
+        "label": "Confirmations",
+        "description": "Close prompts"
+      },
+      "appearance": {
+        "label": "Appearance",
+        "description": "Language, theme & panes"
+      }
+    },
+    "appearance": {
+      "title": "Appearance",
+      "description": "Choose a cohesive app and terminal palette, then tune pane chrome.",
+      "language": {
+        "title": "Language",
+        "description": "Choose the language used throughout the application.",
+        "label": "Application language"
+      },
+      "colorPreset": {
+        "title": "Color preset",
+        "description": "Each preset updates both the interface and terminal ANSI colors."
+      },
+      "themeMode": {
+        "light": "Light",
+        "dark": "Dark"
+      },
+      "paneChrome": {
+        "title": "Pane chrome",
+        "description": "Adjust boundaries without changing terminal content.",
+        "borderWidth": "Border width",
+        "cornerRadius": "Corner radius",
+        "activeHighlight": "Active pane highlight",
+        "activeHighlightDescription": "Show a signal rail on the focused terminal."
+      },
+      "presets": {
+        "graphite": "Graphite",
+        "ocean": "Ocean",
+        "sunset": "Sunset",
+        "forest": "Forest",
+        "orchid": "Orchid",
+        "paper": "Paper"
+      }
+    },
+    "confirmations": {
+      "title": "Close confirmations",
+      "description": "Choose which destructive close actions require confirmation.",
+      "terminal": {
+        "label": "Ask before closing a terminal",
+        "description": "Confirm before terminating a shell process and removing its pane."
+      },
+      "workspace": {
+        "label": "Ask before closing a workspace",
+        "description": "Confirm before terminating all terminals in a workspace."
+      }
+    },
+    "shortcuts": {
+      "title": "Keyboard shortcuts",
+      "description": "Click a key chord, then press a new combination.",
+      "resetDefaults": "Reset defaults",
+      "navigator": {
+        "title": "Workspace Navigator",
+        "description": "Hold the modifiers, then use arrow keys to move between projects and workspaces.",
+        "change": "Change workspace navigator shortcut",
+        "pressModifiers": "Press modifiers…"
+      },
+      "changeCommand": "Change shortcut for {{command}}",
+      "pressKeys": "Press keys…",
+      "keys": {
+        "space": "Space",
+        "pageUp": "Page Up",
+        "pageDown": "Page Down"
+      },
+      "messages": {
+        "empty": "Shortcuts cannot be empty",
+        "unmodified": "Cannot bind unmodified terminal keystrokes",
+        "modifiersOnly": "Use modifier keys only",
+        "twoModifiers": "Use at least two modifier keys",
+        "conflict": "Shortcut conflicts with another command",
+        "saveFailed": "Could not save navigator shortcut. Try again."
+      }
+    },
+    "profiles": {
+      "title": "Terminal profiles",
+      "description": "Define trusted local shells and their launch environment.",
+      "new": "New profile",
+      "listLabel": "Terminal profiles",
+      "empty": "No custom profiles",
+      "defaultProfile": "Default profile",
+      "fields": {
+        "name": "Name",
+        "executable": "Executable (optional)",
+        "executablePlaceholder": "Example: /bin/zsh",
+        "executableHelp": "Leave empty to use the resolved system login shell.",
+        "args": "Args (space-separated, ordered)",
+        "argsPlaceholder": "Example: -l",
+        "env": "Env overrides (KEY=value per line)",
+        "cwd": "Cwd override (absolute, optional)",
+        "cwdPlaceholder": "Example: /Users/me/Development",
+        "globalDefault": "Global default",
+        "globalDefaultHelp": "Use this profile for new terminals."
+      },
+      "save": "Save profile",
+      "delete": "Delete profile",
+      "deleteTitle": "Delete profile?",
+      "deleteDescription": "Delete “{{name}}”? Existing terminal panes keep running, but this profile will no longer be available for new terminals.",
+      "invalidEnvLine": "Invalid environment line: {{line}}",
+      "systemShell": "System shell",
+      "validation": {
+        "nameRequired": "Name is required",
+        "executableEmpty": "Executable must be non-empty when set",
+        "argsInvalid": "Arguments must be an ordered string array",
+        "envKeyInvalid": "Invalid environment key: {{key}}",
+        "envValueInvalid": "Environment value for {{key}} must be a string",
+        "cwdEmpty": "Working directory override must be non-empty when set",
+        "cwdAbsolute": "Working directory override must be an absolute path"
+      }
+    },
+    "recovery": {
+      "title": "Workspace database recovery",
+      "description": "Terminus could not open the local workspace database. Your original file has not been reset or overwritten.",
+      "databaseError": "Database error",
+      "backupAvailable": "Backup available",
+      "backupUnavailable": "Backup not available",
+      "createBackup": "Create backup",
+      "reveal": "Reveal database folder",
+      "resetAfterBackup": "Reset after successful backup",
+      "resetWithoutBackupHint": "Create a backup first, or confirm force reset",
+      "resetDatabase": "Reset database",
+      "resetWithoutBackup": "Reset without backup…",
+      "forceTitle": "Reset without backup?",
+      "forceDescription": "This permanently deletes the corrupt database without creating a backup copy. You will lose all projects, workspaces, and settings stored in that file. Prefer Create backup first when possible.",
+      "forceReset": "Force reset",
+      "backupCreated": "Backup created: {{path}}",
+      "locationRevealed": "Revealed database location"
+    }
+  },
+  "commands": {
+    "commandPalette": "Command palette",
+    "openSettings": "Open settings",
+    "toggleSidebar": "Toggle sidebar",
+    "toggleFocus": "Toggle focus mode",
+    "toggleGitPanel": "Toggle git panel",
+    "toggleSnippetsPanel": "Toggle snippets panel",
+    "toggleTasksPanel": "Toggle tasks panel",
+    "toggleTmuxPanel": "Toggle tmux panel",
+    "newWorkspace": "New workspace",
+    "newTerminal": "New terminal",
+    "splitHorizontal": "Split horizontal",
+    "splitVertical": "Split vertical",
+    "closePane": "Close pane",
+    "nextWorkspace": "Next workspace",
+    "prevWorkspace": "Previous workspace",
+    "goToProject": "Go to project: {{name}}",
+    "goToWorkspace": "Go to workspace: {{name}}"
+  },
+  "commandPalette": {
+    "title": "Command palette",
+    "searchLabel": "Search commands",
+    "searchPlaceholder": "Search commands…",
+    "emptyTitle": "No matching commands",
+    "emptyDescription": "Try a project, workspace, or action name.",
+    "count_one": "{{count}} command",
+    "count_other": "{{count}} commands",
+    "navigate": "↑↓ Navigate",
+    "run": "Run"
+  },
+  "projects": {
+    "title": "Projects",
+    "open": "Open project",
+    "openShort": "Open",
+    "empty": "Open a folder to create your first project.",
+    "closeNamed": "Close {{name}}",
+    "renameTitle": "Rename project",
+    "renameDescription": "Update the display name for this project.",
+    "name": "Name",
+    "renameMenu": "Rename project…",
+    "removeMenu": "Remove project…"
+  },
+  "workspaces": {
+    "tabsLabel": "Workspaces",
+    "closeNamed": "Close {{name}}",
+    "new": "New workspace",
+    "defaultName": "Workspace {{number}}",
+    "overflow": "Show {{count}} more workspace",
+    "overflow_other": "Show {{count}} more workspaces",
+    "more": "More workspaces",
+    "actions": "Workspace actions",
+    "renameTitle": "Rename workspace",
+    "renameDescription": "Choose a short name that identifies this terminal layout.",
+    "name": "Workspace name",
+    "rename": "Rename workspace",
+    "menu": {
+      "rename": "Rename…",
+      "moveLeft": "Move left",
+      "moveRight": "Move right",
+      "close": "Close workspace…"
+    },
+    "area": {
+      "selectTitle": "Select a workspace",
+      "selectDescription": "Your terminal will start when the workspace becomes active.",
+      "startTitle": "Start a terminal",
+      "startDescription": "This workspace is ready. Open a local shell to begin."
+    }
+  },
+  "closeDialogs": {
+    "dontAskAgain": "Don't ask again",
+    "terminalPreference": "You can restore terminal confirmations in Settings.",
+    "workspacePreference": "You can restore workspace confirmations in Settings.",
+    "terminal": {
+      "title": "Close terminal?",
+      "description": "Close “{{name}}”? The shell process will be terminated.",
+      "affects": "This action affects {{count}} terminals.",
+      "action": "Close terminal"
+    },
+    "workspace": {
+      "title": "Close workspace?",
+      "description": "Close “{{name}}”? This will terminate {{terminals}}.",
+      "action": "Close workspace"
+    },
+    "project": {
+      "title": "Close project?",
+      "description": "Remove “{{name}}” from Terminus? This closes {{workspaces}} and terminates {{terminals}}. The project folder on disk is not deleted.",
+      "action": "Close project"
+    },
+    "application": {
+      "title": "Quit Terminus?",
+      "description": "Quit and terminate {{terminals}}? Layout is saved; shells are not restored on next launch.",
+      "action": "Quit"
+    }
+  },
+  "terminal": {
+    "defaultTitle": "Terminal",
+    "close": "Close terminal",
+    "restart": "Restart",
+    "processExited": "Process exited.",
+    "processExitedCode": "Process exited with code {{code}}.",
+    "error": "Terminal error",
+    "status": {
+      "starting": "starting",
+      "running": "running",
+      "exited": "exited",
+      "error": "error",
+      "closing": "closing"
+    },
+    "indicators": {
+      "attention": "Terminal needs attention",
+      "unread": "Terminal has unread output",
+      "active": "Terminal is producing output",
+      "error": "Terminal encountered an error"
+    }
+  },
+  "panes": {
+    "drag": "Drag pane",
+    "renameNamed": "Rename terminal: {{name}}",
+    "rename": "Rename terminal",
+    "profile": "Profile: {{name}}",
+    "renameTitle": "Rename terminal",
+    "renameDescription": "This name stays with the workspace and takes priority over titles set by the shell.",
+    "terminalName": "Terminal name",
+    "menu": {
+      "splitRight": "Split right",
+      "splitDown": "Split down",
+      "focusMode": "Focus mode",
+      "rename": "Rename terminal…",
+      "profile": "Profile",
+      "globalDefault": "Global default — {{name}}",
+      "close": "Close terminal…"
+    }
+  },
+  "navigator": {
+    "region": "Workspace navigator",
+    "eyebrow": "Navigator",
+    "title": "Projects & Workspaces",
+    "arrowNavigation": "Arrow key navigation",
+    "upArrow": "Up arrow",
+    "downArrow": "Down arrow",
+    "leftArrow": "Left arrow",
+    "rightArrow": "Right arrow",
+    "projects": "Projects",
+    "workspaces": "Workspaces",
+    "projectPreview": "Project preview",
+    "openWorkspaces": "Open Workspaces",
+    "workspacePreview": "Workspace preview",
+    "ready": "Ready to switch",
+    "workspace": "Workspace",
+    "defaultWorkspace": "Default workspace",
+    "defaultDescription": "It will be prepared when you switch.",
+    "hold": "Keep holding to navigate",
+    "cancelHint": "cancels · release to switch",
+    "switchFailed": "Could not switch workspace. Try again."
+  },
+  "sourcePreview": {
+    "region": "Source preview",
+    "readOnly": "Read only",
+    "close": "Close source preview",
+    "loading": "Loading source file",
+    "plainText": "Plain text",
+    "sourceCode": "Source code: {{path}}",
+    "errorTitle": "Could not preview file",
+    "errorHelp": "Choose a UTF-8 text file smaller than 2 MiB from Source control.",
+    "headSnapshot": "HEAD snapshot",
+    "workingTree": "Working tree",
+    "sourceLens": "Source lens"
+  },
+  "workbench": {
+    "refresh": "Refresh {{label}}",
+    "close": "Close {{label}}"
+  },
+  "git": {
+    "title": "Source control",
+    "noProjectTitle": "No project selected",
+    "noProjectBody": "Open a project to inspect its git working tree.",
+    "notRepositoryTitle": "Not a git repository",
+    "notRepositoryBody": "This project folder has no .git directory. Initialize git in the terminal if you need source control here.",
+    "detached": "HEAD (detached)",
+    "noUpstream": "No upstream",
+    "conflicts": "Conflicts",
+    "switchBranch": "Switch branch",
+    "selectBranch": "Select branch",
+    "createBranch": "Create branch",
+    "branch": "Branch",
+    "newBranchName": "New branch name",
+    "branchPlaceholder": "feature/…",
+    "staged": "Staged",
+    "changes": "Changes",
+    "nothingStaged": "Nothing staged",
+    "clean": "Working tree clean",
+    "stageAll": "Stage all",
+    "unstageAll": "Unstage all",
+    "stage": "Stage",
+    "unstage": "Unstage",
+    "stash": "Stash",
+    "stashes": "Stashes",
+    "pop": "Pop",
+    "status": {
+      "untracked": "Untracked",
+      "conflict": "Conflict",
+      "added": "Added",
+      "deleted": "Deleted",
+      "renamed": "Renamed",
+      "modified": "Modified"
+    },
+    "viewDiff": "View diff",
+    "viewDiffFile": "View diff {{path}}",
+    "fileAction": "{{action}} {{path}}",
+    "workingDiff": "Working diff",
+    "stagedDiff": "Staged diff",
+    "diff": "Diff",
+    "closeDiff": "Close diff",
+    "loadingDiff": "Loading diff…",
+    "noTextChanges": "No textual changes to display.",
+    "commitMessage": "Commit message",
+    "stageBeforeCommit": "Stage files before committing.",
+    "commitShortcut": "⌘↵ / Ctrl+Enter to commit"
+  },
+  "tasks": {
+    "title": "Tasks",
+    "storageLead": "Stored in",
+    "storageTail": "Project-local data; no task executes a shell command.",
+    "noProjectTitle": "No project selected",
+    "noProjectBody": "Open a project to use its local task board.",
+    "newTask": "New task title",
+    "columnName": "Column name",
+    "newColumnName": "New column name",
+    "addColumn": "Add column",
+    "defaultColumns": {
+      "todo": "To Do",
+      "inProgress": "In Progress",
+      "done": "Done"
+    },
+    "renameColumnNamed": "Rename {{name}} column",
+    "deleteColumnNamed": "Delete {{name}} column",
+    "emptyColumn": "No tasks in this column.",
+    "moveTask": "Move {{task}} to {{column}}",
+    "deleteTaskNamed": "Delete {{name}}",
+    "editTitle": "Edit task",
+    "editDescription": "Update the task title and optional context.",
+    "fields": {
+      "title": "Title",
+      "description": "Description"
+    },
+    "saveChanges": "Save changes",
+    "renameColumnTitle": "Rename column",
+    "renameColumnDescription": "Use a short label that reflects the stage of work.",
+    "deleteColumnTitle": "Delete column?",
+    "deleteTaskTitle": "Delete task?",
+    "deleteColumnDescription": "“{{name}}” and every task inside it will be removed.",
+    "deleteTaskDescription": "“{{name}}” will be removed from this board."
+  },
+  "snippets": {
+    "title": "Snippets",
+    "footer": "Insert writes text to the focused PTY; it never spawns a shell.",
+    "focusedReady": "Focused terminal ready.",
+    "focusFirst": "Focus a terminal first.",
+    "noProjectTitle": "No project selected",
+    "noProjectBody": "Open a project to manage its command snippets.",
+    "new": "New snippet",
+    "name": "Name",
+    "namePlaceholder": "Build production",
+    "terminalInput": "Terminal input",
+    "inputPlaceholder": "pnpm build",
+    "add": "Add snippet",
+    "library": "Library",
+    "empty": "No snippets yet. Add one above or import Makefile targets.",
+    "insertFocused": "Insert into focused terminal",
+    "emptyBody": "Empty body",
+    "insertNamed": "Insert {{name}}",
+    "editNamed": "Edit {{name}}",
+    "deleteNamed": "Delete {{name}}",
+    "makefile": "Makefile",
+    "editTitle": "Edit snippet",
+    "editDescription": "Changes stay in this project’s local snippet library.",
+    "description": "Description",
+    "descriptionPlaceholder": "Optional context",
+    "saveChanges": "Save changes",
+    "deleteTitle": "Delete snippet?",
+    "deleteDescription": "“{{name}}” will be removed from this project."
+  },
+  "tmux": {
+    "noProjectTitle": "No project selected",
+    "noProjectBody": "Open a project to attach tmux sessions into a workspace pane.",
+    "notFoundTitle": "tmux not found",
+    "notFoundBody": "Install tmux and ensure it is on PATH, or set TMUX_BIN.",
+    "localOnly": "Local attach only",
+    "description": "Opt-in: opens a pane with tmux attach -t. No Terminus daemon.",
+    "sessions": "Sessions",
+    "noSessions": "No sessions",
+    "noSessionsHelp": "Start one with tmux new -s name.",
+    "sessionMeta": "{{windows}} win · {{attached}} attached",
+    "attach": "Attach"
+  },
+  "errors": {
+    "unexpected": "Unexpected application error",
+    "interceptWindowClose": "Could not intercept window close",
+    "closeRequestedItem": "Could not close the requested item",
+    "updateClosePreference": "Could not update close confirmation preference",
+    "openProject": "Could not open project",
+    "selectProject": "Could not select project",
+    "renameProject": "Could not rename project",
+    "selectWorkspace": "Could not select workspace",
+    "renameWorkspace": "Could not rename workspace",
+    "createWorkspace": "Could not create workspace",
+    "reorderWorkspace": "Could not reorder workspace",
+    "changeLanguage": "Could not change application language",
+    "applyTerminalTheme": "Could not apply terminal theme",
+    "loadGitStatus": "Could not load git status",
+    "loadFileDiff": "Could not load file diff",
+    "stageFiles": "Could not stage files",
+    "unstageFiles": "Could not unstage files",
+    "commit": "Could not commit",
+    "checkoutBranch": "Could not checkout branch",
+    "createBranch": "Could not create branch",
+    "stash": "Could not stash",
+    "popStash": "Could not pop stash",
+    "loadTasks": "Could not load tasks",
+    "addTaskColumn": "Could not add task column",
+    "renameTaskColumn": "Could not rename task column",
+    "deleteTaskColumn": "Could not delete task column",
+    "addTask": "Could not add task",
+    "updateTask": "Could not update task",
+    "moveTask": "Could not move task",
+    "removeTask": "Could not remove task",
+    "loadSnippets": "Could not load snippets",
+    "createSnippet": "Could not create snippet",
+    "updateSnippet": "Could not update snippet",
+    "deleteSnippet": "Could not delete snippet",
+    "scanMakefile": "Could not scan Makefile",
+    "importMakefile": "Could not import Makefile targets",
+    "insertSnippet": "Could not insert snippet",
+    "insertSnippetTerminal": "Could not insert snippet into terminal",
+    "noFocusedTerminal": "No focused terminal. Focus a pane first.",
+    "loadTmux": "Could not load tmux sessions",
+    "attachTmux": "Could not attach tmux session",
+    "noActiveWorkspace": "No active workspace",
+    "workspaceNotFound": "Workspace not found"
+  }
+}

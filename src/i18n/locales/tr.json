@@ -1,0 +1,561 @@
+{
+  "common": {
+    "actions": {
+      "add": "Ekle",
+      "attach": "Bağlan",
+      "cancel": "İptal",
+      "close": "Kapat",
+      "commit": "Commit oluştur",
+      "create": "Oluştur",
+      "delete": "Sil",
+      "importAll": "Tümünü içe aktar",
+      "open": "Aç",
+      "rename": "Yeniden adlandır",
+      "reset": "Sıfırla",
+      "retry": "Tekrar dene",
+      "run": "Çalıştır",
+      "save": "Kaydet"
+    },
+    "states": {
+      "adding": "Ekleniyor…",
+      "committing": "Commit oluşturuluyor…",
+      "deleting": "Siliniyor…",
+      "loading": "Yükleniyor…",
+      "saving": "Kaydediliyor…"
+    },
+    "languages": {
+      "en": "English",
+      "tr": "Türkçe"
+    },
+    "terminal": "Terminal",
+    "workspace": "Çalışma alanı",
+    "workspaces_one": "{{count}} çalışma alanı",
+    "workspaces_other": "{{count}} çalışma alanı",
+    "terminals_one": "{{count}} terminal",
+    "terminals_other": "{{count}} terminal"
+  },
+  "app": {
+    "loading": "Yükleniyor…",
+    "openProjectDialog": "Proje klasörü aç",
+    "empty": {
+      "eyebrow": "YEREL ÇALIŞMA ALANI",
+      "description": "Yerel terminallerinizi proje, çalışma alanı ve bölmelere göre düzenleyin. Başlamak için bir klasör açın.",
+      "descriptionLead": "Yerel terminallerinizi proje, çalışma alanı ve bölmelere göre düzenleyin.",
+      "openFolderHint": "Başlamak için bir klasör açın.",
+      "openProject": "Proje aç",
+      "localOnly": "Projeleriniz ve yerleşimleriniz bu cihazda kalır."
+    },
+    "shell": {
+      "skipToWorkspace": "Çalışma alanına geç",
+      "chooseProject": "Bir proje seçin",
+      "chooseProjectDescription": "Kenar çubuğundan bir proje seçin veya yeni çalışma alanı oluşturmak için yerel bir klasör açın.",
+      "loadingWorkbenchPanel": "Çalışma paneli yükleniyor",
+      "loadingPanel": "Panel yükleniyor…",
+      "loadingSourcePreview": "Kaynak önizlemesi yükleniyor"
+    }
+  },
+  "titlebar": {
+    "showSidebar": "Kenar çubuğunu göster",
+    "hideSidebar": "Kenar çubuğunu gizle",
+    "showGit": "Git panelini göster",
+    "hideGit": "Git panelini gizle",
+    "showSnippets": "Kod parçalarını göster",
+    "hideSnippets": "Kod parçalarını gizle",
+    "showTasks": "Görevleri göster",
+    "hideTasks": "Görevleri gizle",
+    "showTmux": "tmux panelini göster",
+    "hideTmux": "tmux panelini gizle",
+    "commandPalette": "Komut paleti",
+    "settings": "Ayarlar"
+  },
+  "settings": {
+    "sheet": {
+      "title": "Ayarlar",
+      "description": "Yerel kabukları, klavye kontrollerini, kapatma onaylarını, dili ve çalışma alanı görünümünü yapılandırın.",
+      "categories": "Ayar kategorileri"
+    },
+    "tabs": {
+      "profiles": {
+        "label": "Profiller",
+        "description": "Kabuklar ve ortamlar"
+      },
+      "shortcuts": {
+        "label": "Kısayollar",
+        "description": "Klavye kontrolleri"
+      },
+      "confirmations": {
+        "label": "Onaylar",
+        "description": "Kapatma uyarıları"
+      },
+      "appearance": {
+        "label": "Görünüm",
+        "description": "Dil, tema ve bölmeler"
+      }
+    },
+    "appearance": {
+      "title": "Görünüm",
+      "description": "Uyumlu bir uygulama ve terminal paleti seçin, ardından bölme görünümünü ayarlayın.",
+      "language": {
+        "title": "Dil",
+        "description": "Uygulamanın tamamında kullanılacak dili seçin.",
+        "label": "Uygulama dili"
+      },
+      "colorPreset": {
+        "title": "Renk teması",
+        "description": "Her tema hem arayüzü hem de terminal ANSI renklerini günceller."
+      },
+      "themeMode": {
+        "light": "Açık",
+        "dark": "Koyu"
+      },
+      "paneChrome": {
+        "title": "Bölme görünümü",
+        "description": "Terminal içeriğini değiştirmeden sınırları ayarlayın.",
+        "borderWidth": "Kenarlık kalınlığı",
+        "cornerRadius": "Köşe yuvarlaklığı",
+        "activeHighlight": "Etkin bölmeyi vurgula",
+        "activeHighlightDescription": "Odaktaki terminalde bir işaret şeridi gösterin."
+      },
+      "presets": {
+        "graphite": "Grafit",
+        "ocean": "Okyanus",
+        "sunset": "Gün Batımı",
+        "forest": "Orman",
+        "orchid": "Orkide",
+        "paper": "Kâğıt"
+      }
+    },
+    "confirmations": {
+      "title": "Kapatma onayları",
+      "description": "Hangi yıkıcı kapatma işlemlerinin onay gerektireceğini seçin.",
+      "terminal": {
+        "label": "Terminali kapatmadan önce sor",
+        "description": "Kabuk işlemini sonlandırıp bölmesini kaldırmadan önce onay iste."
+      },
+      "workspace": {
+        "label": "Çalışma alanını kapatmadan önce sor",
+        "description": "Bir çalışma alanındaki tüm terminalleri sonlandırmadan önce onay iste."
+      }
+    },
+    "shortcuts": {
+      "title": "Klavye kısayolları",
+      "description": "Bir tuş birleşimine tıklayın, ardından yeni birleşime basın.",
+      "resetDefaults": "Varsayılanları sıfırla",
+      "navigator": {
+        "title": "Çalışma Alanı Gezgini",
+        "description": "Değiştirici tuşları basılı tutun, ardından projeler ve çalışma alanları arasında hareket etmek için ok tuşlarını kullanın.",
+        "change": "Çalışma alanı gezgini kısayolunu değiştir",
+        "pressModifiers": "Değiştiricilere basın…"
+      },
+      "changeCommand": "{{command}} kısayolunu değiştir",
+      "pressKeys": "Tuşlara basın…",
+      "keys": {
+        "space": "Boşluk",
+        "pageUp": "Sayfa Yukarı",
+        "pageDown": "Sayfa Aşağı"
+      },
+      "messages": {
+        "empty": "Kısayollar boş olamaz",
+        "unmodified": "Değiştiricisiz terminal tuşları atanamaz",
+        "modifiersOnly": "Yalnızca değiştirici tuşları kullanın",
+        "twoModifiers": "En az iki değiştirici tuş kullanın",
+        "conflict": "Kısayol başka bir komutla çakışıyor",
+        "saveFailed": "Gezgin kısayolu kaydedilemedi. Tekrar deneyin."
+      }
+    },
+    "profiles": {
+      "title": "Terminal profilleri",
+      "description": "Güvenilir yerel kabukları ve başlatma ortamlarını tanımlayın.",
+      "new": "Yeni profil",
+      "listLabel": "Terminal profilleri",
+      "empty": "Özel profil yok",
+      "defaultProfile": "Varsayılan profil",
+      "fields": {
+        "name": "Ad",
+        "executable": "Çalıştırılabilir dosya (isteğe bağlı)",
+        "executablePlaceholder": "Örnek: /bin/zsh",
+        "executableHelp": "Çözümlenen sistem oturum kabuğunu kullanmak için boş bırakın.",
+        "args": "Argümanlar (boşlukla ayrılmış, sıralı)",
+        "argsPlaceholder": "Örnek: -l",
+        "env": "Ortam değişkenleri (her satıra KEY=value)",
+        "cwd": "Çalışma dizini geçersiz kılması (mutlak, isteğe bağlı)",
+        "cwdPlaceholder": "Örnek: /Users/me/Development",
+        "globalDefault": "Genel varsayılan",
+        "globalDefaultHelp": "Yeni terminaller için bu profili kullan."
+      },
+      "save": "Profili kaydet",
+      "delete": "Profili sil",
+      "deleteTitle": "Profil silinsin mi?",
+      "deleteDescription": "“{{name}}” silinsin mi? Mevcut terminal bölmeleri çalışmaya devam eder ancak bu profil yeni terminallerde kullanılamaz.",
+      "invalidEnvLine": "Geçersiz ortam satırı: {{line}}",
+      "systemShell": "Sistem kabuğu",
+      "validation": {
+        "nameRequired": "Ad gereklidir",
+        "executableEmpty": "Ayarlanmış çalıştırılabilir dosya boş olamaz",
+        "argsInvalid": "Argümanlar sıralı bir metin dizisi olmalıdır",
+        "envKeyInvalid": "Geçersiz ortam anahtarı: {{key}}",
+        "envValueInvalid": "{{key}} ortam değeri metin olmalıdır",
+        "cwdEmpty": "Ayarlanmış çalışma dizini geçersiz kılması boş olamaz",
+        "cwdAbsolute": "Çalışma dizini geçersiz kılması mutlak bir yol olmalıdır"
+      }
+    },
+    "recovery": {
+      "title": "Çalışma alanı veritabanı kurtarma",
+      "description": "Terminus yerel çalışma alanı veritabanını açamadı. Özgün dosyanız sıfırlanmadı veya üzerine yazılmadı.",
+      "databaseError": "Veritabanı hatası",
+      "backupAvailable": "Yedek mevcut",
+      "backupUnavailable": "Yedek mevcut değil",
+      "createBackup": "Yedek oluştur",
+      "reveal": "Veritabanı klasörünü göster",
+      "resetAfterBackup": "Başarılı yedekten sonra sıfırla",
+      "resetWithoutBackupHint": "Önce yedek oluşturun veya zorla sıfırlamayı onaylayın",
+      "resetDatabase": "Veritabanını sıfırla",
+      "resetWithoutBackup": "Yedeksiz sıfırla…",
+      "forceTitle": "Yedek olmadan sıfırlansın mı?",
+      "forceDescription": "Bu işlem, bozuk veritabanını yedek kopya oluşturmadan kalıcı olarak siler. Bu dosyada saklanan tüm projeleri, çalışma alanlarını ve ayarları kaybedersiniz. Mümkünse önce Yedek oluştur seçeneğini kullanın.",
+      "forceReset": "Zorla sıfırla",
+      "backupCreated": "Yedek oluşturuldu: {{path}}",
+      "locationRevealed": "Veritabanı konumu gösterildi"
+    }
+  },
+  "commands": {
+    "commandPalette": "Komut paleti",
+    "openSettings": "Ayarları aç",
+    "toggleSidebar": "Kenar çubuğunu aç/kapat",
+    "toggleFocus": "Odak modunu aç/kapat",
+    "toggleGitPanel": "Git panelini aç/kapat",
+    "toggleSnippetsPanel": "Kod parçaları panelini aç/kapat",
+    "toggleTasksPanel": "Görevler panelini aç/kapat",
+    "toggleTmuxPanel": "tmux panelini aç/kapat",
+    "newWorkspace": "Yeni çalışma alanı",
+    "newTerminal": "Yeni terminal",
+    "splitHorizontal": "Yatay böl",
+    "splitVertical": "Dikey böl",
+    "closePane": "Bölmeyi kapat",
+    "nextWorkspace": "Sonraki çalışma alanı",
+    "prevWorkspace": "Önceki çalışma alanı",
+    "goToProject": "Projeye git: {{name}}",
+    "goToWorkspace": "Çalışma alanına git: {{name}}"
+  },
+  "commandPalette": {
+    "title": "Komut paleti",
+    "searchLabel": "Komutlarda ara",
+    "searchPlaceholder": "Komutlarda ara…",
+    "emptyTitle": "Eşleşen komut yok",
+    "emptyDescription": "Bir proje, çalışma alanı veya işlem adı deneyin.",
+    "count_one": "{{count}} komut",
+    "count_other": "{{count}} komut",
+    "navigate": "↑↓ Gezin",
+    "run": "Çalıştır"
+  },
+  "projects": {
+    "title": "Projeler",
+    "open": "Proje aç",
+    "openShort": "Aç",
+    "empty": "İlk projenizi oluşturmak için bir klasör açın.",
+    "closeNamed": "{{name}} projesini kapat",
+    "renameTitle": "Projeyi yeniden adlandır",
+    "renameDescription": "Bu projenin görünen adını güncelleyin.",
+    "name": "Ad",
+    "renameMenu": "Projeyi yeniden adlandır…",
+    "removeMenu": "Projeyi kaldır…"
+  },
+  "workspaces": {
+    "tabsLabel": "Çalışma alanları",
+    "closeNamed": "{{name}} çalışma alanını kapat",
+    "new": "Yeni çalışma alanı",
+    "defaultName": "Çalışma Alanı {{number}}",
+    "overflow": "{{count}} çalışma alanı daha göster",
+    "overflow_other": "{{count}} çalışma alanı daha göster",
+    "more": "Diğer çalışma alanları",
+    "actions": "Çalışma alanı işlemleri",
+    "renameTitle": "Çalışma alanını yeniden adlandır",
+    "renameDescription": "Bu terminal yerleşimini tanımlayan kısa bir ad seçin.",
+    "name": "Çalışma alanı adı",
+    "rename": "Çalışma alanını yeniden adlandır",
+    "menu": {
+      "rename": "Yeniden adlandır…",
+      "moveLeft": "Sola taşı",
+      "moveRight": "Sağa taşı",
+      "close": "Çalışma alanını kapat…"
+    },
+    "area": {
+      "selectTitle": "Bir çalışma alanı seçin",
+      "selectDescription": "Çalışma alanı etkin olduğunda terminaliniz başlayacak.",
+      "startTitle": "Bir terminal başlatın",
+      "startDescription": "Bu çalışma alanı hazır. Başlamak için yerel bir kabuk açın."
+    }
+  },
+  "closeDialogs": {
+    "dontAskAgain": "Bir daha sorma",
+    "terminalPreference": "Terminal onaylarını Ayarlar'dan geri açabilirsiniz.",
+    "workspacePreference": "Çalışma alanı onaylarını Ayarlar'dan geri açabilirsiniz.",
+    "terminal": {
+      "title": "Terminal kapatılsın mı?",
+      "description": "“{{name}}” kapatılsın mı? Kabuk işlemi sonlandırılacak.",
+      "affects": "Bu işlem {{count}} terminali etkiler.",
+      "action": "Terminali kapat"
+    },
+    "workspace": {
+      "title": "Çalışma alanı kapatılsın mı?",
+      "description": "“{{name}}” kapatılsın mı? Bu işlem {{terminals}} sonlandıracak.",
+      "action": "Çalışma alanını kapat"
+    },
+    "project": {
+      "title": "Proje kapatılsın mı?",
+      "description": "“{{name}}” Terminus'tan kaldırılsın mı? Bu işlem {{workspaces}} kapatıp {{terminals}} sonlandıracak. Diskteki proje klasörü silinmez.",
+      "action": "Projeyi kapat"
+    },
+    "application": {
+      "title": "Terminus'tan çıkılsın mı?",
+      "description": "Çıkıp {{terminals}} sonlandırmak istiyor musunuz? Yerleşim kaydedilir; kabuklar sonraki açılışta geri yüklenmez.",
+      "action": "Çık"
+    }
+  },
+  "terminal": {
+    "defaultTitle": "Terminal",
+    "close": "Terminali kapat",
+    "restart": "Yeniden başlat",
+    "processExited": "İşlem sonlandı.",
+    "processExitedCode": "İşlem {{code}} koduyla sonlandı.",
+    "error": "Terminal hatası",
+    "status": {
+      "starting": "başlatılıyor",
+      "running": "çalışıyor",
+      "exited": "sonlandı",
+      "error": "hata",
+      "closing": "kapatılıyor"
+    },
+    "indicators": {
+      "attention": "Terminal ilgi bekliyor",
+      "unread": "Terminalde okunmamış çıktı var",
+      "active": "Terminal çıktı üretiyor",
+      "error": "Terminal bir hatayla karşılaştı"
+    }
+  },
+  "panes": {
+    "drag": "Bölmeyi sürükle",
+    "renameNamed": "Terminali yeniden adlandır: {{name}}",
+    "rename": "Terminali yeniden adlandır",
+    "profile": "Profil: {{name}}",
+    "renameTitle": "Terminali yeniden adlandır",
+    "renameDescription": "Bu ad çalışma alanında kalır ve kabuğun ayarladığı başlıklardan önceliklidir.",
+    "terminalName": "Terminal adı",
+    "menu": {
+      "splitRight": "Sağa böl",
+      "splitDown": "Aşağı böl",
+      "focusMode": "Odak modu",
+      "rename": "Terminali yeniden adlandır…",
+      "profile": "Profil",
+      "globalDefault": "Genel varsayılan — {{name}}",
+      "close": "Terminali kapat…"
+    }
+  },
+  "navigator": {
+    "region": "Çalışma alanı gezgini",
+    "eyebrow": "Gezgin",
+    "title": "Projeler ve Çalışma Alanları",
+    "arrowNavigation": "Ok tuşlarıyla gezinme",
+    "upArrow": "Yukarı ok",
+    "downArrow": "Aşağı ok",
+    "leftArrow": "Sol ok",
+    "rightArrow": "Sağ ok",
+    "projects": "Projeler",
+    "workspaces": "Çalışma Alanları",
+    "projectPreview": "Proje önizlemesi",
+    "openWorkspaces": "Açık Çalışma Alanları",
+    "workspacePreview": "Çalışma alanı önizlemesi",
+    "ready": "Geçişe hazır",
+    "workspace": "Çalışma alanı",
+    "defaultWorkspace": "Varsayılan çalışma alanı",
+    "defaultDescription": "Geçiş yaptığınızda hazırlanacak.",
+    "hold": "Gezinmek için basılı tutun",
+    "cancelHint": "iptal eder · geçmek için bırakın",
+    "switchFailed": "Çalışma alanına geçilemedi. Tekrar deneyin."
+  },
+  "sourcePreview": {
+    "region": "Kaynak önizlemesi",
+    "readOnly": "Salt okunur",
+    "close": "Kaynak önizlemesini kapat",
+    "loading": "Kaynak dosyası yükleniyor",
+    "plainText": "Düz metin",
+    "sourceCode": "Kaynak kodu: {{path}}",
+    "errorTitle": "Dosya önizlenemedi",
+    "errorHelp": "Kaynak kontrolünden 2 MiB'den küçük bir UTF-8 metin dosyası seçin.",
+    "headSnapshot": "HEAD anlık görüntüsü",
+    "workingTree": "Çalışma ağacı",
+    "sourceLens": "Kaynak görünümü"
+  },
+  "workbench": {
+    "refresh": "{{label}} yenile",
+    "close": "{{label}} kapat"
+  },
+  "git": {
+    "title": "Kaynak kontrolü",
+    "noProjectTitle": "Proje seçilmedi",
+    "noProjectBody": "Git çalışma ağacını incelemek için bir proje açın.",
+    "notRepositoryTitle": "Git deposu değil",
+    "notRepositoryBody": "Bu proje klasöründe .git dizini yok. Burada kaynak kontrolü gerekiyorsa terminalden git'i başlatın.",
+    "detached": "HEAD (bağımsız)",
+    "noUpstream": "Üst dal yok",
+    "conflicts": "Çakışmalar",
+    "switchBranch": "Dal değiştir",
+    "selectBranch": "Dal seç",
+    "createBranch": "Dal oluştur",
+    "branch": "Dal",
+    "newBranchName": "Yeni dal adı",
+    "branchPlaceholder": "feature/…",
+    "staged": "Hazırlananlar",
+    "changes": "Değişiklikler",
+    "nothingStaged": "Hazırlanan dosya yok",
+    "clean": "Çalışma ağacı temiz",
+    "stageAll": "Tümünü hazırla",
+    "unstageAll": "Tümünü hazırlıktan çıkar",
+    "stage": "Hazırla",
+    "unstage": "Hazırlıktan çıkar",
+    "stash": "Zulaya al",
+    "stashes": "Zulalar",
+    "pop": "Geri uygula",
+    "status": {
+      "untracked": "İzlenmeyen",
+      "conflict": "Çakışma",
+      "added": "Eklendi",
+      "deleted": "Silindi",
+      "renamed": "Yeniden adlandırıldı",
+      "modified": "Değiştirildi"
+    },
+    "viewDiff": "Farkı görüntüle",
+    "viewDiffFile": "{{path}} farkını görüntüle",
+    "fileAction": "{{path}}: {{action}}",
+    "workingDiff": "Çalışma ağacı farkı",
+    "stagedDiff": "Hazırlanan fark",
+    "diff": "Fark",
+    "closeDiff": "Farkı kapat",
+    "loadingDiff": "Fark yükleniyor…",
+    "noTextChanges": "Gösterilecek metin değişikliği yok.",
+    "commitMessage": "Commit mesajı",
+    "stageBeforeCommit": "Commit oluşturmadan önce dosyaları hazırlayın.",
+    "commitShortcut": "Commit için ⌘↵ / Ctrl+Enter"
+  },
+  "tasks": {
+    "title": "Görevler",
+    "storageLead": "Saklandığı yer:",
+    "storageTail": "Projeye özel veridir; hiçbir görev kabuk komutu çalıştırmaz.",
+    "noProjectTitle": "Proje seçilmedi",
+    "noProjectBody": "Yerel görev panosunu kullanmak için bir proje açın.",
+    "newTask": "Yeni görev başlığı",
+    "columnName": "Sütun adı",
+    "newColumnName": "Yeni sütun adı",
+    "addColumn": "Sütun ekle",
+    "defaultColumns": {
+      "todo": "Yapılacak",
+      "inProgress": "Devam Ediyor",
+      "done": "Tamamlandı"
+    },
+    "renameColumnNamed": "{{name}} sütununu yeniden adlandır",
+    "deleteColumnNamed": "{{name}} sütununu sil",
+    "emptyColumn": "Bu sütunda görev yok.",
+    "moveTask": "{{task}} görevini {{column}} sütununa taşı",
+    "deleteTaskNamed": "{{name}} görevini sil",
+    "editTitle": "Görevi düzenle",
+    "editDescription": "Görev başlığını ve isteğe bağlı açıklamayı güncelleyin.",
+    "fields": {
+      "title": "Başlık",
+      "description": "Açıklama"
+    },
+    "saveChanges": "Değişiklikleri kaydet",
+    "renameColumnTitle": "Sütunu yeniden adlandır",
+    "renameColumnDescription": "İş aşamasını yansıtan kısa bir etiket kullanın.",
+    "deleteColumnTitle": "Sütun silinsin mi?",
+    "deleteTaskTitle": "Görev silinsin mi?",
+    "deleteColumnDescription": "“{{name}}” ve içindeki tüm görevler kaldırılacak.",
+    "deleteTaskDescription": "“{{name}}” bu panodan kaldırılacak."
+  },
+  "snippets": {
+    "title": "Kod parçaları",
+    "footer": "Ekleme işlemi odaktaki PTY'ye metin yazar; kabuk başlatmaz.",
+    "focusedReady": "Odaktaki terminal hazır.",
+    "focusFirst": "Önce bir terminale odaklanın.",
+    "noProjectTitle": "Proje seçilmedi",
+    "noProjectBody": "Komut parçalarını yönetmek için bir proje açın.",
+    "new": "Yeni kod parçası",
+    "name": "Ad",
+    "namePlaceholder": "Üretim derlemesi",
+    "terminalInput": "Terminal girdisi",
+    "inputPlaceholder": "pnpm build",
+    "add": "Kod parçası ekle",
+    "library": "Kitaplık",
+    "empty": "Henüz kod parçası yok. Yukarıdan ekleyin veya Makefile hedeflerini içe aktarın.",
+    "insertFocused": "Odaktaki terminale ekle",
+    "emptyBody": "Boş içerik",
+    "insertNamed": "{{name}} ekle",
+    "editNamed": "{{name}} düzenle",
+    "deleteNamed": "{{name}} sil",
+    "makefile": "Makefile",
+    "editTitle": "Kod parçasını düzenle",
+    "editDescription": "Değişiklikler bu projenin yerel kod parçası kitaplığında kalır.",
+    "description": "Açıklama",
+    "descriptionPlaceholder": "İsteğe bağlı açıklama",
+    "saveChanges": "Değişiklikleri kaydet",
+    "deleteTitle": "Kod parçası silinsin mi?",
+    "deleteDescription": "“{{name}}” bu projeden kaldırılacak."
+  },
+  "tmux": {
+    "noProjectTitle": "Proje seçilmedi",
+    "noProjectBody": "tmux oturumlarını bir çalışma alanı bölmesine bağlamak için proje açın.",
+    "notFoundTitle": "tmux bulunamadı",
+    "notFoundBody": "tmux'u kurup PATH üzerinde olduğundan emin olun veya TMUX_BIN ayarlayın.",
+    "localOnly": "Yalnızca yerel bağlantı",
+    "description": "İsteğe bağlıdır: tmux attach -t ile bir bölme açar. Terminus arka plan servisi yoktur.",
+    "sessions": "Oturumlar",
+    "noSessions": "Oturum yok",
+    "noSessionsHelp": "tmux new -s name ile bir tane başlatın.",
+    "sessionMeta": "{{windows}} pencere · {{attached}} bağlı",
+    "attach": "Bağlan"
+  },
+  "errors": {
+    "unexpected": "Beklenmeyen uygulama hatası",
+    "interceptWindowClose": "Pencere kapatma işlemi yakalanamadı",
+    "closeRequestedItem": "İstenen öğe kapatılamadı",
+    "updateClosePreference": "Kapatma onayı tercihi güncellenemedi",
+    "openProject": "Proje açılamadı",
+    "selectProject": "Proje seçilemedi",
+    "renameProject": "Proje yeniden adlandırılamadı",
+    "selectWorkspace": "Çalışma alanı seçilemedi",
+    "renameWorkspace": "Çalışma alanı yeniden adlandırılamadı",
+    "createWorkspace": "Çalışma alanı oluşturulamadı",
+    "reorderWorkspace": "Çalışma alanı yeniden sıralanamadı",
+    "changeLanguage": "Uygulama dili değiştirilemedi",
+    "applyTerminalTheme": "Terminal teması uygulanamadı",
+    "loadGitStatus": "Git durumu yüklenemedi",
+    "loadFileDiff": "Dosya farkı yüklenemedi",
+    "stageFiles": "Dosyalar hazırlanamadı",
+    "unstageFiles": "Dosyalar hazırlıktan çıkarılamadı",
+    "commit": "Commit oluşturulamadı",
+    "checkoutBranch": "Dala geçilemedi",
+    "createBranch": "Dal oluşturulamadı",
+    "stash": "Değişiklikler zulaya alınamadı",
+    "popStash": "Zula geri uygulanamadı",
+    "loadTasks": "Görevler yüklenemedi",
+    "addTaskColumn": "Görev sütunu eklenemedi",
+    "renameTaskColumn": "Görev sütunu yeniden adlandırılamadı",
+    "deleteTaskColumn": "Görev sütunu silinemedi",
+    "addTask": "Görev eklenemedi",
+    "updateTask": "Görev güncellenemedi",
+    "moveTask": "Görev taşınamadı",
+    "removeTask": "Görev kaldırılamadı",
+    "loadSnippets": "Kod parçaları yüklenemedi",
+    "createSnippet": "Kod parçası oluşturulamadı",
+    "updateSnippet": "Kod parçası güncellenemedi",
+    "deleteSnippet": "Kod parçası silinemedi",
+    "scanMakefile": "Makefile taranamadı",
+    "importMakefile": "Makefile hedefleri içe aktarılamadı",
+    "insertSnippet": "Kod parçası eklenemedi",
+    "insertSnippetTerminal": "Kod parçası terminale eklenemedi",
+    "noFocusedTerminal": "Odakta terminal yok. Önce bir bölmeye odaklanın.",
+    "loadTmux": "tmux oturumları yüklenemedi",
+    "attachTmux": "tmux oturumuna bağlanılamadı",
+    "noActiveWorkspace": "Etkin çalışma alanı yok",
+    "workspaceNotFound": "Çalışma alanı bulunamadı"
+  }
+}

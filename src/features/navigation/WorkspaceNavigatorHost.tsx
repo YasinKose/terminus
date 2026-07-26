@@ -16,6 +16,7 @@ import {
   WorkspaceNavigator,
   type NavigatorMotion,
 } from "./WorkspaceNavigator";
+import { useTranslation } from "react-i18next";
 
 type NavigatorSession = {
   selection: NavigatorSelection;
@@ -70,6 +71,7 @@ export function WorkspaceNavigatorHost({
   activeWorkspaceId,
   onCommit,
 }: WorkspaceNavigatorHostProps) {
+  const { t } = useTranslation();
   const navigatorModifiers = useSettingsStore((s) => s.navigatorModifiers);
   const shortcutRecording = useSettingsStore((s) => s.shortcutRecording);
   const [session, setSession] = useState<NavigatorSession | null>(null);
@@ -91,13 +93,13 @@ export function WorkspaceNavigatorHost({
 
       try {
         void Promise.resolve(onCommit(current.selection)).catch(() => {
-          setError("Could not switch workspace. Try again.");
+          setError(t("navigator.switchFailed"));
         });
       } catch {
-        setError("Could not switch workspace. Try again.");
+        setError(t("navigator.switchFailed"));
       }
     },
-    [onCommit, replaceSession],
+    [onCommit, replaceSession, t],
   );
 
   useEffect(() => {

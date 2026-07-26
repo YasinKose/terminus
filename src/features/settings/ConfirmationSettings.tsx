@@ -1,6 +1,8 @@
 import { useSettingsStore } from "./settingsStore";
+import { useTranslation } from "react-i18next";
 
 export function ConfirmationSettings() {
+  const { t } = useTranslation();
   const confirmTerminalClose = useSettingsStore(
     (state) => state.confirmTerminalClose,
   );
@@ -24,10 +26,10 @@ export function ConfirmationSettings() {
           id="confirmation-settings-title"
           className="text-sm font-semibold"
         >
-          Close confirmations
+          {t("settings.confirmations.title")}
         </h2>
         <p className="mt-1 text-xs leading-5 text-muted-foreground">
-          Choose which destructive close actions require confirmation.
+          {t("settings.confirmations.description")}
         </p>
       </div>
 
@@ -35,10 +37,10 @@ export function ConfirmationSettings() {
         <label className="flex cursor-pointer items-start justify-between gap-4 rounded-xl border border-border bg-surface-sunken/45 px-3.5 py-3">
           <span className="min-w-0">
             <span className="block text-sm font-medium text-foreground">
-              Ask before closing a terminal
+              {t("settings.confirmations.terminal.label")}
             </span>
             <span className="mt-1 block text-xs leading-5 text-muted-foreground">
-              Confirm before terminating a shell process and removing its pane.
+              {t("settings.confirmations.terminal.description")}
             </span>
           </span>
           <input
@@ -56,10 +58,10 @@ export function ConfirmationSettings() {
         <label className="flex cursor-pointer items-start justify-between gap-4 rounded-xl border border-border bg-surface-sunken/45 px-3.5 py-3">
           <span className="min-w-0">
             <span className="block text-sm font-medium text-foreground">
-              Ask before closing a workspace
+              {t("settings.confirmations.workspace.label")}
             </span>
             <span className="mt-1 block text-xs leading-5 text-muted-foreground">
-              Confirm before terminating all terminals in a workspace.
+              {t("settings.confirmations.workspace.description")}
             </span>
           </span>
           <input

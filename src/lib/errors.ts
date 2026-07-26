@@ -1,4 +1,5 @@
 import { toast } from "sonner";
+import i18n from "@/i18n";
 
 type ErrorPayloadLike = {
   code?: unknown;
@@ -19,7 +20,7 @@ export function errorMessage(error: unknown): string {
           typeof error === "object" &&
           typeof (error as ErrorPayloadLike).message === "string"
         ? ((error as ErrorPayloadLike).message as string)
-        : "Unexpected application error";
+        : i18n.t("errors.unexpected");
   return raw.slice(0, 240);
 }
 

@@ -16,6 +16,7 @@ import { useCloseRequestStore } from "@/stores/closeRequestStore";
 import { FolderOpen, LoaderCircle, SquareTerminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { reportError } from "@/lib/errors";
+import { useTranslation } from "react-i18next";
 
 export type AppProps = {
   dialogApi?: DialogApi;
@@ -37,6 +38,7 @@ export function App({
   autoBootstrap = true,
   interceptWindowClose = true,
 }: AppProps) {
+  const { t } = useTranslation();
   const bootstrapped = useProjectStore((s) => s.bootstrapped);
   const projects = useProjectStore((s) => s.projects);
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
@@ -83,7 +85,7 @@ export function App({
           unlisten?.();
         }
       } catch (error) {
-        reportError("Could not intercept window close", error);
+        reportError(t("errors.interceptWindowClose"), error);
       }
     })();
 
@@ -91,11 +93,11 @@ export function App({
       cancelled = true;
       unlisten?.();
     };
-  }, [interceptWindowClose]);
+  }, [interceptWindowClose, t]);
 
   const handleOpenProject = async () => {
     const path = await dialogApi.openDirectory({
-      title: "Open project folder",
+      title: t("app.openProjectDialog"),
     });
     if (!path) return;
     const name = path.split(/[/\\]/).filter(Boolean).pop() ?? path;
@@ -132,7 +134,7 @@ export function App({
       >
         <div className="flex items-center gap-2">
           <LoaderCircle aria-hidden className="size-4 animate-spin text-primary" />
-          Loading…
+          {t("app.loading")}
         </div>
       </main>
     );
@@ -156,14 +158,14 @@ export function App({
                 <SquareTerminal aria-hidden className="size-6" />
               </div>
               <p className="font-mono text-[10px] font-medium tracking-[0.22em] text-primary">
-                LOCAL WORKSPACE
+                {t("app.empty.eyebrow")}
               </p>
               <h1 className="mt-2 text-2xl font-semibold tracking-[-0.035em]">
                 Terminus
               </h1>
               <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground text-pretty">
-                Keep local terminals organized by project, workspace, and pane.
-                Open a folder to begin.
+                <span>{t("app.empty.descriptionLead")}</span>{" "}
+                <span>{t("app.empty.openFolderHint")}</span>
               </p>
               <Button
                 type="button"
@@ -174,10 +176,10 @@ export function App({
                 }}
               >
                 <FolderOpen aria-hidden className="size-4" />
-                Open project
+                {t("app.empty.openProject")}
               </Button>
               <p className="mt-4 text-xs text-muted-foreground">
-                Your projects and layouts stay on this device.
+                {t("app.empty.localOnly")}
               </p>
             </div>
           </main>

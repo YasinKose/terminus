@@ -2,9 +2,14 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { PRESET_ORDER, getPreset } from "./presets";
 import { useAppearanceStore } from "./appearanceStore";
-import { Check, CircleDot } from "lucide-react";
+import { Check, CircleDot, Languages } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { useSettingsStore } from "@/features/settings/settingsStore";
+import type { SupportedLanguage } from "@/i18n";
+import { reportError } from "@/lib/errors";
 
 export function AppearanceSettings() {
+  const { t } = useTranslation();
   const appearance = useAppearanceStore((s) => s.appearance);
   const setPreset = useAppearanceStore((s) => s.setPreset);
   const setPaneBorderWidth = useAppearanceStore((s) => s.setPaneBorderWidth);
@@ -12,21 +17,62 @@ export function AppearanceSettings() {
   const setActivePaneHighlight = useAppearanceStore(
     (s) => s.setActivePaneHighlight,
   );
+  const language = useSettingsStore((s) => s.language);
+  const setLanguage = useSettingsStore((s) => s.setLanguage);
 
   return (
     <div className="flex h-full flex-col gap-6 overflow-y-auto pr-1 pb-4">
       <header>
-        <h2 className="text-sm font-semibold">Appearance</h2>
+        <h2 className="text-sm font-semibold">
+          {t("settings.appearance.title")}
+        </h2>
         <p className="mt-1 text-xs leading-5 text-muted-foreground">
-          Choose a cohesive app and terminal palette, then tune pane chrome.
+          {t("settings.appearance.description")}
         </p>
       </header>
 
+      <section className="space-y-3 rounded-xl border border-border bg-surface-sunken/45 p-4">
+        <div className="flex items-start gap-2.5">
+          <Languages
+            aria-hidden
+            className="mt-0.5 size-4 shrink-0 text-primary"
+          />
+          <div>
+            <h3 className="text-xs font-medium text-foreground">
+              {t("settings.appearance.language.title")}
+            </h3>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">
+              {t("settings.appearance.language.description")}
+            </p>
+          </div>
+        </div>
+        <Label htmlFor="application-language" className="sr-only">
+          {t("settings.appearance.language.label")}
+        </Label>
+        <select
+          id="application-language"
+          value={language}
+          className="h-9 w-full rounded-lg border border-input bg-surface-raised px-3 text-xs text-foreground outline-none transition-[border-color,box-shadow] focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25"
+          onChange={(event) => {
+            void setLanguage(event.target.value as SupportedLanguage).catch(
+              (error) => {
+                reportError(t("errors.changeLanguage"), error);
+              },
+            );
+          }}
+        >
+          <option value="en">{t("common.languages.en")}</option>
+          <option value="tr">{t("common.languages.tr")}</option>
+        </select>
+      </section>
+
       <section className="space-y-3">
         <div>
-          <h3 className="text-xs font-medium text-foreground">Color preset</h3>
+          <h3 className="text-xs font-medium text-foreground">
+            {t("settings.appearance.colorPreset.title")}
+          </h3>
           <p className="mt-0.5 text-[11px] text-muted-foreground">
-            Each preset updates both the interface and terminal ANSI colors.
+            {t("settings.appearance.colorPreset.description")}
           </p>
         </div>
         <div className="grid grid-cols-2 gap-2.5">
@@ -60,9 +106,13 @@ export function AppearanceSettings() {
                   )}
                 </span>
                 <span className="min-w-0">
-                  <span className="block font-medium">{preset.label}</span>
+                  <span className="block font-medium">
+                    {t(`settings.appearance.presets.${id}`)}
+                  </span>
                   <span className="mt-0.5 block text-[10px] text-muted-foreground">
-                    {id === "paper" ? "Light" : "Dark"}
+                    {id === "paper"
+                      ? t("settings.appearance.themeMode.light")
+                      : t("settings.appearance.themeMode.dark")}
                   </span>
                 </span>
                 {selected ? (
@@ -78,15 +128,17 @@ export function AppearanceSettings() {
 
       <section className="space-y-4 rounded-xl border border-border bg-surface-sunken/45 p-4">
         <div>
-          <h3 className="text-xs font-medium text-foreground">Pane chrome</h3>
+          <h3 className="text-xs font-medium text-foreground">
+            {t("settings.appearance.paneChrome.title")}
+          </h3>
           <p className="mt-0.5 text-[11px] text-muted-foreground">
-            Adjust boundaries without changing terminal content.
+            {t("settings.appearance.paneChrome.description")}
           </p>
         </div>
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-3">
             <Label htmlFor="pane-border-width" className="text-xs">
-              Border width
+              {t("settings.appearance.paneChrome.borderWidth")}
             </Label>
             <output
               htmlFor="pane-border-width"
@@ -113,7 +165,7 @@ export function AppearanceSettings() {
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-3">
             <Label htmlFor="pane-radius" className="text-xs">
-              Corner radius
+              {t("settings.appearance.paneChrome.cornerRadius")}
             </Label>
             <output
               htmlFor="pane-radius"
@@ -145,10 +197,12 @@ export function AppearanceSettings() {
             />
             <div>
               <Label htmlFor="active-pane-highlight" className="text-xs">
-                Active pane highlight
+                {t("settings.appearance.paneChrome.activeHighlight")}
               </Label>
               <p className="mt-0.5 text-[10px] leading-4 text-muted-foreground">
-                Show a signal rail on the focused terminal.
+                {t(
+                  "settings.appearance.paneChrome.activeHighlightDescription",
+                )}
               </p>
             </div>
           </div>

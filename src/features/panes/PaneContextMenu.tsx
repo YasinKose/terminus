@@ -13,6 +13,7 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { paneProfileLabel } from "@/features/profiles/profileModel";
+import { useTranslation } from "react-i18next";
 
 export type PaneContextMenuProps = {
   children: ReactNode;
@@ -35,28 +36,39 @@ export function PaneContextMenu({
   onSelectProfile,
   onClose,
 }: PaneContextMenuProps) {
+  const { t } = useTranslation();
+  const systemShellLabel = t("settings.profiles.systemShell");
+
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
       <ContextMenuContent className="min-w-48">
         <ContextMenuItem onSelect={() => onSplit("row")}>
-          Split right
+          {t("panes.menu.splitRight")}
         </ContextMenuItem>
         <ContextMenuItem onSelect={() => onSplit("column")}>
-          Split down
+          {t("panes.menu.splitDown")}
         </ContextMenuItem>
-        <ContextMenuItem onSelect={onToggleFocus}>Focus mode</ContextMenuItem>
+        <ContextMenuItem onSelect={onToggleFocus}>
+          {t("panes.menu.focusMode")}
+        </ContextMenuItem>
         <ContextMenuSeparator />
-        <ContextMenuItem onSelect={onRename}>Rename terminal…</ContextMenuItem>
+        <ContextMenuItem onSelect={onRename}>
+          {t("panes.menu.rename")}
+        </ContextMenuItem>
         <ContextMenuSub>
-          <ContextMenuSubTrigger>Profile</ContextMenuSubTrigger>
+          <ContextMenuSubTrigger>
+            {t("panes.menu.profile")}
+          </ContextMenuSubTrigger>
           <ContextMenuSubContent className="min-w-48">
             <ContextMenuRadioGroup value={selectedProfileId ?? ""}>
               <ContextMenuRadioItem
                 value=""
                 onSelect={() => onSelectProfile(null)}
               >
-                Global default — {paneProfileLabel(null, profiles)}
+                {t("panes.menu.globalDefault", {
+                  name: paneProfileLabel(null, profiles, systemShellLabel),
+                })}
               </ContextMenuRadioItem>
               {profiles.map((profile) => (
                 <ContextMenuRadioItem
@@ -72,7 +84,7 @@ export function PaneContextMenu({
         </ContextMenuSub>
         <ContextMenuSeparator />
         <ContextMenuItem variant="destructive" onSelect={onClose}>
-          Close terminal…
+          {t("panes.menu.close")}
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>

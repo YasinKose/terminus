@@ -10,6 +10,7 @@ import { usePaneDragStore } from "@/features/panes/paneDragStore";
 import { useWorkspaceStore } from "@/features/workspaces/workspaceStore";
 import { Button } from "@/components/ui/button";
 import { SquareTerminal } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 function parseRoot(rootJson: string | null): PaneNode | null {
   if (!rootJson) return null;
@@ -44,6 +45,7 @@ export function WorkspaceArea({
   workspaces,
   activeWorkspaceId,
 }: WorkspaceAreaProps) {
+  const { t } = useTranslation();
   const saveWorkspace = useWorkspaceStore((s) => s.saveWorkspace);
   const saveTwoWorkspaces = useWorkspaceStore((s) => s.saveTwoWorkspaces);
   const activateWorkspace = useWorkspaceStore((s) => s.activateWorkspace);
@@ -154,10 +156,10 @@ export function WorkspaceArea({
             className="mx-auto mb-3 size-6 text-muted-foreground"
           />
           <p className="text-sm font-medium text-foreground">
-            Select a workspace
+            {t("workspaces.area.selectTitle")}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Your terminal will start when the workspace becomes active.
+            {t("workspaces.area.selectDescription")}
           </p>
         </div>
       </div>
@@ -188,10 +190,10 @@ export function WorkspaceArea({
                   <SquareTerminal aria-hidden className="size-5" />
                 </div>
                 <p className="text-sm font-medium text-foreground">
-                  Start a terminal
+                  {t("workspaces.area.startTitle")}
                 </p>
                 <p className="mt-1 max-w-xs text-xs leading-5 text-muted-foreground">
-                  This workspace is ready. Open a local shell to begin.
+                  {t("workspaces.area.startDescription")}
                 </p>
                 <Button
                   type="button"
@@ -208,7 +210,7 @@ export function WorkspaceArea({
                   }}
                 >
                   <SquareTerminal aria-hidden className="size-3.5" />
-                  New terminal
+                  {t("commands.newTerminal")}
                 </Button>
               </div>
             ) : (

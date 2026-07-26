@@ -6,6 +6,7 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import { useTranslation } from "react-i18next";
 
 export function ProjectContextMenu({
   children,
@@ -16,14 +17,18 @@ export function ProjectContextMenu({
   onRename: () => void;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
+
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
       <ContextMenuContent className="min-w-44">
-        <ContextMenuItem onSelect={onRename}>Rename project…</ContextMenuItem>
+        <ContextMenuItem onSelect={onRename}>
+          {t("projects.renameMenu")}
+        </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem variant="destructive" onSelect={onClose}>
-          Remove project…
+          {t("projects.removeMenu")}
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>

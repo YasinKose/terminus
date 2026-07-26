@@ -16,6 +16,7 @@ import {
   getDefaultTerminalRuntimeRegistryIfInitialized,
 } from "@/features/terminal/runtime/TerminalRuntimeRegistry";
 import { reportError } from "@/lib/errors";
+import i18n from "@/i18n";
 
 const APPEARANCE_KEY = "appearance";
 
@@ -40,7 +41,7 @@ function notifyTheme(presetId: PresetId): void {
     try {
       registry.get(id)?.applyTheme?.(xtermThemeFromPreset(presetId));
     } catch (error) {
-      reportError("Could not apply terminal theme", error);
+      reportError(i18n.t("errors.applyTerminalTheme"), error);
     }
   }
 }

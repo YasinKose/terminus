@@ -13,6 +13,7 @@ import {
   workspacesForNavigatorProject,
   type NavigatorSelection,
 } from "./workspaceNavigatorModel";
+import { useTranslation } from "react-i18next";
 
 export type NavigatorMotion = {
   axis: "project" | "workspace" | null;
@@ -81,6 +82,7 @@ export function WorkspaceNavigator({
   selection: NavigatorSelection;
   motion: NavigatorMotion;
 }) {
+  const { t } = useTranslation();
   const selectedProject = projects.find(
     (project) => project.id === selection.projectId,
   );
@@ -112,7 +114,7 @@ export function WorkspaceNavigator({
       />
       <section
         role="region"
-        aria-label="Workspace navigator"
+        aria-label={t("navigator.region")}
         className="relative grid max-h-[min(42rem,calc(100vh-5rem))] w-full max-w-4xl animate-navigator-in grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-2xl border border-border/90 bg-surface/95 shadow-dialog"
       >
         <header className="flex min-w-0 items-center justify-between gap-4 border-b border-border/80 bg-chrome/75 px-4 py-3 sm:px-5">
@@ -122,31 +124,31 @@ export function WorkspaceNavigator({
             </span>
             <span className="min-w-0">
               <span className="block text-[10px] font-semibold tracking-[0.16em] text-primary uppercase">
-                Navigator
+                {t("navigator.eyebrow")}
               </span>
               <h1 className="truncate text-sm font-semibold tracking-[-0.015em]">
-                Projects & Workspaces
+                {t("navigator.title")}
               </h1>
             </span>
           </div>
           <div
             className="hidden items-center gap-1.5 text-[10px] text-muted-foreground sm:flex"
-            aria-label="Arrow key navigation"
+            aria-label={t("navigator.arrowNavigation")}
           >
-            <Keycap label="Up arrow">
+            <Keycap label={t("navigator.upArrow")}>
               <ArrowUp aria-hidden className="size-3" />
             </Keycap>
-            <Keycap label="Down arrow">
+            <Keycap label={t("navigator.downArrow")}>
               <ArrowDown aria-hidden className="size-3" />
             </Keycap>
-            <span className="mr-1">Projects</span>
-            <Keycap label="Left arrow">
+            <span className="mr-1">{t("navigator.projects")}</span>
+            <Keycap label={t("navigator.leftArrow")}>
               <ArrowLeft aria-hidden className="size-3" />
             </Keycap>
-            <Keycap label="Right arrow">
+            <Keycap label={t("navigator.rightArrow")}>
               <ArrowRight aria-hidden className="size-3" />
             </Keycap>
-            <span>Workspaces</span>
+            <span>{t("navigator.workspaces")}</span>
           </div>
         </header>
 
@@ -160,7 +162,7 @@ export function WorkspaceNavigator({
           <aside className="min-h-0 border-b border-border/80 bg-surface-sunken/40 p-3 sm:border-r sm:border-b-0 sm:p-4">
             <div className="mb-2 flex items-center justify-between gap-3 px-1">
               <h2 className="text-[10px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
-                Projects
+                {t("navigator.projects")}
               </h2>
               <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
                 {projects.findIndex(
@@ -171,7 +173,7 @@ export function WorkspaceNavigator({
             </div>
             <ol
               className="grid min-w-0 gap-1.5"
-              aria-label="Project preview"
+              aria-label={t("navigator.projectPreview")}
             >
               {visibleProjects.map((project) => {
                 const selected = project.id === selectedProject.id;
@@ -199,8 +201,7 @@ export function WorkspaceNavigator({
                         {project.displayName}
                       </span>
                       <span className="block truncate text-[10px] text-muted-foreground">
-                        {workspaceCount}{" "}
-                        {workspaceCount === 1 ? "workspace" : "workspaces"}
+                        {t("common.workspaces", { count: workspaceCount })}
                       </span>
                     </span>
                     {selected && (
@@ -236,7 +237,7 @@ export function WorkspaceNavigator({
             <div className="mt-5 flex min-h-0 flex-1 flex-col">
               <div className="mb-2 flex items-center justify-between gap-3">
                 <h3 className="text-[10px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
-                  Open Workspaces
+                  {t("navigator.openWorkspaces")}
                 </h3>
                 <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
                   {selectedWorkspace
@@ -251,7 +252,7 @@ export function WorkspaceNavigator({
               {visibleWorkspaces.length > 0 ? (
                 <ol
                   className="grid min-h-0 flex-1 grid-cols-[repeat(auto-fit,minmax(min(100%,8.5rem),1fr))] items-stretch gap-2"
-                  aria-label="Workspace preview"
+                  aria-label={t("navigator.workspacePreview")}
                 >
                   {visibleWorkspaces.map((workspace) => {
                     const selected = workspace.id === selection.workspaceId;
@@ -283,7 +284,9 @@ export function WorkspaceNavigator({
                             {workspace.name}
                           </span>
                           <span className="mt-1 block text-[10px] text-muted-foreground">
-                            {selected ? "Ready to switch" : "Workspace"}
+                            {selected
+                              ? t("navigator.ready")
+                              : t("navigator.workspace")}
                           </span>
                         </span>
                       </li>
@@ -298,10 +301,10 @@ export function WorkspaceNavigator({
                       className="mx-auto size-5 text-muted-foreground"
                     />
                     <span className="mt-2 block text-xs font-medium">
-                      Default workspace
+                      {t("navigator.defaultWorkspace")}
                     </span>
                     <span className="mt-1 block text-[10px] text-muted-foreground">
-                      It will be prepared when you switch.
+                      {t("navigator.defaultDescription")}
                     </span>
                   </span>
                 </div>
@@ -313,19 +316,19 @@ export function WorkspaceNavigator({
         <footer className="flex items-center justify-between gap-4 border-t border-border/80 bg-chrome/65 px-4 py-2.5 text-[10px] text-muted-foreground sm:px-5">
           <span className="flex items-center gap-1.5">
             <Keyboard aria-hidden className="size-3.5" />
-            Keep holding to navigate
+            {t("navigator.hold")}
           </span>
           <span>
             <kbd className="rounded border border-border bg-surface-raised px-1.5 py-0.5 font-mono text-[9px] text-foreground">
               Esc
             </kbd>{" "}
-            cancels · release to switch
+            {t("navigator.cancelHint")}
           </span>
         </footer>
 
         <p className="sr-only" role="status" aria-live="polite">
           {selectedProject.displayName} —{" "}
-          {selectedWorkspace?.name ?? "Default workspace"}
+          {selectedWorkspace?.name ?? t("navigator.defaultWorkspace")}
         </p>
       </section>
     </div>

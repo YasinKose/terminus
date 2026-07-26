@@ -1,4 +1,5 @@
 import type { ProfileRecord } from "@/lib/tauri/contracts";
+import i18n from "@/i18n";
 
 export type ProfileDraft = {
   id?: string;
@@ -63,7 +64,10 @@ export function validateProfileDraft(draft: ProfileDraft): ProfileValidationResu
   const errors: ProfileValidationError[] = [];
   const name = draft.name.trim();
   if (!name) {
-    errors.push({ field: "name", message: "name is required" });
+    errors.push({
+      field: "name",
+      message: i18n.t("settings.profiles.validation.nameRequired"),
+    });
   }
 
   if (draft.executable !== null) {
@@ -71,26 +75,31 @@ export function validateProfileDraft(draft: ProfileDraft): ProfileValidationResu
     if (!exe) {
       errors.push({
         field: "executable",
-        message: "executable must be non-empty when set",
+        message: i18n.t("settings.profiles.validation.executableEmpty"),
       });
     }
   }
 
   if (!Array.isArray(draft.args) || !draft.args.every((a) => typeof a === "string")) {
-    errors.push({ field: "args", message: "args must be an ordered string array" });
+    errors.push({
+      field: "args",
+      message: i18n.t("settings.profiles.validation.argsInvalid"),
+    });
   }
 
   for (const [key, value] of Object.entries(draft.env)) {
     if (!ENV_KEY.test(key)) {
       errors.push({
         field: "env",
-        message: `invalid env key: ${key}`,
+        message: i18n.t("settings.profiles.validation.envKeyInvalid", { key }),
       });
     }
     if (typeof value !== "string") {
       errors.push({
         field: "env",
-        message: `env value for ${key} must be a string`,
+        message: i18n.t("settings.profiles.validation.envValueInvalid", {
+          key,
+        }),
       });
     }
   }
@@ -100,12 +109,12 @@ export function validateProfileDraft(draft: ProfileDraft): ProfileValidationResu
     if (!cwd) {
       errors.push({
         field: "cwdOverride",
-        message: "cwd override must be non-empty when set",
+        message: i18n.t("settings.profiles.validation.cwdEmpty"),
       });
     } else if (!cwd.startsWith("/")) {
       errors.push({
         field: "cwdOverride",
-        message: "cwd override must be an absolute path",
+        message: i18n.t("settings.profiles.validation.cwdAbsolute"),
       });
     }
   }
@@ -158,6 +167,7 @@ export function resolvePaneProfile(
 export function paneProfileLabel(
   profileId: string | null | undefined,
   profiles: ProfileRecord[],
+  systemShellLabel = "System shell",
 ): string {
-  return resolvePaneProfile(profileId, profiles)?.name ?? "System shell";
+  return resolvePaneProfile(profileId, profiles)?.name ?? systemShellLabel;
 }

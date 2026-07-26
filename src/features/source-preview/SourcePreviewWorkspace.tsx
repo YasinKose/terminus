@@ -2,6 +2,7 @@ import { AlertTriangle, Braces, FileCode2, LockKeyhole, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSourcePreviewStore } from "./sourcePreviewStore";
 import { SourceCodeView, sourceLanguageName } from "./SourceCodeView";
+import { useTranslation } from "react-i18next";
 
 function fileBaseName(path: string): string {
   const parts = path.split(/[/\\]/).filter(Boolean);
@@ -14,11 +15,8 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MiB`;
 }
 
-function sourceLabel(source: "worktree" | "head"): string {
-  return source === "head" ? "HEAD snapshot" : "Working tree";
-}
-
 export function SourcePreviewWorkspace() {
+  const { t } = useTranslation();
   const path = useSourcePreviewStore((state) => state.path);
   const status = useSourcePreviewStore((state) => state.status);
   const document = useSourcePreviewStore((state) => state.document);
@@ -31,7 +29,7 @@ export function SourcePreviewWorkspace() {
   return (
     <section
       className="source-lens flex h-full min-h-0 flex-col overflow-hidden bg-background"
-      aria-label="Source preview"
+      aria-label={t("sourcePreview.region")}
       role="region"
     >
       <header className="relative flex min-h-14 shrink-0 items-center gap-3 border-b border-border/80 bg-chrome px-3 py-2 shadow-[0_1px_0_rgb(255_255_255/0.025)_inset] sm:px-4">
@@ -67,7 +65,7 @@ export function SourcePreviewWorkspace() {
           </span>
           <span className="inline-flex items-center gap-1 rounded-md border border-border/70 bg-background/45 px-2 py-1">
             <LockKeyhole className="size-3" aria-hidden />
-            Read only
+            {t("sourcePreview.readOnly")}
           </span>
         </div>
         <Button
@@ -75,7 +73,7 @@ export function SourcePreviewWorkspace() {
           size="icon-sm"
           variant="ghost"
           className="shrink-0"
-          aria-label="Close source preview"
+          aria-label={t("sourcePreview.close")}
           onClick={close}
         >
           <X className="size-4" aria-hidden />
@@ -86,7 +84,7 @@ export function SourcePreviewWorkspace() {
         {loading ? (
           <div
             className="grid h-full grid-cols-[3.25rem_1fr] overflow-hidden"
-            aria-label="Loading source file"
+            aria-label={t("sourcePreview.loading")}
           >
             <div className="border-r border-border/60 bg-surface-sunken/70" />
             <div className="space-y-3 p-6">
@@ -106,13 +104,13 @@ export function SourcePreviewWorkspace() {
                 <AlertTriangle className="size-4" aria-hidden />
               </span>
               <h3 className="mt-3 text-sm font-semibold">
-                Could not preview file
+                {t("sourcePreview.errorTitle")}
               </h3>
               <p className="mt-1.5 text-xs leading-5 text-muted-foreground">
                 {error}
               </p>
               <p className="mt-2 text-[11px] leading-4 text-muted-foreground">
-                Choose a UTF-8 text file smaller than 2 MiB from Source control.
+                {t("sourcePreview.errorHelp")}
               </p>
             </div>
           </div>
@@ -123,7 +121,11 @@ export function SourcePreviewWorkspace() {
 
       <footer className="flex h-7 shrink-0 items-center justify-between gap-3 overflow-hidden border-t border-border/70 bg-chrome px-3 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground sm:px-4">
         <span className="shrink-0">
-          {document ? sourceLabel(document.source) : "Source lens"}
+          {document
+            ? document.source === "head"
+              ? t("sourcePreview.headSnapshot")
+              : t("sourcePreview.workingTree")
+            : t("sourcePreview.sourceLens")}
         </span>
         <span
           className="flex min-w-0 items-center gap-3 whitespace-nowrap"
@@ -132,7 +134,7 @@ export function SourcePreviewWorkspace() {
           <span className="hidden sm:inline">{sourceLanguageName(path)}</span>
           <span className="hidden md:inline">UTF-8</span>
           {document ? <span>{formatBytes(document.byteSize)}</span> : null}
-          <span>Read only</span>
+          <span>{t("sourcePreview.readOnly")}</span>
         </span>
       </footer>
     </section>

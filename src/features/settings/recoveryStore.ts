@@ -4,6 +4,7 @@ import {
   tauriRecoveryApi,
   type RecoveryApi,
 } from "@/lib/tauri/recovery";
+import i18n from "@/i18n";
 
 export type RecoveryStatus =
   | { kind: "idle" }
@@ -142,7 +143,9 @@ export const useRecoveryStore = create<RecoveryStoreState>((set, get) => ({
       const result = await api.backupDatabase();
       set((s) => ({
         busy: false,
-        lastMessage: `Backup created: ${result.backupPath}`,
+        lastMessage: i18n.t("settings.recovery.backupCreated", {
+          path: result.backupPath,
+        }),
         status:
           s.status.kind === "recoveryRequired"
             ? { ...s.status, backupAvailable: result.backupAvailable }
@@ -173,7 +176,10 @@ export const useRecoveryStore = create<RecoveryStoreState>((set, get) => ({
     set({ busy: true, lastMessage: null });
     try {
       await api.revealDatabaseDir();
-      set({ busy: false, lastMessage: "Revealed database location" });
+      set({
+        busy: false,
+        lastMessage: i18n.t("settings.recovery.locationRevealed"),
+      });
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
       set({ busy: false, lastMessage: message });

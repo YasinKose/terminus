@@ -45,6 +45,35 @@ describe("settingsStore", () => {
     expect(useSettingsStore.getState().confirmWorkspaceClose).toBe(true);
   });
 
+  it("hydrates and persists the application language", async () => {
+    const api: SettingsApi = {
+      saveProfile: vi.fn(async (p) => p),
+      deleteProfile: vi.fn(async () => {}),
+      saveSetting: vi.fn(async () => {}),
+    };
+    useSettingsStore.getState().setApi(api);
+
+    const state = useSettingsStore.getState() as unknown as {
+      language?: string;
+      hydrateFromBootstrap: (settings: Record<string, unknown>) => void;
+      setLanguage?: (language: "en" | "tr") => Promise<void>;
+    };
+    state.hydrateFromBootstrap({ "ui.language": "tr" });
+
+    expect(
+      (useSettingsStore.getState() as unknown as { language?: string }).language,
+    ).toBe("tr");
+    expect(state.setLanguage).toBeTypeOf("function");
+
+    await state.setLanguage?.("en");
+
+    expect(api.saveSetting).toHaveBeenCalledWith("ui.language", "en");
+    expect(
+      (useSettingsStore.getState() as unknown as { language?: string }).language,
+    ).toBe("en");
+    expect(document.documentElement.lang).toBe("en");
+  });
+
   it("hydrates the workspace navigator modifier chord", () => {
     useSettingsStore.getState().hydrateFromBootstrap({
       "shortcuts.navigatorModifiers": {

@@ -1,4 +1,5 @@
 import type { DesktopPlatform } from "@/platform/detection";
+import i18n from "@/i18n";
 
 export type ShortcutCommandId =
   | "commandPalette"
@@ -201,7 +202,7 @@ export function formatChordMac(chord: ShortcutChord): string {
     chord.key.length === 1
       ? chord.key.toUpperCase()
       : chord.key === "space"
-        ? "Space"
+        ? i18n.t("settings.shortcuts.keys.space")
         : chord.key.charAt(0).toUpperCase() + chord.key.slice(1);
   parts.push(keyLabel);
   return parts.join("");
@@ -221,11 +222,11 @@ export function formatChord(
     chord.key.length === 1
       ? chord.key.toUpperCase()
       : chord.key === "space"
-        ? "Space"
+        ? i18n.t("settings.shortcuts.keys.space")
         : chord.key === "pageup"
-          ? "Page Up"
+          ? i18n.t("settings.shortcuts.keys.pageUp")
           : chord.key === "pagedown"
-            ? "Page Down"
+            ? i18n.t("settings.shortcuts.keys.pageDown")
             : chord.key.charAt(0).toUpperCase() + chord.key.slice(1);
   parts.push(keyLabel);
   return parts.join("+");

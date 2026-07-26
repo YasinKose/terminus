@@ -4,6 +4,7 @@ import { TerminalHost } from "./TerminalHost";
 import { TerminalStatus } from "./TerminalStatus";
 import { useTerminalStore } from "./terminalStore";
 import { cn } from "@/lib/utils/cn";
+import { useTranslation } from "react-i18next";
 
 export type TerminalPaneProps = {
   sessionId: string;
@@ -24,7 +25,7 @@ export type TerminalPaneProps = {
 export function TerminalPane({
   sessionId,
   projectId,
-  title = "Terminal",
+  title,
   profileId = null,
   initialCwd = null,
   tmuxSession = null,
@@ -36,11 +37,12 @@ export function TerminalPane({
   onRequestClose,
   showChrome = true,
 }: TerminalPaneProps) {
+  const { t } = useTranslation();
   const session = useTerminalStore((s) => s.sessions[sessionId]);
   const markStarting = useTerminalStore((s) => s.markStarting);
   const resetActivity = useTerminalStore((s) => s.resetActivity);
   const status = session?.status ?? "starting";
-  const displayTitle = session?.title || title;
+  const displayTitle = session?.title || title || t("terminal.defaultTitle");
   const exitCode = session?.exitCode ?? null;
   const errorMessage = session?.error?.message ?? null;
   const activity = session?.activity ?? "quiet";
@@ -102,13 +104,15 @@ export function TerminalPane({
             className="min-w-0 flex-1"
           />
           <div className="flex shrink-0 items-center gap-2">
-            <span className="tabular-nums opacity-70">{status}</span>
+            <span className="tabular-nums opacity-70">
+              {t(`terminal.status.${status}`)}
+            </span>
             {onRequestClose ? (
               <button
                 type="button"
                 data-testid={`close-terminal-${sessionId}`}
                 className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors duration-150 hover:bg-destructive/15 hover:text-destructive"
-                aria-label="Close terminal"
+                aria-label={t("terminal.close")}
                 onClick={(e) => {
                   e.stopPropagation();
                   onRequestClose();
@@ -137,15 +141,17 @@ export function TerminalPane({
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-background/85 p-4 text-center">
             <p className="text-sm text-muted-foreground">
               {status === "exited"
-                ? `Process exited${exitCode !== null ? ` with code ${exitCode}` : ""}.`
-                : (errorMessage ?? "Terminal error")}
+                ? exitCode !== null
+                  ? t("terminal.processExitedCode", { code: exitCode })
+                  : t("terminal.processExited")
+                : (errorMessage ?? t("terminal.error"))}
             </p>
             <button
               type="button"
               className="inline-flex h-8 items-center justify-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90"
               onClick={handleRestart}
             >
-              Restart
+              {t("terminal.restart")}
             </button>
           </div>
         )}

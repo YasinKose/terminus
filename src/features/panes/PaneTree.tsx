@@ -30,6 +30,7 @@ import { createTerminalLeaf } from "./model";
 import { usePaneDragStore } from "./paneDragStore";
 import { SplitContainerView } from "./SplitContainer";
 import { renameTerminal, setTerminalProfile, splitPane } from "./tree";
+import { useTranslation } from "react-i18next";
 
 export type PaneTreeProps = {
   root: PaneNode;
@@ -66,6 +67,7 @@ function TerminalLeafView({
   onSplit: (terminalId: string, direction: "row" | "column") => void;
   onToggleFocus: () => void;
 }) {
+  const { t } = useTranslation();
   const hostRef = useRef<HTMLDivElement>(null);
   const renameInputId = useId();
   const [renameOpen, setRenameOpen] = useState(false);
@@ -77,8 +79,14 @@ function TerminalLeafView({
   const session = useTerminalStore((s) => s.sessions[leaf.id]);
   const focused = activePaneId === leaf.id;
   const displayTitle =
-    leaf.titleOverride?.trim() || session?.title?.trim() || "Terminal";
-  const profileLabel = paneProfileLabel(leaf.profileId, profiles);
+    leaf.titleOverride?.trim() ||
+    session?.title?.trim() ||
+    t("terminal.defaultTitle");
+  const profileLabel = paneProfileLabel(
+    leaf.profileId,
+    profiles,
+    t("settings.profiles.systemShell"),
+  );
 
   const isDragging = drag.status === "dragging";
   const isSource =
@@ -209,15 +217,15 @@ function TerminalLeafView({
                 data-testid={`pane-drag-handle-${leaf.id}`}
                 className="inline-flex size-6 cursor-grab items-center justify-center rounded-md text-muted-foreground outline-none transition-colors duration-150 hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/35 active:cursor-grabbing"
                 onPointerDown={onPointerDownHandle}
-                aria-label="Drag pane"
+                aria-label={t("panes.drag")}
               >
                 <GripVertical aria-hidden className="size-3.5" />
               </button>
               <button
                 type="button"
                 className="group/title flex min-w-0 flex-1 items-center gap-1 rounded-md px-1 py-0.5 text-left outline-none transition-colors duration-150 hover:bg-accent/65 focus-visible:ring-2 focus-visible:ring-ring/35"
-                aria-label={`Rename terminal: ${displayTitle}`}
-                title="Rename terminal"
+                aria-label={t("panes.renameNamed", { name: displayTitle })}
+                title={t("panes.rename")}
                 onClick={(event) => {
                   event.stopPropagation();
                   openRenameDialog();
@@ -239,7 +247,7 @@ function TerminalLeafView({
               <span
                 data-testid={`pane-profile-${leaf.id}`}
                 className="max-w-28 shrink-0 truncate rounded-md bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground"
-                title={`Profile: ${profileLabel}`}
+                title={t("panes.profile", { name: profileLabel })}
               >
                 {profileLabel}
               </span>
@@ -247,7 +255,7 @@ function TerminalLeafView({
                 type="button"
                 data-testid={`close-pane-${leaf.id}`}
                 className="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors duration-150 hover:bg-destructive/15 hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring/35"
-                aria-label="Close terminal"
+                aria-label={t("terminal.close")}
                 onClick={(e) => {
                   e.stopPropagation();
                   requestClose();
@@ -265,7 +273,9 @@ function TerminalLeafView({
                 tmuxSession={leaf.tmuxSession}
                 title={
                   leaf.titleOverride ??
-                  (leaf.tmuxSession ? `tmux: ${leaf.tmuxSession}` : "Terminal")
+                  (leaf.tmuxSession
+                    ? `tmux: ${leaf.tmuxSession}`
+                    : t("terminal.defaultTitle"))
                 }
                 focused={focused}
                 showChrome={false}
@@ -282,10 +292,9 @@ function TerminalLeafView({
       <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Rename terminal</DialogTitle>
+            <DialogTitle>{t("panes.renameTitle")}</DialogTitle>
             <DialogDescription>
-              This name stays with the workspace and takes priority over titles
-              set by the shell.
+              {t("panes.renameDescription")}
             </DialogDescription>
           </DialogHeader>
           <form
@@ -296,7 +305,7 @@ function TerminalLeafView({
             }}
           >
             <div className="space-y-1.5">
-              <Label htmlFor={renameInputId}>Terminal name</Label>
+              <Label htmlFor={renameInputId}>{t("panes.terminalName")}</Label>
               <Input
                 id={renameInputId}
                 name="terminal-name"
@@ -313,10 +322,10 @@ function TerminalLeafView({
                 variant="outline"
                 onClick={() => setRenameOpen(false)}
               >
-                Cancel
+                {t("common.actions.cancel")}
               </Button>
               <Button type="submit" disabled={!renameValue.trim()}>
-                Rename terminal
+                {t("panes.rename")}
               </Button>
             </DialogFooter>
           </form>

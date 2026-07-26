@@ -2,6 +2,7 @@ import { useId, type ReactNode } from "react";
 import { ToolbarIconButton } from "@/components/chrome/ToolbarIconButton";
 import { cn } from "@/lib/utils/cn";
 import { RefreshCw, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 type WorkbenchPanelProps = {
   label: string;
@@ -28,6 +29,7 @@ export function WorkbenchPanel({
   footer,
   className,
 }: WorkbenchPanelProps) {
+  const { t } = useTranslation();
   const titleId = useId();
 
   return (
@@ -60,7 +62,7 @@ export function WorkbenchPanel({
         <div className="flex items-center gap-0.5">
           {onRefresh ? (
             <ToolbarIconButton
-              label={`Refresh ${label.toLowerCase()}`}
+              label={t("workbench.refresh", { label })}
               disabled={refreshDisabled || loading}
               onClick={onRefresh}
             >
@@ -71,7 +73,7 @@ export function WorkbenchPanel({
             </ToolbarIconButton>
           ) : null}
           <ToolbarIconButton
-            label={`Close ${label.toLowerCase()}`}
+            label={t("workbench.close", { label })}
             onClick={onClose}
           >
             <X className="size-4" aria-hidden />

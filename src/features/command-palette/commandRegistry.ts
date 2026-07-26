@@ -1,4 +1,6 @@
 import type { ShortcutCommandId } from "@/features/settings/shortcutModel";
+import i18n from "@/i18n";
+import type { TFunction } from "i18next";
 
 export type CommandDefinition = {
   id: ShortcutCommandId | string;
@@ -30,86 +32,89 @@ export type CommandContext = {
   activeProjectId: string | null;
 };
 
-export function buildCommands(ctx: CommandContext): CommandDefinition[] {
+export function buildCommands(
+  ctx: CommandContext,
+  t: TFunction = i18n.t.bind(i18n),
+): CommandDefinition[] {
   const base: CommandDefinition[] = [
     {
       id: "commandPalette",
-      label: "Command palette",
+      label: t("commands.commandPalette"),
       run: () => ctx.openPalette(),
     },
     {
       id: "openSettings",
-      label: "Open settings",
+      label: t("commands.openSettings"),
       keywords: ["preferences"],
       run: () => ctx.openSettings(),
     },
     {
       id: "toggleSidebar",
-      label: "Toggle sidebar",
+      label: t("commands.toggleSidebar"),
       run: () => ctx.toggleSidebar(),
     },
     {
       id: "toggleFocus",
-      label: "Toggle focus mode",
+      label: t("commands.toggleFocus"),
       run: () => ctx.toggleFocus(),
     },
     {
       id: "toggleGitPanel",
-      label: "Toggle git panel",
+      label: t("commands.toggleGitPanel"),
       keywords: ["source control", "scm", "commit"],
       run: () => ctx.toggleGitPanel(),
     },
     {
       id: "toggleSnippetsPanel",
-      label: "Toggle snippets panel",
+      label: t("commands.toggleSnippetsPanel"),
       keywords: ["snippet", "makefile", "insert"],
       run: () => ctx.toggleSnippetsPanel(),
     },
     {
       id: "toggleTasksPanel",
-      label: "Toggle tasks panel",
+      label: t("commands.toggleTasksPanel"),
       keywords: ["board", "todo", "kanban"],
       run: () => ctx.toggleTasksPanel(),
     },
     {
       id: "toggleTmuxPanel",
-      label: "Toggle tmux panel",
+      label: t("commands.toggleTmuxPanel"),
       keywords: ["attach", "session", "mux"],
       run: () => ctx.toggleTmuxPanel(),
     },
     {
       id: "newWorkspace",
-      label: "New workspace",
+      label: t("commands.newWorkspace"),
       run: () => ctx.newWorkspace(),
     },
     {
       id: "newTerminal",
-      label: "New terminal",
+      label: t("commands.newTerminal"),
       run: () => ctx.newTerminal(),
     },
     {
       id: "splitHorizontal",
-      label: "Split horizontal",
+      label: t("commands.splitHorizontal"),
       run: () => ctx.splitHorizontal(),
     },
     {
       id: "splitVertical",
-      label: "Split vertical",
+      label: t("commands.splitVertical"),
       run: () => ctx.splitVertical(),
     },
     {
       id: "closePane",
-      label: "Close pane",
+      label: t("commands.closePane"),
       run: () => ctx.closePane(),
     },
     {
       id: "nextWorkspace",
-      label: "Next workspace",
+      label: t("commands.nextWorkspace"),
       run: () => ctx.nextWorkspace(),
     },
     {
       id: "prevWorkspace",
-      label: "Previous workspace",
+      label: t("commands.prevWorkspace"),
       run: () => ctx.prevWorkspace(),
     },
   ];
@@ -117,7 +122,7 @@ export function buildCommands(ctx: CommandContext): CommandDefinition[] {
   for (const p of ctx.projects) {
     base.push({
       id: `project:${p.id}`,
-      label: `Go to project: ${p.displayName}`,
+      label: t("commands.goToProject", { name: p.displayName }),
       keywords: [p.displayName],
       run: () => ctx.selectProject(p.id),
     });
@@ -129,7 +134,7 @@ export function buildCommands(ctx: CommandContext): CommandDefinition[] {
   for (const w of projectWorkspaces) {
     base.push({
       id: `workspace:${w.id}`,
-      label: `Go to workspace: ${w.name}`,
+      label: t("commands.goToWorkspace", { name: w.name }),
       keywords: [w.name],
       run: () => ctx.selectWorkspace(w.id),
     });

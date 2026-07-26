@@ -38,6 +38,7 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export type TasksPanelProps = {
   projectId: string | null;
@@ -56,6 +57,7 @@ type DeleteTarget =
   | null;
 
 export function TasksPanel({ projectId, open, onClose }: TasksPanelProps) {
+  const { t } = useTranslation();
   const board = useTaskStore((state) => state.board);
   const loading = useTaskStore((state) => state.loading);
   const busy = useTaskStore((state) => state.busy);
@@ -130,7 +132,7 @@ export function TasksPanel({ projectId, open, onClose }: TasksPanelProps) {
   return (
     <>
       <WorkbenchPanel
-        label="Tasks"
+        label={t("tasks.title")}
         icon={<CheckSquare className="size-3.5" />}
         count={total}
         loading={loading}
@@ -139,19 +141,19 @@ export function TasksPanel({ projectId, open, onClose }: TasksPanelProps) {
         onClose={onClose}
         footer={
           <p className="text-[10px] leading-4 text-muted-foreground">
-            Stored in{" "}
+            {t("tasks.storageLead")}{" "}
             <span className="font-mono text-foreground/80">
               .terminus/tasks.json
             </span>
-            . Project-local data; no task executes a shell command.
+            . {t("tasks.storageTail")}
           </p>
         }
       >
         {!projectId ? (
           <WorkbenchEmptyState
             icon={<FolderOpen className="size-4" aria-hidden />}
-            title="No project selected"
-            body="Open a project to use its local task board."
+            title={t("tasks.noProjectTitle")}
+            body={t("tasks.noProjectBody")}
           />
         ) : (
           <>
@@ -160,9 +162,9 @@ export function TasksPanel({ projectId, open, onClose }: TasksPanelProps) {
                 <Input
                   value={draftTitle}
                   onChange={(event) => setDraftTitle(event.target.value)}
-                  placeholder="New task title"
+                  placeholder={t("tasks.newTask")}
                   className="h-8 bg-background/60 text-xs"
-                  aria-label="New task title"
+                  aria-label={t("tasks.newTask")}
                   disabled={mutationDisabled}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" && canAdd) {
@@ -179,7 +181,7 @@ export function TasksPanel({ projectId, open, onClose }: TasksPanelProps) {
                   onClick={() => void addCard(firstColumnId)}
                 >
                   <Plus className="size-3.5" aria-hidden />
-                  Add
+                  {t("common.actions.add")}
                 </Button>
               </div>
 
@@ -188,9 +190,9 @@ export function TasksPanel({ projectId, open, onClose }: TasksPanelProps) {
                   <Input
                     value={columnDraft}
                     onChange={(event) => setColumnDraft(event.target.value)}
-                    placeholder="Column name"
+                    placeholder={t("tasks.columnName")}
                     className="h-8 bg-background/60 text-xs"
-                    aria-label="New column name"
+                    aria-label={t("tasks.newColumnName")}
                     autoFocus
                     disabled={mutationDisabled}
                     onKeyDown={(event) => {
@@ -212,7 +214,7 @@ export function TasksPanel({ projectId, open, onClose }: TasksPanelProps) {
                     disabled={!columnDraft.trim() || mutationDisabled}
                     onClick={() => void confirmAddColumn()}
                   >
-                    Create
+                    {t("common.actions.create")}
                   </Button>
                 </div>
               ) : (
@@ -225,7 +227,7 @@ export function TasksPanel({ projectId, open, onClose }: TasksPanelProps) {
                   disabled={mutationDisabled}
                 >
                   <Columns3 className="size-3.5" aria-hidden />
-                  Add column
+                  {t("tasks.addColumn")}
                 </Button>
               )}
             </div>
@@ -242,7 +244,9 @@ export function TasksPanel({ projectId, open, onClose }: TasksPanelProps) {
                       action={
                         <div className="flex items-center gap-0.5">
                           <ToolbarIconButton
-                            label={`Rename ${column.title} column`}
+                            label={t("tasks.renameColumnNamed", {
+                              name: column.title,
+                            })}
                             disabled={mutationDisabled}
                             onClick={() =>
                               setRenamingColumn({
@@ -254,7 +258,9 @@ export function TasksPanel({ projectId, open, onClose }: TasksPanelProps) {
                             <Pencil className="size-3.5" aria-hidden />
                           </ToolbarIconButton>
                           <ToolbarIconButton
-                            label={`Delete ${column.title} column`}
+                            label={t("tasks.deleteColumnNamed", {
+                              name: column.title,
+                            })}
                             disabled={
                               mutationDisabled || board.columns.length <= 1
                             }
@@ -276,7 +282,7 @@ export function TasksPanel({ projectId, open, onClose }: TasksPanelProps) {
                     />
                     {column.tasks.length === 0 ? (
                       <p className="px-3 py-3 text-[11px] text-muted-foreground">
-                        No tasks in this column.
+                        {t("tasks.emptyColumn")}
                       </p>
                     ) : (
                       <ul className="space-y-1 p-1.5">
@@ -303,7 +309,10 @@ export function TasksPanel({ projectId, open, onClose }: TasksPanelProps) {
                             <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
                               {previous ? (
                                 <ToolbarIconButton
-                                  label={`Move ${task.title} to ${previous.title}`}
+                                  label={t("tasks.moveTask", {
+                                    task: task.title,
+                                    column: previous.title,
+                                  })}
                                   disabled={mutationDisabled}
                                   onClick={() =>
                                     void moveCard(
@@ -318,7 +327,10 @@ export function TasksPanel({ projectId, open, onClose }: TasksPanelProps) {
                               ) : null}
                               {next ? (
                                 <ToolbarIconButton
-                                  label={`Move ${task.title} to ${next.title}`}
+                                  label={t("tasks.moveTask", {
+                                    task: task.title,
+                                    column: next.title,
+                                  })}
                                   disabled={mutationDisabled}
                                   onClick={() =>
                                     void moveCard(
@@ -332,7 +344,9 @@ export function TasksPanel({ projectId, open, onClose }: TasksPanelProps) {
                                 </ToolbarIconButton>
                               ) : null}
                               <ToolbarIconButton
-                                label={`Delete ${task.title}`}
+                                label={t("tasks.deleteTaskNamed", {
+                                  name: task.title,
+                                })}
                                 disabled={mutationDisabled}
                                 onClick={() =>
                                   setDeleteTarget({
@@ -369,14 +383,14 @@ export function TasksPanel({ projectId, open, onClose }: TasksPanelProps) {
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Edit task</DialogTitle>
+            <DialogTitle>{t("tasks.editTitle")}</DialogTitle>
             <DialogDescription>
-              Update the task title and optional context.
+              {t("tasks.editDescription")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <label className="grid gap-1.5 text-xs font-medium">
-              Title
+              {t("tasks.fields.title")}
               <Input
                 value={editTitle}
                 onChange={(event) => setEditTitle(event.target.value)}
@@ -385,7 +399,7 @@ export function TasksPanel({ projectId, open, onClose }: TasksPanelProps) {
               />
             </label>
             <label className="grid gap-1.5 text-xs font-medium">
-              Description
+              {t("tasks.fields.description")}
               <textarea
                 value={editDescription}
                 onChange={(event) => setEditDescription(event.target.value)}
@@ -402,7 +416,7 @@ export function TasksPanel({ projectId, open, onClose }: TasksPanelProps) {
               onClick={() => setEditingTask(null)}
               disabled={mutationDisabled}
             >
-              Cancel
+              {t("common.actions.cancel")}
             </Button>
             <Button
               type="button"
@@ -421,7 +435,7 @@ export function TasksPanel({ projectId, open, onClose }: TasksPanelProps) {
                 });
               }}
             >
-              {busy ? "Saving…" : "Save changes"}
+              {busy ? t("common.states.saving") : t("tasks.saveChanges")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -435,13 +449,13 @@ export function TasksPanel({ projectId, open, onClose }: TasksPanelProps) {
       >
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Rename column</DialogTitle>
+            <DialogTitle>{t("tasks.renameColumnTitle")}</DialogTitle>
             <DialogDescription>
-              Use a short label that reflects the stage of work.
+              {t("tasks.renameColumnDescription")}
             </DialogDescription>
           </DialogHeader>
           <label className="grid gap-1.5 text-xs font-medium">
-            Column name
+            {t("tasks.columnName")}
             <Input
               value={renamingColumn?.title ?? ""}
               onChange={(event) =>
@@ -460,7 +474,7 @@ export function TasksPanel({ projectId, open, onClose }: TasksPanelProps) {
               onClick={() => setRenamingColumn(null)}
               disabled={mutationDisabled}
             >
-              Cancel
+              {t("common.actions.cancel")}
             </Button>
             <Button
               type="button"
@@ -477,7 +491,7 @@ export function TasksPanel({ projectId, open, onClose }: TasksPanelProps) {
                 });
               }}
             >
-              Rename
+              {t("common.actions.rename")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -495,17 +509,23 @@ export function TasksPanel({ projectId, open, onClose }: TasksPanelProps) {
               <Trash2 className="size-5" aria-hidden />
             </AlertDialogMedia>
             <AlertDialogTitle>
-              Delete {deleteTarget?.kind === "column" ? "column" : "task"}?
+              {deleteTarget?.kind === "column"
+                ? t("tasks.deleteColumnTitle")
+                : t("tasks.deleteTaskTitle")}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {deleteTarget?.kind === "column"
-                ? `“${deleteTarget.label}” and every task inside it will be removed.`
-                : `“${deleteTarget?.label ?? ""}” will be removed from this board.`}
+                ? t("tasks.deleteColumnDescription", {
+                    name: deleteTarget.label,
+                  })
+                : t("tasks.deleteTaskDescription", {
+                    name: deleteTarget?.label ?? "",
+                  })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={mutationDisabled}>
-              Cancel
+              {t("common.actions.cancel")}
             </AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
@@ -515,7 +535,7 @@ export function TasksPanel({ projectId, open, onClose }: TasksPanelProps) {
                 void confirmDelete();
               }}
             >
-              {busy ? "Deleting…" : "Delete"}
+              {busy ? t("common.states.deleting") : t("common.actions.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

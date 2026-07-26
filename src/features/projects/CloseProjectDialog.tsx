@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { CloseRequest } from "@/stores/closeRequestStore";
 import { FolderX } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export type CloseProjectDialogProps = {
   request: Extract<CloseRequest, { kind: "project" }>;
@@ -23,6 +24,12 @@ export function CloseProjectDialog({
   onConfirm,
   onCancel,
 }: CloseProjectDialogProps) {
+  const { t } = useTranslation();
+  const workspaces = t("common.workspaces", {
+    count: request.workspaceCount,
+  });
+  const terminals = t("common.terminals", { count: request.terminalCount });
+
   return (
     <AlertDialog
       open
@@ -35,27 +42,25 @@ export function CloseProjectDialog({
           <AlertDialogMedia className="border-destructive/25 bg-destructive/10 text-destructive">
             <FolderX aria-hidden />
           </AlertDialogMedia>
-          <AlertDialogTitle>Close project?</AlertDialogTitle>
+          <AlertDialogTitle>{t("closeDialogs.project.title")}</AlertDialogTitle>
           <AlertDialogDescription>
-            Remove “{request.name}” from Terminus? This closes{" "}
-            {request.workspaceCount === 1
-              ? "1 workspace"
-              : `${request.workspaceCount} workspaces`}{" "}
-            and terminates{" "}
-            {request.terminalCount === 1
-              ? "1 terminal"
-              : `${request.terminalCount} terminals`}. The project folder on
-            disk is not deleted.
+            {t("closeDialogs.project.description", {
+              name: request.name,
+              workspaces,
+              terminals,
+            })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onCancel}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel onClick={onCancel}>
+            {t("common.actions.cancel")}
+          </AlertDialogCancel>
           <AlertDialogAction
             variant="destructive"
             onClick={onConfirm}
             data-testid="close-project-confirm"
           >
-            Close project
+            {t("closeDialogs.project.action")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

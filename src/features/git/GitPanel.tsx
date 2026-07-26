@@ -33,6 +33,8 @@ import {
   Plus,
   X,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
 export type GitPanelProps = {
   projectId: string | null;
@@ -53,7 +55,7 @@ function fileDirName(path: string): string {
   return normalized.slice(0, idx);
 }
 
-function statusMeta(file: GitFileEntry): {
+function statusMeta(file: GitFileEntry, t: TFunction): {
   letter: string;
   label: string;
   className: string;
@@ -62,21 +64,21 @@ function statusMeta(file: GitFileEntry): {
   if (file.untracked || raw.includes("untracked") || raw === "?") {
     return {
       letter: "U",
-      label: "Untracked",
+      label: t("git.status.untracked"),
       className: "bg-status-info/15 text-status-info ring-status-info/25",
     };
   }
   if (raw.includes("conflict") || raw.includes("unmerged") || raw === "u") {
     return {
       letter: "C",
-      label: "Conflict",
+      label: t("git.status.conflict"),
       className: "bg-status-danger/15 text-status-danger ring-status-danger/30",
     };
   }
   if (raw.includes("added") || raw.includes("new") || raw === "a") {
     return {
       letter: "A",
-      label: "Added",
+      label: t("git.status.added"),
       className:
         "bg-status-success/15 text-status-success ring-status-success/25",
     };
@@ -84,21 +86,21 @@ function statusMeta(file: GitFileEntry): {
   if (raw.includes("deleted") || raw === "d") {
     return {
       letter: "D",
-      label: "Deleted",
+      label: t("git.status.deleted"),
       className: "bg-status-danger/15 text-status-danger ring-status-danger/25",
     };
   }
   if (raw.includes("renamed") || raw === "r") {
     return {
       letter: "R",
-      label: "Renamed",
+      label: t("git.status.renamed"),
       className:
         "bg-status-special/15 text-status-special ring-status-special/25",
     };
   }
   return {
     letter: "M",
-    label: "Modified",
+    label: t("git.status.modified"),
     className:
       "bg-status-warning/15 text-status-warning ring-status-warning/25",
   };
@@ -110,6 +112,7 @@ export function GitPanel({
   onClose,
   onOpenSource,
 }: GitPanelProps) {
+  const { t } = useTranslation();
   const status = useGitStore((s) => s.status);
   const branches = useGitStore((s) => s.branches);
   const stashes = useGitStore((s) => s.stashes);
@@ -189,7 +192,7 @@ export function GitPanel({
 
   return (
     <WorkbenchPanel
-      label="Source control"
+      label={t("git.title")}
       icon={<GitBranch className="size-3.5" />}
       count={status.isRepo ? changeCount : undefined}
       loading={loading}
@@ -212,14 +215,14 @@ export function GitPanel({
       {!projectId ? (
         <WorkbenchEmptyState
           icon={<FileCode2 className="size-4" aria-hidden />}
-          title="No project selected"
-          body="Open a project to inspect its git working tree."
+          title={t("git.noProjectTitle")}
+          body={t("git.noProjectBody")}
         />
       ) : !status.isRepo ? (
         <WorkbenchEmptyState
           icon={<GitBranch className="size-4" aria-hidden />}
-          title="Not a git repository"
-          body="This project folder has no .git directory. Initialize git in the terminal if you need source control here."
+          title={t("git.notRepositoryTitle")}
+          body={t("git.notRepositoryBody")}
         />
       ) : (
         <>
@@ -227,7 +230,7 @@ export function GitPanel({
             <div className="flex min-w-0 items-start justify-between gap-2">
               <div className="min-w-0">
                 <div className="truncate font-mono text-[13px] font-medium tracking-tight text-foreground">
-                  {status.branch ?? "HEAD (detached)"}
+                  {status.branch ?? t("git.detached")}
                 </div>
                 <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
                   {status.upstream ? (
@@ -235,7 +238,7 @@ export function GitPanel({
                       {status.upstream}
                     </span>
                   ) : (
-                    <span>No upstream</span>
+                    <span>{t("git.noUpstream")}</span>
                   )}
                   {(status.ahead > 0 || status.behind > 0) && (
                     <span className="inline-flex items-center gap-1 font-mono tabular-nums">
@@ -253,7 +256,7 @@ export function GitPanel({
                   )}
                   {status.hasConflicts ? (
                     <span className="rounded bg-status-danger/15 px-1 py-px text-status-danger">
-                      Conflicts
+                      {t("git.conflicts")}
                     </span>
                   ) : null}
                 </div>
@@ -271,9 +274,9 @@ export function GitPanel({
                 <SelectTrigger
                   size="sm"
                   className="h-8 min-w-0 flex-1 border-border/80 bg-background/60 text-xs"
-                  aria-label="Switch branch"
+                  aria-label={t("git.switchBranch")}
                 >
-                  <SelectValue placeholder="Select branch" />
+                  <SelectValue placeholder={t("git.selectBranch")} />
                 </SelectTrigger>
                 <SelectContent align="start" className="max-h-64">
                   {localBranches.map((branch) => (
@@ -294,10 +297,10 @@ export function GitPanel({
                 className="h-8 shrink-0 px-2 text-xs"
                 onClick={() => setCreatingBranch((v) => !v)}
                 aria-expanded={creatingBranch}
-                aria-label="Create branch"
+                aria-label={t("git.createBranch")}
               >
                 <Plus className="size-3.5" aria-hidden />
-                Branch
+                {t("git.branch")}
               </Button>
             </div>
 
@@ -306,9 +309,9 @@ export function GitPanel({
                 <Input
                   value={newBranch}
                   onChange={(e) => setNewBranch(e.target.value)}
-                  placeholder="feature/…"
+                  placeholder={t("git.branchPlaceholder")}
                   className="h-8 font-mono text-xs"
-                  aria-label="New branch name"
+                  aria-label={t("git.newBranchName")}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && newBranch.trim()) {
                       const name = newBranch.trim();
@@ -340,7 +343,7 @@ export function GitPanel({
                     });
                   }}
                 >
-                  Create
+                  {t("common.actions.create")}
                 </Button>
               </div>
             ) : null}
@@ -355,12 +358,12 @@ export function GitPanel({
               />
             ) : null}
             <ChangeSection
-              title="Staged"
+              title={t("git.staged")}
               count={staged.length}
-              empty="Nothing staged"
+              empty={t("git.nothingStaged")}
               files={staged}
               action="unstage"
-              bulkLabel="Unstage all"
+              bulkLabel={t("git.unstageAll")}
               onBulk={
                 staged.length > 0
                   ? () => void unstage(staged.map((f) => f.path))
@@ -378,12 +381,12 @@ export function GitPanel({
               disabled={busy}
             />
             <ChangeSection
-              title="Changes"
+              title={t("git.changes")}
               count={unstaged.length}
-              empty="Working tree clean"
+              empty={t("git.clean")}
               files={unstaged}
               action="stage"
-              bulkLabel="Stage all"
+              bulkLabel={t("git.stageAll")}
               onBulk={
                 unstaged.length > 0
                   ? () => void stage(unstaged.map((f) => f.path))
@@ -404,7 +407,7 @@ export function GitPanel({
             <div className="border-t border-border/60 px-3 py-2.5">
               <div className="mb-1.5 flex items-baseline justify-between gap-2">
                 <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                  Stash
+                  {t("git.stash")}
                 </span>
                 <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
                   {stashes.length}
@@ -420,7 +423,7 @@ export function GitPanel({
                   onClick={() => void stashPush()}
                 >
                   <Archive className="size-3.5" aria-hidden />
-                  Stash
+                  {t("git.stash")}
                 </Button>
                 <Button
                   type="button"
@@ -431,11 +434,14 @@ export function GitPanel({
                   onClick={() => void stashPop(stashes[0]?.index ?? 0)}
                 >
                   <ArchiveRestore className="size-3.5" aria-hidden />
-                  Pop
+                  {t("git.pop")}
                 </Button>
               </div>
               {stashes.length > 0 ? (
-                <ul className="mt-2 space-y-1" aria-label="Stashes">
+                <ul
+                  className="mt-2 space-y-1"
+                  aria-label={t("git.stashes")}
+                >
                   {stashes.map((stash) => (
                     <li
                       key={stash.index}
@@ -450,7 +456,7 @@ export function GitPanel({
                         disabled={busy}
                         onClick={() => void stashPop(stash.index)}
                       >
-                        Pop
+                        {t("git.pop")}
                       </button>
                     </li>
                   ))}
@@ -546,10 +552,12 @@ function FileRow({
   onOpenDiff: () => void;
   disabled: boolean;
 }) {
-  const meta = statusMeta(file);
+  const { t } = useTranslation();
+  const meta = statusMeta(file, t);
   const base = fileBaseName(file.path);
   const dir = fileDirName(file.path);
-  const actionLabel = action === "stage" ? "Stage" : "Unstage";
+  const actionLabel =
+    action === "stage" ? t("git.stage") : t("git.unstage");
 
   return (
     <li className="group flex items-center gap-1.5 px-2 py-0.5">
@@ -586,7 +594,7 @@ function FileRow({
           <button
             type="button"
             className="inline-flex size-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground opacity-0 outline-none transition-[background-color,color,opacity] duration-150 hover:bg-accent hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/35 group-hover:opacity-100 group-focus-within:opacity-100"
-            aria-label={`View diff ${file.path}`}
+            aria-label={t("git.viewDiffFile", { path: file.path })}
             disabled={disabled}
             onClick={(event) => {
               event.stopPropagation();
@@ -597,7 +605,7 @@ function FileRow({
           </button>
         </TooltipTrigger>
         <TooltipContent side="left" sideOffset={4}>
-          View diff
+          {t("git.viewDiff")}
         </TooltipContent>
       </Tooltip>
       <Tooltip>
@@ -605,7 +613,10 @@ function FileRow({
           <button
             type="button"
             className="mr-0.5 inline-flex size-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground opacity-0 outline-none transition-[background-color,color,opacity] duration-150 hover:bg-accent hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/35 group-hover:opacity-100 group-focus-within:opacity-100"
-            aria-label={`${actionLabel} ${file.path}`}
+            aria-label={t("git.fileAction", {
+              action: actionLabel,
+              path: file.path,
+            })}
             disabled={disabled}
             onClick={(e) => {
               e.stopPropagation();
@@ -636,16 +647,24 @@ function DiffViewer({
   loading: boolean;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
+
   return (
     <section className="border-b border-border/70 bg-surface-sunken/45">
       <WorkbenchSectionHeader
-        title={diff ? `${diff.staged ? "Staged" : "Working"} diff` : "Diff"}
+        title={
+          diff
+            ? diff.staged
+              ? t("git.stagedDiff")
+              : t("git.workingDiff")
+            : t("git.diff")
+        }
         action={
           <button
             type="button"
             className="inline-flex size-6 items-center justify-center rounded text-muted-foreground outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/35"
             onClick={onClose}
-            aria-label="Close diff"
+            aria-label={t("git.closeDiff")}
           >
             <X className="size-3.5" aria-hidden />
           </button>
@@ -655,7 +674,7 @@ function DiffViewer({
         {loading && !diff ? (
           <div className="flex items-center gap-2 px-3 py-4 text-xs text-muted-foreground">
             <FileDiff className="size-3.5 animate-pulse" aria-hidden />
-            Loading diff…
+            {t("git.loadingDiff")}
           </div>
         ) : diff ? (
           <>
@@ -663,7 +682,7 @@ function DiffViewer({
               {diff.path}
             </div>
             <pre className="min-w-max p-3 font-mono text-[10px] leading-4 text-foreground/85">
-              {diff.patch || "No textual changes to display."}
+              {diff.patch || t("git.noTextChanges")}
             </pre>
           </>
         ) : null}
@@ -687,17 +706,19 @@ function CommitComposer({
   onMessageChange: (value: string) => void;
   onCommit: () => void;
 }) {
+  const { t } = useTranslation();
+
   return (
     <div>
       <label className="sr-only" htmlFor="git-commit-message">
-        Commit message
+        {t("git.commitMessage")}
       </label>
       <textarea
         id="git-commit-message"
         value={message}
         onChange={(event) => onMessageChange(event.target.value)}
         rows={3}
-        placeholder="Commit message"
+        placeholder={t("git.commitMessage")}
         disabled={busy}
         className="w-full resize-none rounded-lg border border-border/80 bg-background/70 px-2.5 py-2 text-sm leading-5 text-foreground outline-none transition-[border-color,box-shadow] placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/35 disabled:opacity-60"
         onKeyDown={(event) => {
@@ -718,7 +739,7 @@ function CommitComposer({
         onClick={onCommit}
       >
         <GitCommitHorizontal className="size-4" aria-hidden />
-        {busy ? "Committing…" : "Commit"}
+        {busy ? t("common.states.committing") : t("common.actions.commit")}
         {stagedCount > 0 ? (
           <span className="font-mono text-[11px] tabular-nums opacity-80">
             {stagedCount}
@@ -727,8 +748,8 @@ function CommitComposer({
       </Button>
       <p className="mt-1.5 text-[10px] leading-4 text-muted-foreground">
         {stagedCount === 0
-          ? "Stage files before committing."
-          : "⌘↵ / Ctrl+Enter to commit"}
+          ? t("git.stageBeforeCommit")
+          : t("git.commitShortcut")}
       </p>
     </div>
   );

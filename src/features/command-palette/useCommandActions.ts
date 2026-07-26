@@ -8,6 +8,7 @@ import { useWorkspaceStore } from "@/features/workspaces/workspaceStore";
 import type { WorkspaceRecord } from "@/lib/tauri/contracts";
 import { useCloseRequestStore } from "@/stores/closeRequestStore";
 import type { CommandContext } from "./commandRegistry";
+import { useTranslation } from "react-i18next";
 
 function parseRoot(rootJson: string | null): PaneNode | null {
   if (!rootJson) return null;
@@ -22,6 +23,7 @@ export function useCommandActions(options: {
   setPaletteOpen: (open: boolean) => void;
 }): CommandContext {
   const { setPaletteOpen } = options;
+  const { t } = useTranslation();
 
   const projects = useProjectStore((s) => s.projects);
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
@@ -52,7 +54,7 @@ export function useCommandActions(options: {
     const record: WorkspaceRecord = {
       id,
       projectId: activeProjectId,
-      name: `Workspace ${existing.length + 1}`,
+      name: t("workspaces.defaultName", { number: existing.length + 1 }),
       rootJson: null,
       activePaneId: null,
       position,
@@ -61,7 +63,7 @@ export function useCommandActions(options: {
     };
     const saved = await saveWorkspace(record);
     await selectWorkspace(activeProjectId, saved.id);
-  }, [activeProjectId, listForProject, saveWorkspace, selectWorkspace]);
+  }, [activeProjectId, listForProject, saveWorkspace, selectWorkspace, t]);
 
   const mutateActiveTree = useCallback(
     async (
@@ -134,10 +136,10 @@ export function useCommandActions(options: {
       sessionId: ws.activePaneId,
       workspaceId: ws.id,
       projectId: ws.projectId,
-      title: "Terminal",
+      title: t("terminal.defaultTitle"),
       terminalCount: 1,
     });
-  }, [activeWorkspaceId, workspaces]);
+  }, [activeWorkspaceId, t, workspaces]);
 
   const nextWorkspace = useCallback(async () => {
     if (!activeProjectId) return;

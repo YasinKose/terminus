@@ -6,12 +6,17 @@ import {
   type TaskCard,
   type TasksApi,
 } from "@/lib/tauri/tasks";
+import i18n from "@/i18n";
 
 const emptyBoard = (): TaskBoard => ({
   columns: [
-    { id: "todo", title: "To Do", tasks: [] },
-    { id: "in-progress", title: "In Progress", tasks: [] },
-    { id: "done", title: "Done", tasks: [] },
+    { id: "todo", title: i18n.t("tasks.defaultColumns.todo"), tasks: [] },
+    {
+      id: "in-progress",
+      title: i18n.t("tasks.defaultColumns.inProgress"),
+      tasks: [],
+    },
+    { id: "done", title: i18n.t("tasks.defaultColumns.done"), tasks: [] },
   ],
 });
 
@@ -108,7 +113,7 @@ export const useTaskStore = create<TaskStoreState>((set, get) => {
       } catch (error) {
         if (request !== refreshSequence || get().projectId !== projectId) return;
         set({ loading: false, board: emptyBoard() });
-        reportError("Could not load tasks", error);
+        reportError(i18n.t("errors.loadTasks"), error);
       }
     },
     addColumn: async (title) => {
@@ -121,7 +126,7 @@ export const useTaskStore = create<TaskStoreState>((set, get) => {
             { id: newId(), title: value, tasks: [] },
           ],
         },
-        "Could not add task column",
+        i18n.t("errors.addTaskColumn"),
       );
     },
     renameColumn: async (columnId, title) => {
@@ -135,7 +140,7 @@ export const useTaskStore = create<TaskStoreState>((set, get) => {
             column.id === columnId ? { ...column, title: value } : column,
           ),
         },
-        "Could not rename task column",
+        i18n.t("errors.renameTaskColumn"),
       );
     },
     removeColumn: async (columnId) => {
@@ -145,7 +150,7 @@ export const useTaskStore = create<TaskStoreState>((set, get) => {
         columns: board.columns.filter((column) => column.id !== columnId),
       };
       if (next.columns.length === board.columns.length) return false;
-      return persist(next, "Could not delete task column");
+      return persist(next, i18n.t("errors.deleteTaskColumn"));
     },
     addCard: async (columnId) => {
       const { board, draftTitle } = get();
@@ -166,7 +171,7 @@ export const useTaskStore = create<TaskStoreState>((set, get) => {
             : column,
         ),
       };
-      return persist(next, "Could not add task", () =>
+      return persist(next, i18n.t("errors.addTask"), () =>
         set({ draftTitle: "" }),
       );
     },
@@ -194,7 +199,7 @@ export const useTaskStore = create<TaskStoreState>((set, get) => {
             : column,
         ),
       };
-      return persist(next, "Could not update task");
+      return persist(next, i18n.t("errors.updateTask"));
     },
     moveCard: async (cardId, fromColumnId, toColumnId) => {
       const { board } = get();
@@ -224,7 +229,7 @@ export const useTaskStore = create<TaskStoreState>((set, get) => {
             : column,
         ),
       };
-      return persist(next, "Could not move task");
+      return persist(next, i18n.t("errors.moveTask"));
     },
     removeCard: async (columnId, cardId) => {
       const { board } = get();
@@ -240,7 +245,7 @@ export const useTaskStore = create<TaskStoreState>((set, get) => {
             : column,
         ),
       };
-      return persist(next, "Could not remove task");
+      return persist(next, i18n.t("errors.removeTask"));
     },
   };
 });

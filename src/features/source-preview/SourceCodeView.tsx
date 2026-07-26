@@ -10,6 +10,8 @@ import { languages } from "@codemirror/language-data";
 import type { Extension } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { tags } from "@lezer/highlight";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 
 const sourceLensTheme: Extension = [
   EditorView.theme({
@@ -111,7 +113,10 @@ const sourceLensTheme: Extension = [
 ];
 
 export function sourceLanguageName(path: string): string {
-  return LanguageDescription.matchFilename(languages, path)?.name ?? "Plain text";
+  return (
+    LanguageDescription.matchFilename(languages, path)?.name ??
+    i18n.t("sourcePreview.plainText")
+  );
 }
 
 export type SourceCodeViewProps = {
@@ -120,6 +125,7 @@ export type SourceCodeViewProps = {
 };
 
 export function SourceCodeView({ value, path }: SourceCodeViewProps) {
+  const { t } = useTranslation();
   const description = useMemo(
     () => LanguageDescription.matchFilename(languages, path),
     [path],
@@ -148,13 +154,13 @@ export function SourceCodeView({ value, path }: SourceCodeViewProps) {
     () => [
       sourceLensTheme,
       EditorView.contentAttributes.of({
-        "aria-label": `Source code: ${path}`,
+        "aria-label": t("sourcePreview.sourceCode", { path }),
         spellcheck: "false",
         translate: "no",
       }),
       ...(language ? [language] : []),
     ],
-    [language, path],
+    [language, path, t],
   );
 
   return (

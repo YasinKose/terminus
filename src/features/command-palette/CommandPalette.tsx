@@ -15,6 +15,7 @@ import {
   type ShortcutMap,
 } from "@/features/settings/shortcutModel";
 import { detectDesktopPlatform } from "@/platform/detection";
+import { useTranslation } from "react-i18next";
 
 export type CommandPaletteProps = {
   open: boolean;
@@ -27,11 +28,12 @@ export function CommandPalette({
   onOpenChange,
   context,
 }: CommandPaletteProps) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const shortcuts = useSettingsStore((s) => s.shortcuts);
 
-  const commands = useMemo(() => buildCommands(context), [context]);
+  const commands = useMemo(() => buildCommands(context, t), [context, t]);
   const filtered = useMemo(
     () => filterCommands(commands, query),
     [commands, query],
@@ -62,7 +64,7 @@ export function CommandPalette({
         className="gap-0 overflow-hidden p-0 sm:max-w-[34rem]"
       >
         <DialogHeader className="sr-only">
-          <DialogTitle>Command palette</DialogTitle>
+          <DialogTitle>{t("commandPalette.title")}</DialogTitle>
         </DialogHeader>
         <div className="flex h-13 items-center gap-2 border-b border-border/90 px-3">
           <Search
@@ -74,8 +76,8 @@ export function CommandPalette({
             name="command-search"
             autoComplete="off"
             spellCheck={false}
-            aria-label="Search commands"
-            placeholder="Search commands…"
+            aria-label={t("commandPalette.searchLabel")}
+            placeholder={t("commandPalette.searchPlaceholder")}
             className="h-11 border-0 bg-transparent px-0 shadow-none hover:border-0 focus-visible:border-0 focus-visible:bg-transparent focus-visible:ring-0"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -106,10 +108,10 @@ export function CommandPalette({
                 className="mb-2 size-5 text-muted-foreground"
               />
               <span className="text-sm font-medium text-foreground">
-                No matching commands
+                {t("commandPalette.emptyTitle")}
               </span>
               <span className="mt-1 text-xs text-muted-foreground">
-                Try a project, workspace, or action name.
+                {t("commandPalette.emptyDescription")}
               </span>
             </li>
           )}
@@ -152,13 +154,13 @@ export function CommandPalette({
         </ul>
         <div className="flex h-9 items-center justify-between border-t border-border/80 bg-chrome px-3 text-[10px] text-muted-foreground">
           <span className="font-mono tabular-nums">
-            {filtered.length} {filtered.length === 1 ? "command" : "commands"}
+            {t("commandPalette.count", { count: filtered.length })}
           </span>
           <span className="flex items-center gap-2">
-            <span>↑↓ Navigate</span>
+            <span>{t("commandPalette.navigate")}</span>
             <span className="flex items-center gap-1">
               <CornerDownLeft aria-hidden className="size-3" />
-              Run
+              {t("commandPalette.run")}
             </span>
           </span>
         </div>

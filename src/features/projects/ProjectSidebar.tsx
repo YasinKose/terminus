@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { ProjectRecord } from "@/lib/tauri/contracts";
 import { ProjectContextMenu } from "./ProjectContextMenu";
+import { useTranslation } from "react-i18next";
 
 export type ProjectSidebarProps = {
   projects: ProjectRecord[];
@@ -33,6 +34,7 @@ export function ProjectSidebar({
   onCloseProject,
   onRenameProject,
 }: ProjectSidebarProps) {
+  const { t } = useTranslation();
   const [renameTarget, setRenameTarget] = useState<ProjectRecord | null>(null);
   const [renameValue, setRenameValue] = useState("");
 
@@ -51,12 +53,12 @@ export function ProjectSidebar({
     <>
       <aside
         className="flex w-60 shrink-0 flex-col border-r border-border/90 bg-chrome"
-        aria-label="Projects"
+        aria-label={t("projects.title")}
       >
         <div className="flex h-11 items-center justify-between border-b border-border/80 px-3">
           <div className="flex min-w-0 items-baseline gap-2">
             <span className="text-xs font-semibold text-foreground">
-              Projects
+              {t("projects.title")}
             </span>
             <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
               {projects.length}
@@ -68,16 +70,16 @@ export function ProjectSidebar({
             size="sm"
             className="h-7 gap-1.5 px-2 text-xs"
             onClick={onOpenProject}
-            aria-label="Open project"
+            aria-label={t("projects.open")}
           >
             <FolderOpen aria-hidden className="size-3.5" />
-            Open
+            {t("projects.openShort")}
           </Button>
         </div>
         <ul className="min-h-0 flex-1 space-y-0.5 overflow-y-auto p-2">
           {projects.length === 0 ? (
             <li className="rounded-lg border border-dashed border-border px-3 py-5 text-center text-xs leading-5 text-muted-foreground">
-              Open a folder to create your first project.
+              {t("projects.empty")}
             </li>
           ) : (
             projects.map((project) => {
@@ -121,7 +123,9 @@ export function ProjectSidebar({
                       type="button"
                       data-testid={`close-project-${project.id}`}
                       className="mr-0.5 inline-flex size-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground opacity-0 outline-none transition-[background-color,color,opacity] duration-150 hover:bg-accent hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/35 group-hover:opacity-100 group-focus-within:opacity-100"
-                      aria-label={`Close ${project.displayName}`}
+                      aria-label={t("projects.closeNamed", {
+                        name: project.displayName,
+                      })}
                       onClick={(e) => {
                         e.stopPropagation();
                         onCloseProject(project.id);
@@ -145,13 +149,13 @@ export function ProjectSidebar({
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Rename project</DialogTitle>
+            <DialogTitle>{t("projects.renameTitle")}</DialogTitle>
             <DialogDescription>
-              Update the display name for this project.
+              {t("projects.renameDescription")}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-2 py-2">
-            <Label htmlFor="project-rename-input">Name</Label>
+            <Label htmlFor="project-rename-input">{t("projects.name")}</Label>
             <Input
               id="project-rename-input"
               value={renameValue}
@@ -171,10 +175,10 @@ export function ProjectSidebar({
               variant="outline"
               onClick={() => setRenameTarget(null)}
             >
-              Cancel
+              {t("common.actions.cancel")}
             </Button>
             <Button type="button" onClick={submitRename}>
-              Save
+              {t("common.actions.save")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -18,11 +18,19 @@ import {
   type ShortcutMap,
 } from "./shortcutModel";
 import { detectDesktopPlatform } from "@/platform/detection";
+import {
+  default as i18n,
+  changeLanguage,
+  detectSystemLanguage,
+  parseSupportedLanguage,
+  type SupportedLanguage,
+} from "@/i18n";
 
 const SHORTCUTS_KEY = "shortcuts";
 const NAVIGATOR_MODIFIERS_KEY = "shortcuts.navigatorModifiers";
 const CONFIRM_TERMINAL_CLOSE_KEY = "confirmClose.terminal";
 const CONFIRM_WORKSPACE_CLOSE_KEY = "confirmClose.workspace";
+const LANGUAGE_KEY = "ui.language";
 
 export interface SettingsStoreState {
   shortcuts: ShortcutMap;
@@ -33,6 +41,7 @@ export interface SettingsStoreState {
   focusMode: boolean;
   confirmTerminalClose: boolean;
   confirmWorkspaceClose: boolean;
+  language: SupportedLanguage;
   setApi: (api: SettingsApi) => void;
   setShortcutRecording: (recording: boolean) => void;
   hydrateFromBootstrap: (settings: Record<string, unknown>) => void;
@@ -42,6 +51,7 @@ export interface SettingsStoreState {
   toggleFocusMode: () => void;
   setConfirmTerminalClose: (confirm: boolean) => Promise<void>;
   setConfirmWorkspaceClose: (confirm: boolean) => Promise<void>;
+  setLanguage: (language: SupportedLanguage) => Promise<void>;
   setShortcut: (
     id: ShortcutCommandId,
     chord: ShortcutChord,
@@ -63,6 +73,7 @@ export const useSettingsStore = create<SettingsStoreState>((set, get) => ({
   focusMode: false,
   confirmTerminalClose: true,
   confirmWorkspaceClose: true,
+  language: detectSystemLanguage(),
 
   setApi: (next) => {
     api = next;
@@ -79,6 +90,12 @@ export const useSettingsStore = create<SettingsStoreState>((set, get) => ({
     );
     const confirmTerminalClose = settings[CONFIRM_TERMINAL_CLOSE_KEY];
     const confirmWorkspaceClose = settings[CONFIRM_WORKSPACE_CLOSE_KEY];
+    const savedLanguage = settings[LANGUAGE_KEY];
+    const language =
+      typeof savedLanguage === "string"
+        ? (parseSupportedLanguage(savedLanguage) ?? detectSystemLanguage())
+        : detectSystemLanguage();
+    void changeLanguage(language);
     set({
       ...(parsed ? { shortcuts: parsed } : {}),
       navigatorModifiers:
@@ -91,6 +108,7 @@ export const useSettingsStore = create<SettingsStoreState>((set, get) => ({
         typeof confirmWorkspaceClose === "boolean"
           ? confirmWorkspaceClose
           : true,
+      language,
     });
   },
 
@@ -106,18 +124,26 @@ export const useSettingsStore = create<SettingsStoreState>((set, get) => ({
     await api.saveSetting(CONFIRM_WORKSPACE_CLOSE_KEY, confirm);
     set({ confirmWorkspaceClose: confirm });
   },
+  setLanguage: async (language) => {
+    await api.saveSetting(LANGUAGE_KEY, language);
+    await changeLanguage(language);
+    set({ language });
+  },
 
   setShortcut: async (id, chord) => {
     if (isUnmodifiedTerminalKeystroke(chord)) {
       return {
         ok: false,
-        reason: "Cannot bind unmodified terminal keystrokes",
+        reason: i18n.t("settings.shortcuts.messages.unmodified"),
       };
     }
     const next: ShortcutMap = { ...get().shortcuts, [id]: chord };
     const conflicts = findConflicts(next);
     if (conflicts.length > 0) {
-      return { ok: false, reason: "Shortcut conflicts with another command" };
+      return {
+        ok: false,
+        reason: i18n.t("settings.shortcuts.messages.conflict"),
+      };
     }
     await api.saveSetting(SHORTCUTS_KEY, next);
     set({ shortcuts: next });
@@ -128,7 +154,7 @@ export const useSettingsStore = create<SettingsStoreState>((set, get) => ({
     if (!isValidModifierChord(chord)) {
       return {
         ok: false,
-        reason: "Use at least two modifier keys",
+        reason: i18n.t("settings.shortcuts.messages.twoModifiers"),
       };
     }
     await api.saveSetting(NAVIGATOR_MODIFIERS_KEY, chord);

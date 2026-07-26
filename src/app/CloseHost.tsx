@@ -7,12 +7,14 @@ import { CloseWorkspaceDialog } from "@/features/workspaces/CloseWorkspaceDialog
 import { reportError } from "@/lib/errors";
 import { executeClose } from "@/stores/executeClose";
 import { useCloseRequestStore } from "@/stores/closeRequestStore";
+import { useTranslation } from "react-i18next";
 
 export type CloseHostProps = {
   destroyWindow?: () => Promise<void>;
 };
 
 export function CloseHost({ destroyWindow }: CloseHostProps) {
+  const { t } = useTranslation();
   const request = useCloseRequestStore((s) => s.request);
   const cancel = useCloseRequestStore((s) => s.cancel);
   const confirmTerminalClose = useSettingsStore(
@@ -32,10 +34,10 @@ export function CloseHost({ destroyWindow }: CloseHostProps) {
   const runClose = useCallback(
     (current: NonNullable<typeof request>) => {
       void executeClose(current, { destroyWindow }).catch((error) => {
-        reportError("Could not close the requested item", error);
+        reportError(t("errors.closeRequestedItem"), error);
       });
     },
-    [destroyWindow],
+    [destroyWindow, t],
   );
 
   const handleConfirm = useCallback(
@@ -55,12 +57,12 @@ export function CloseHost({ destroyWindow }: CloseHostProps) {
             await setConfirmWorkspaceClose(false);
           }
         } catch (error) {
-          reportError("Could not update close confirmation preference", error);
+          reportError(t("errors.updateClosePreference"), error);
         }
         runClose(current);
       })();
     },
-    [runClose, setConfirmTerminalClose, setConfirmWorkspaceClose],
+    [runClose, setConfirmTerminalClose, setConfirmWorkspaceClose, t],
   );
 
   const bypassConfirmation =

@@ -195,6 +195,31 @@
   --pane-border-width: 1px;
   --pane-radius: 8px;
   --active-pane-highlight: 1;
+  --terminal-background: #0d0f12;
+  --terminal-foreground: #dce1e7;
+  --terminal-cursor: #5eead4;
+  --terminal-selection-background: #2dd4bf42;
+  --terminal-black: #15181d;
+  --terminal-red: #fb7185;
+  --terminal-green: #4ade80;
+  --terminal-yellow: #fbbf24;
+  --terminal-blue: #60a5fa;
+  --terminal-magenta: #c084fc;
+  --terminal-cyan: #2dd4bf;
+  --terminal-white: #dce1e7;
+  --terminal-bright-black: #737d8b;
+  --terminal-bright-red: #fda4af;
+  --terminal-bright-green: #86efac;
+  --terminal-bright-yellow: #fde68a;
+  --terminal-bright-blue: #93c5fd;
+  --terminal-bright-magenta: #d8b4fe;
+  --terminal-bright-cyan: #5eead4;
+  --terminal-bright-white: #f8fafc;
+  --terminal-font-family:
+    "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, SFMono-Regular,
+    Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --terminal-font-size: 14px;
+  --terminal-line-height: 1.25;
 }
 
 [data-theme="ocean"] {
@@ -393,15 +418,36 @@ button:not(:disabled),
   min-width: 0;
   min-height: 0;
   overflow: hidden;
+  background: var(--terminal-background);
 }
 
 .terminus-terminal-host .xterm {
   height: 100%;
-  padding: 8px 10px;
+  padding: 10px 12px;
+  background: var(--terminal-background);
 }
 
 .terminus-terminal-host .xterm-viewport {
   overflow-y: auto !important;
+  background-color: var(--terminal-background) !important;
+  scrollbar-color:
+    color-mix(in oklab, var(--terminal-bright-black) 68%, transparent)
+    transparent;
+}
+
+.terminus-cursor-preview[data-blink="true"] {
+  animation: terminal-cursor-blink 1s steps(1, end) infinite;
+}
+
+@keyframes terminal-cursor-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
 }
 
 .terminus-navigator-workspace-card {

@@ -1,3 +1,5 @@
+import type { TerminalPresentation } from "@/features/appearance/presets";
+
 export type TerminalAdapter = {
   open: (parent: HTMLElement) => void;
   write: (data: string) => void;
@@ -13,6 +15,7 @@ export type TerminalAdapter = {
   setOnAttention?: (handler: () => void) => void;
   getProposedSize?: () => { cols: number; rows: number };
   applyTheme?: (theme: Record<string, string>) => void;
+  applyAppearance?: (appearance: TerminalPresentation) => void;
 };
 
 export type TerminalAdapterFactory = (sessionId: string) => TerminalAdapter;
@@ -37,6 +40,7 @@ export type TerminalRuntimeHandle = {
   setOnAttention: (handler: () => void) => void;
   getProposedSize: () => { cols: number; rows: number };
   applyTheme: (theme: Record<string, string>) => void;
+  applyAppearance: (appearance: TerminalPresentation) => void;
   readonly usingWebgl: boolean;
   readonly openCount: number;
 };

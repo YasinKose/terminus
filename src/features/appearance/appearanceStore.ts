@@ -10,7 +10,9 @@ import {
   parseAppearanceSettings,
   type AppearanceSettings,
   type PresetId,
-  xtermThemeFromPreset,
+  type TerminalCursorStyle,
+  type TerminalFontFamilyId,
+  terminalPresentationFromAppearance,
 } from "./presets";
 import {
   getDefaultTerminalRuntimeRegistryIfInitialized,
@@ -31,15 +33,17 @@ export function subscribeTheme(listener: ThemeListener): () => void {
   };
 }
 
-function notifyTheme(presetId: PresetId): void {
+function notifyAppearance(appearance: AppearanceSettings): void {
   for (const listener of themeListeners) {
-    listener(presetId);
+    listener(appearance.presetId);
   }
   const registry = getDefaultTerminalRuntimeRegistryIfInitialized();
   if (!registry) return;
   for (const id of registry.listIds()) {
     try {
-      registry.get(id)?.applyTheme?.(xtermThemeFromPreset(presetId));
+      registry
+        .get(id)
+        ?.applyAppearance(terminalPresentationFromAppearance(appearance));
     } catch (error) {
       reportError(i18n.t("errors.applyTerminalTheme"), error);
     }
@@ -54,6 +58,11 @@ export interface AppearanceStoreState {
   setPaneBorderWidth: (width: number) => Promise<void>;
   setPaneRadius: (radius: number) => Promise<void>;
   setActivePaneHighlight: (on: boolean) => Promise<void>;
+  setTerminalFontFamily: (fontFamily: TerminalFontFamilyId) => Promise<void>;
+  setTerminalFontSize: (fontSize: number) => Promise<void>;
+  setTerminalLineHeight: (lineHeight: number) => Promise<void>;
+  setTerminalCursorStyle: (cursorStyle: TerminalCursorStyle) => Promise<void>;
+  setTerminalCursorBlink: (cursorBlink: boolean) => Promise<void>;
   applyToDocument: () => void;
 }
 
@@ -66,11 +75,32 @@ async function persist(
   await api.saveSetting(APPEARANCE_KEY, next);
   set({ appearance: next });
   applyAppearanceToDocument(next);
-  notifyTheme(next.presetId);
+  notifyAppearance(next);
+}
+
+async function persistTerminal(
+  patch: Partial<AppearanceSettings["terminal"]>,
+  get: () => AppearanceStoreState,
+  set: (partial: Partial<AppearanceStoreState>) => void,
+): Promise<void> {
+  const appearance = get().appearance;
+  await persist(
+    {
+      ...appearance,
+      terminal: {
+        ...appearance.terminal,
+        ...patch,
+      },
+    },
+    set,
+  );
 }
 
 export const useAppearanceStore = create<AppearanceStoreState>((set, get) => ({
-  appearance: { ...DEFAULT_APPEARANCE },
+  appearance: {
+    ...DEFAULT_APPEARANCE,
+    terminal: { ...DEFAULT_APPEARANCE.terminal },
+  },
 
   setApi: (next) => {
     api = next;
@@ -78,15 +108,18 @@ export const useAppearanceStore = create<AppearanceStoreState>((set, get) => ({
 
   hydrateFromBootstrap: (settings) => {
     const parsed = parseAppearanceSettings(settings[APPEARANCE_KEY]);
-    const appearance = parsed ?? { ...DEFAULT_APPEARANCE };
+    const appearance = parsed ?? {
+      ...DEFAULT_APPEARANCE,
+      terminal: { ...DEFAULT_APPEARANCE.terminal },
+    };
     set({ appearance });
     applyAppearanceToDocument(appearance);
-    notifyTheme(appearance.presetId);
+    notifyAppearance(appearance);
   },
 
   applyToDocument: () => {
     applyAppearanceToDocument(get().appearance);
-    notifyTheme(get().appearance.presetId);
+    notifyAppearance(get().appearance);
   },
 
   setPreset: async (id) => {
@@ -119,5 +152,33 @@ export const useAppearanceStore = create<AppearanceStoreState>((set, get) => ({
       { ...get().appearance, activePaneHighlight: on },
       set,
     );
+  },
+
+  setTerminalFontFamily: async (fontFamily) => {
+    await persistTerminal({ fontFamily }, get, set);
+  },
+
+  setTerminalFontSize: async (fontSize) => {
+    await persistTerminal(
+      { fontSize: Math.round(Math.min(20, Math.max(12, fontSize))) },
+      get,
+      set,
+    );
+  },
+
+  setTerminalLineHeight: async (lineHeight) => {
+    await persistTerminal(
+      { lineHeight: Math.min(1.6, Math.max(1, lineHeight)) },
+      get,
+      set,
+    );
+  },
+
+  setTerminalCursorStyle: async (cursorStyle) => {
+    await persistTerminal({ cursorStyle }, get, set);
+  },
+
+  setTerminalCursorBlink: async (cursorBlink) => {
+    await persistTerminal({ cursorBlink }, get, set);
   },
 }));

@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { useSettingsStore } from "@/features/settings/settingsStore";
 import type { SupportedLanguage } from "@/i18n";
 import { reportError } from "@/lib/errors";
+import { TerminalAppearanceSettings } from "./TerminalAppearanceSettings";
 
 export function AppearanceSettings() {
   const { t } = useTranslation();
@@ -125,6 +126,8 @@ export function AppearanceSettings() {
           })}
         </div>
       </section>
+
+      <TerminalAppearanceSettings />
 
       <section className="space-y-4 rounded-xl border border-border bg-surface-sunken/45 p-4">
         <div>

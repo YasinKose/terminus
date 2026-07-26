@@ -56,11 +56,67 @@ export type AppearancePreset = {
   xterm: XtermThemeTokens;
 };
 
+export type TerminalFontFamilyId =
+  | "jetbrains-mono"
+  | "system-mono"
+  | "sf-mono"
+  | "menlo";
+
+export type TerminalCursorStyle = "block" | "bar" | "underline";
+
+export type TerminalAppearanceSettings = {
+  fontFamily: TerminalFontFamilyId;
+  fontSize: number;
+  lineHeight: number;
+  cursorStyle: TerminalCursorStyle;
+  cursorBlink: boolean;
+};
+
+export const TERMINAL_FONT_FAMILY_IDS = [
+  "jetbrains-mono",
+  "system-mono",
+  "sf-mono",
+  "menlo",
+] as const satisfies ReadonlyArray<TerminalFontFamilyId>;
+
+export const TERMINAL_CURSOR_STYLES = [
+  "block",
+  "bar",
+  "underline",
+] as const satisfies ReadonlyArray<TerminalCursorStyle>;
+
+const PORTABLE_MONO_FALLBACK =
+  'Consolas, "Liberation Mono", "Courier New", monospace';
+const SYSTEM_MONO_STACK =
+  `ui-monospace, SFMono-Regular, Menlo, Monaco, ${PORTABLE_MONO_FALLBACK}`;
+
+export const TERMINAL_FONT_STACKS: Record<TerminalFontFamilyId, string> = {
+  "jetbrains-mono": `"JetBrains Mono Variable", "JetBrains Mono", ${SYSTEM_MONO_STACK}`,
+  "system-mono": SYSTEM_MONO_STACK,
+  "sf-mono": `"SF Mono", SFMono-Regular, Menlo, Monaco, ${PORTABLE_MONO_FALLBACK}`,
+  menlo: `Menlo, Monaco, ${PORTABLE_MONO_FALLBACK}`,
+};
+
 export type AppearanceSettings = {
   presetId: PresetId;
   paneBorderWidth: number;
   paneRadius: number;
   activePaneHighlight: boolean;
+  terminal: TerminalAppearanceSettings;
+};
+
+export type TerminalPresentation = {
+  theme: XtermThemeTokens;
+  fontFamily: string;
+  fontSize: number;
+  lineHeight: number;
+  fontWeight: number;
+  fontWeightBold: number;
+  cursorStyle: TerminalCursorStyle;
+  cursorInactiveStyle: "outline";
+  cursorBlink: boolean;
+  customGlyphs: boolean;
+  minimumContrastRatio: number;
 };
 
 export const APP_TOKEN_KEYS = [
@@ -107,11 +163,20 @@ export const XTERM_THEME_KEYS = [
   ...ANSI_KEYS,
 ] as const;
 
+export const DEFAULT_TERMINAL_APPEARANCE: TerminalAppearanceSettings = {
+  fontFamily: "jetbrains-mono",
+  fontSize: 14,
+  lineHeight: 1.25,
+  cursorStyle: "block",
+  cursorBlink: true,
+};
+
 export const DEFAULT_APPEARANCE: AppearanceSettings = {
   presetId: "graphite",
   paneBorderWidth: 1,
   paneRadius: 8,
   activePaneHighlight: true,
+  terminal: { ...DEFAULT_TERMINAL_APPEARANCE },
 };
 
 function hex(h: string): string {
@@ -412,11 +477,51 @@ export function parseAppearanceSettings(
     typeof o.activePaneHighlight === "boolean"
       ? o.activePaneHighlight
       : DEFAULT_APPEARANCE.activePaneHighlight;
-  return { presetId, paneBorderWidth, paneRadius, activePaneHighlight };
+  const terminal = parseTerminalAppearanceSettings(o.terminal);
+  return {
+    presetId,
+    paneBorderWidth,
+    paneRadius,
+    activePaneHighlight,
+    terminal,
+  };
 }
 
 function clamp(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n));
+}
+
+function parseTerminalAppearanceSettings(
+  raw: unknown,
+): TerminalAppearanceSettings {
+  if (!raw || typeof raw !== "object") {
+    return { ...DEFAULT_TERMINAL_APPEARANCE };
+  }
+  const terminal = raw as Record<string, unknown>;
+  const fontFamily = (TERMINAL_FONT_FAMILY_IDS as readonly unknown[]).includes(
+    terminal.fontFamily,
+  )
+    ? (terminal.fontFamily as TerminalFontFamilyId)
+    : DEFAULT_TERMINAL_APPEARANCE.fontFamily;
+  const fontSize =
+    typeof terminal.fontSize === "number" && Number.isFinite(terminal.fontSize)
+      ? Math.round(clamp(terminal.fontSize, 12, 20))
+      : DEFAULT_TERMINAL_APPEARANCE.fontSize;
+  const lineHeight =
+    typeof terminal.lineHeight === "number" &&
+    Number.isFinite(terminal.lineHeight)
+      ? clamp(terminal.lineHeight, 1, 1.6)
+      : DEFAULT_TERMINAL_APPEARANCE.lineHeight;
+  const cursorStyle = (TERMINAL_CURSOR_STYLES as readonly unknown[]).includes(
+    terminal.cursorStyle,
+  )
+    ? (terminal.cursorStyle as TerminalCursorStyle)
+    : DEFAULT_TERMINAL_APPEARANCE.cursorStyle;
+  const cursorBlink =
+    typeof terminal.cursorBlink === "boolean"
+      ? terminal.cursorBlink
+      : DEFAULT_TERMINAL_APPEARANCE.cursorBlink;
+  return { fontFamily, fontSize, lineHeight, cursorStyle, cursorBlink };
 }
 
 export function relativeLuminance(color: string): number {
@@ -494,6 +599,32 @@ export function applyAppearanceToDocument(
   root.style.setProperty("--destructive", app.destructive);
   root.style.setProperty("--border", app.border);
   root.style.setProperty("--ring", app.ring);
+  const terminalTheme = preset.xterm;
+  root.style.setProperty("--terminal-background", terminalTheme.background);
+  root.style.setProperty("--terminal-foreground", terminalTheme.foreground);
+  root.style.setProperty("--terminal-cursor", terminalTheme.cursor);
+  root.style.setProperty(
+    "--terminal-selection-background",
+    terminalTheme.selectionBackground,
+  );
+  for (const key of ANSI_KEYS) {
+    root.style.setProperty(
+      `--terminal-${key.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`)}`,
+      terminalTheme[key],
+    );
+  }
+  root.style.setProperty(
+    "--terminal-font-family",
+    TERMINAL_FONT_STACKS[settings.terminal.fontFamily],
+  );
+  root.style.setProperty(
+    "--terminal-font-size",
+    `${settings.terminal.fontSize}px`,
+  );
+  root.style.setProperty(
+    "--terminal-line-height",
+    String(settings.terminal.lineHeight),
+  );
   root.style.setProperty("--pane-border-width", `${settings.paneBorderWidth}px`);
   root.style.setProperty("--pane-radius", `${settings.paneRadius}px`);
   root.style.setProperty("--radius", `${Math.max(settings.paneRadius, 4)}px`);
@@ -505,4 +636,22 @@ export function applyAppearanceToDocument(
 
 export function xtermThemeFromPreset(id: PresetId): XtermThemeTokens {
   return { ...getPreset(id).xterm };
+}
+
+export function terminalPresentationFromAppearance(
+  appearance: AppearanceSettings,
+): TerminalPresentation {
+  return {
+    theme: xtermThemeFromPreset(appearance.presetId),
+    fontFamily: TERMINAL_FONT_STACKS[appearance.terminal.fontFamily],
+    fontSize: appearance.terminal.fontSize,
+    lineHeight: appearance.terminal.lineHeight,
+    fontWeight: 400,
+    fontWeightBold: 600,
+    cursorStyle: appearance.terminal.cursorStyle,
+    cursorInactiveStyle: "outline",
+    cursorBlink: appearance.terminal.cursorBlink,
+    customGlyphs: true,
+    minimumContrastRatio: 4.5,
+  };
 }

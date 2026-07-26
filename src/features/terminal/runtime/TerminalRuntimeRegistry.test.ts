@@ -9,6 +9,7 @@ type FakeAdapter = TerminalAdapter & {
   writeLog: string[];
   webglAttached: boolean;
   parentWhenOpen: HTMLElement | null;
+  appearanceLog: unknown[];
 };
 
 function createFakeAdapterFactory() {
@@ -26,6 +27,7 @@ function createFakeAdapterFactory() {
       writeLog: [],
       webglAttached: false,
       parentWhenOpen: null,
+      appearanceLog: [],
       open(parent: HTMLElement) {
         this.openCalls += 1;
         this.parentWhenOpen = parent;
@@ -44,6 +46,9 @@ function createFakeAdapterFactory() {
       },
       detachWebgl() {
         this.webglAttached = false;
+      },
+      applyAppearance(appearance: unknown) {
+        this.appearanceLog.push(appearance);
       },
     };
     adapters.set(sessionId, adapter);
@@ -217,5 +222,23 @@ describe("TerminalRuntimeRegistry", () => {
     r.attach(host);
     r.write("direct");
     expect(adapters.get("t1")!.writeLog).toEqual(["direct"]);
+  });
+
+  it("forwards presentation changes to a live terminal adapter", () => {
+    const runtime = registry.acquire("t1");
+    const applyAppearance = (
+      runtime as unknown as {
+        applyAppearance?: (appearance: unknown) => void;
+      }
+    ).applyAppearance;
+    const presentation = {
+      fontFamily: "JetBrains Mono Variable",
+      fontSize: 16,
+    };
+
+    expect(applyAppearance).toBeTypeOf("function");
+    applyAppearance?.call(runtime, presentation);
+
+    expect(adapters.get("t1")?.appearanceLog).toEqual([presentation]);
   });
 });

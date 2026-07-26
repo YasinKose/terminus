@@ -89,7 +89,7 @@
       },
       "appearance": {
         "label": "Appearance",
-        "description": "Language, theme & panes"
+        "description": "Language, terminal & panes"
       }
     },
     "appearance": {
@@ -107,6 +107,39 @@
       "themeMode": {
         "light": "Light",
         "dark": "Dark"
+      },
+      "terminal": {
+        "title": "Terminal typography",
+        "description": "Tune a consistent, readable terminal without changing shell behavior.",
+        "preview": {
+          "label": "Terminal appearance preview",
+          "session": "Live preview",
+          "output": "VITE ready in 312 ms",
+          "ready": "Workspace ready"
+        },
+        "fontFamily": {
+          "label": "Terminal font",
+          "options": {
+            "jetbrains-mono": "JetBrains Mono",
+            "system-mono": "System monospace",
+            "sf-mono": "SF Mono",
+            "menlo": "Menlo"
+          }
+        },
+        "fontSize": "Font size",
+        "lineHeight": "Line height",
+        "cursorStyle": {
+          "label": "Cursor style",
+          "options": {
+            "block": "Block",
+            "bar": "Bar",
+            "underline": "Underline"
+          }
+        },
+        "cursorBlink": {
+          "label": "Blinking cursor",
+          "description": "Animate the cursor while the terminal is focused."
+        }
       },
       "paneChrome": {
         "title": "Pane chrome",
@@ -526,6 +559,7 @@
     "createWorkspace": "Could not create workspace",
     "reorderWorkspace": "Could not reorder workspace",
     "changeLanguage": "Could not change application language",
+    "updateTerminalAppearance": "Could not update terminal appearance",
     "applyTerminalTheme": "Could not apply terminal theme",
     "loadGitStatus": "Could not load git status",
     "loadFileDiff": "Could not load file diff",

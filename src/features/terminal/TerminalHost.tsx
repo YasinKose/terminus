@@ -14,6 +14,8 @@ import {
 import { createLiveXtermAdapter } from "./createXtermAdapter";
 import { sanitizeTitle } from "./osc";
 import { useTerminalStore } from "./terminalStore";
+import { useAppearanceStore } from "@/features/appearance/appearanceStore";
+import { terminalPresentationFromAppearance } from "@/features/appearance/presets";
 
 const RESIZE_DEBOUNCE_MS = 80;
 const DEFAULT_COLS = 80;
@@ -35,7 +37,11 @@ export type TerminalHostProps = {
 
 function ensureDefaultRegistry(): TerminalRuntimeRegistry {
   return getDefaultTerminalRuntimeRegistry((sessionId) =>
-    createLiveXtermAdapter(sessionId),
+    createLiveXtermAdapter(sessionId, {
+      appearance: terminalPresentationFromAppearance(
+        useAppearanceStore.getState().appearance,
+      ),
+    }),
   );
 }
 

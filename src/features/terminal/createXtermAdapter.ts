@@ -4,7 +4,8 @@ import type { TerminalAdapter } from "@/features/terminal/runtime";
 import { isSupportedOscNotification, parseOsc7Cwd } from "./osc";
 import {
   DEFAULT_APPEARANCE,
-  xtermThemeFromPreset,
+  terminalPresentationFromAppearance,
+  type TerminalPresentation,
 } from "@/features/appearance/presets";
 
 export type XtermAdapterHooks = {
@@ -23,16 +24,15 @@ export type LiveXtermHandle = TerminalAdapter & {
   setOnCwdChange: (handler: (cwd: string) => void) => void;
   setOnAttention: (handler: () => void) => void;
   applyTheme: (theme: Record<string, string>) => void;
+  applyAppearance: (appearance: TerminalPresentation) => void;
 };
-
-const MONO_STACK =
-  'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
 
 export function createLiveXtermAdapter(
   _sessionId: string,
   options: XtermAdapterHooks & {
     scrollback?: number;
     enableWebgl?: boolean;
+    appearance?: TerminalPresentation;
   } = {},
 ): LiveXtermHandle {
   const scrollback = options.scrollback ?? 10000;
@@ -41,7 +41,12 @@ export function createLiveXtermAdapter(
   let term: Terminal | null = null;
   let fitAddon: FitAddon | null = null;
   let webglAddon: { dispose: () => void } | null = null;
+  let parentElement: HTMLElement | null = null;
   let disposed = false;
+  let currentAppearance =
+    options.appearance ??
+    terminalPresentationFromAppearance(DEFAULT_APPEARANCE);
+  let fontLoadSequence = 0;
   let onDataHandler: ((data: string) => void) | null = options.onData ?? null;
   let onTitleHandler: ((title: string) => void) | null =
     options.onTitleChange ?? null;
@@ -56,13 +61,10 @@ export function createLiveXtermAdapter(
       throw new Error("xterm adapter disposed");
     }
     if (!term) {
-      const initialTheme = xtermThemeFromPreset(DEFAULT_APPEARANCE.presetId);
       term = new Terminal({
         scrollback,
-        cursorBlink: true,
-        fontFamily: MONO_STACK,
         allowProposedApi: true,
-        theme: initialTheme,
+        ...currentAppearance,
       });
       fitAddon = new FitAddon();
       term.loadAddon(fitAddon);
@@ -111,11 +113,35 @@ export function createLiveXtermAdapter(
     return term;
   };
 
+  const requestResize = (): void => {
+    parentElement?.dispatchEvent(
+      new Event("resize-request", { bubbles: true }),
+    );
+  };
+
+  const refitAfterFontLoad = (): void => {
+    const fonts = parentElement?.ownerDocument.fonts;
+    if (!fonts) return;
+    const request = ++fontLoadSequence;
+    void fonts
+      .load(
+        `${currentAppearance.fontWeight} ${currentAppearance.fontSize}px ${currentAppearance.fontFamily}`,
+      )
+      .then(() => {
+        if (disposed || request !== fontLoadSequence) return;
+        fitAddon?.fit();
+        requestResize();
+      })
+      .catch(() => undefined);
+  };
+
   return {
     open(parent: HTMLElement) {
+      parentElement = parent;
       const t = ensure();
       t.open(parent);
       fitAddon?.fit();
+      refitAfterFontLoad();
       if (wantWebgl) {
         void import("@xterm/addon-webgl")
           .then(({ WebglAddon }) => {
@@ -174,6 +200,7 @@ export function createLiveXtermAdapter(
       }
       term = null;
       fitAddon = null;
+      parentElement = null;
     },
     attachWebgl() {
       return webglAddon !== null;
@@ -208,6 +235,15 @@ export function createLiveXtermAdapter(
     applyTheme(theme: Record<string, string>) {
       if (disposed || !term) return;
       term.options.theme = theme;
+    },
+    applyAppearance(appearance: TerminalPresentation) {
+      if (disposed) return;
+      currentAppearance = appearance;
+      if (!term) return;
+      term.options = { ...appearance };
+      fitAddon?.fit();
+      requestResize();
+      refitAfterFontLoad();
     },
   };
 }

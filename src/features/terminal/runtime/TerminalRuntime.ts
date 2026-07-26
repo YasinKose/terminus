@@ -1,4 +1,5 @@
 import { getParkingContainer } from "./parking";
+import type { TerminalPresentation } from "@/features/appearance/presets";
 import type {
   RuntimeLifecycle,
   TerminalAdapter,
@@ -142,6 +143,17 @@ export class TerminalRuntime implements TerminalRuntimeHandle {
       return;
     }
     this.adapter.applyTheme?.(theme);
+  }
+
+  applyAppearance(appearance: TerminalPresentation): void {
+    if (this.disposed) {
+      return;
+    }
+    if (this.adapter.applyAppearance) {
+      this.adapter.applyAppearance(appearance);
+      return;
+    }
+    this.adapter.applyTheme?.(appearance.theme);
   }
 
   handleWebglContextLoss(): void {

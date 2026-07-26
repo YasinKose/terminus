@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
+import * as presetModule from "./presets";
 import {
   ANSI_KEYS,
   APP_TOKEN_KEYS,
   PRESETS,
   PRESET_ORDER,
   XTERM_THEME_KEYS,
+  applyAppearanceToDocument,
   contrastRatio,
   getPreset,
   isPresetId,
@@ -103,6 +105,13 @@ describe("appearance presets", () => {
       paneBorderWidth: 2,
       paneRadius: 10,
       activePaneHighlight: false,
+      terminal: {
+        fontFamily: "jetbrains-mono",
+        fontSize: 14,
+        lineHeight: 1.25,
+        cursorStyle: "block",
+        cursorBlink: true,
+      },
     });
     expect(
       parseAppearanceSettings({
@@ -118,6 +127,142 @@ describe("appearance presets", () => {
         paneRadius: -1,
       })?.paneRadius,
     ).toBe(0);
+  });
+
+  it("hydrates professional terminal defaults for older appearance records", () => {
+    expect(
+      parseAppearanceSettings({
+        presetId: "ocean",
+        paneBorderWidth: 2,
+        paneRadius: 10,
+        activePaneHighlight: true,
+      }),
+    ).toMatchObject({
+      terminal: {
+        fontFamily: "jetbrains-mono",
+        fontSize: 14,
+        lineHeight: 1.25,
+        cursorStyle: "block",
+        cursorBlink: true,
+      },
+    });
+  });
+
+  it("validates and clamps persisted terminal presentation settings", () => {
+    expect(
+      parseAppearanceSettings({
+        presetId: "forest",
+        terminal: {
+          fontFamily: "menlo",
+          fontSize: 99,
+          lineHeight: 0.25,
+          cursorStyle: "bar",
+          cursorBlink: false,
+        },
+      })?.terminal,
+    ).toEqual({
+      fontFamily: "menlo",
+      fontSize: 20,
+      lineHeight: 1,
+      cursorStyle: "bar",
+      cursorBlink: false,
+    });
+
+    expect(
+      parseAppearanceSettings({
+        presetId: "forest",
+        terminal: {
+          fontFamily: "unknown",
+          cursorStyle: "beam",
+        },
+      })?.terminal,
+    ).toEqual({
+      fontFamily: "jetbrains-mono",
+      fontSize: 14,
+      lineHeight: 1.25,
+      cursorStyle: "block",
+      cursorBlink: true,
+    });
+  });
+
+  it("applies terminal theme and typography as semantic document tokens", () => {
+    applyAppearanceToDocument(
+      {
+        presetId: "ocean",
+        paneBorderWidth: 1,
+        paneRadius: 8,
+        activePaneHighlight: true,
+        terminal: {
+          fontFamily: "menlo",
+          fontSize: 16,
+          lineHeight: 1.4,
+          cursorStyle: "underline",
+          cursorBlink: false,
+        },
+      },
+      document,
+    );
+
+    const style = document.documentElement.style;
+    expect(style.getPropertyValue("--terminal-background")).toBe(
+      PRESETS.ocean.xterm.background,
+    );
+    expect(style.getPropertyValue("--terminal-foreground")).toBe(
+      PRESETS.ocean.xterm.foreground,
+    );
+    expect(style.getPropertyValue("--terminal-font-family")).toContain("Menlo");
+    expect(style.getPropertyValue("--terminal-font-size")).toBe("16px");
+    expect(style.getPropertyValue("--terminal-line-height")).toBe("1.4");
+  });
+
+  it("builds complete xterm presentation options from appearance", () => {
+    const buildPresentation = (
+      presetModule as unknown as {
+        terminalPresentationFromAppearance?: (
+          appearance: ReturnType<typeof parseAppearanceSettings>,
+        ) => {
+          theme: { background: string };
+          fontFamily: string;
+          fontSize: number;
+          lineHeight: number;
+          cursorStyle: string;
+          cursorBlink: boolean;
+          minimumContrastRatio: number;
+          fontWeight: number;
+          fontWeightBold: number;
+          customGlyphs: boolean;
+          cursorInactiveStyle: string;
+        };
+      }
+    ).terminalPresentationFromAppearance;
+
+    expect(buildPresentation).toBeTypeOf("function");
+
+    const appearance = parseAppearanceSettings({
+      presetId: "orchid",
+      terminal: {
+        fontFamily: "sf-mono",
+        fontSize: 17,
+        lineHeight: 1.35,
+        cursorStyle: "underline",
+        cursorBlink: false,
+      },
+    });
+    const presentation = buildPresentation?.(appearance);
+
+    expect(presentation).toMatchObject({
+      theme: { background: PRESETS.orchid.xterm.background },
+      fontSize: 17,
+      lineHeight: 1.35,
+      cursorStyle: "underline",
+      cursorBlink: false,
+      minimumContrastRatio: 4.5,
+      fontWeight: 400,
+      fontWeightBold: 600,
+      customGlyphs: true,
+      cursorInactiveStyle: "outline",
+    });
+    expect(presentation?.fontFamily).toContain("SF Mono");
   });
 });
 

@@ -4,6 +4,7 @@ import { App } from "@/app/App";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "@/i18n";
+import "@fontsource-variable/jetbrains-mono/wght.css";
 import "@/styles/index.css";
 
 const rootElement = document.getElementById("root");

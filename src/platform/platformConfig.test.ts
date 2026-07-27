@@ -11,7 +11,7 @@ describe("desktop platform configuration", () => {
     const config = json("src-tauri/tauri.conf.json");
     const window = config.app.windows[0];
 
-    expect(config.version).toBe("0.2.0");
+    expect(config.version).toBe("0.2.1");
     expect(config.app.macOSPrivateApi).toBe(true);
     expect(window.titleBarStyle).toBeUndefined();
     expect(window.hiddenTitle).toBeUndefined();
@@ -44,8 +44,8 @@ describe("desktop platform configuration", () => {
       "utf8",
     );
 
-    expect(packageJson.version).toBe("0.2.0");
-    expect(cargo).toMatch(/^version = "0\.2\.0"$/m);
+    expect(packageJson.version).toBe("0.2.1");
+    expect(cargo).toMatch(/^version = "0\.2\.1"$/m);
     expect(cargo).toContain(
       'tauri = { version = "2", features = ["macos-private-api"] }',
     );

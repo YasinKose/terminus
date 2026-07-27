@@ -143,7 +143,7 @@ export function TerminalAppearanceSettings() {
           <select
             id="terminal-font-family"
             value={terminal.fontFamily}
-            className="h-11 w-full rounded-lg border border-input bg-surface-raised px-3 text-xs text-foreground outline-none transition-[border-color,box-shadow] duration-150 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25"
+            className="h-11 w-full rounded-lg border border-input bg-surface-raised px-3 text-xs text-foreground outline-none transition-[background-color,border-color,box-shadow] duration-150 focus-visible:border-ring focus-visible:bg-surface focus-visible:shadow-field-focus"
             onChange={(event) => {
               runUpdate(
                 setTerminalFontFamily(

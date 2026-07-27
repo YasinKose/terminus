@@ -39,6 +39,7 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --shadow-panel: var(--shadow-panel);
   --shadow-dialog: var(--shadow-dialog);
+  --shadow-field-focus: var(--field-focus-shadow);
 }
 
 @theme {
@@ -191,6 +192,9 @@
   --destructive: #fb7185;
   --border: #303640;
   --ring: #5eead4;
+  --field-focus-shadow:
+    0 0 0 1px color-mix(in oklab, var(--ring) 45%, transparent) inset,
+    0 1px 0 rgb(255 255 255 / 0.025) inset;
   --radius: 0.625rem;
   --pane-border-width: 1px;
   --pane-radius: 8px;
@@ -407,9 +411,11 @@ button:not(:disabled),
   scrollbar-width: thin;
 }
 
-*:focus-visible {
-  outline: 2px solid color-mix(in oklab, var(--ring) 72%, transparent);
-  outline-offset: 2px;
+@layer base {
+  :where(*:focus-visible) {
+    outline: 2px solid color-mix(in oklab, var(--ring) 72%, transparent);
+    outline-offset: 2px;
+  }
 }
 
 .terminus-terminal-host {

@@ -405,7 +405,7 @@ export function TasksPanel({ projectId, open, onClose }: TasksPanelProps) {
                 onChange={(event) => setEditDescription(event.target.value)}
                 rows={4}
                 disabled={mutationDisabled}
-                className="w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/35 disabled:opacity-60"
+                className="w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition-[background-color,border-color,box-shadow] duration-150 focus-visible:border-ring focus-visible:bg-surface focus-visible:shadow-field-focus disabled:opacity-60"
               />
             </label>
           </div>

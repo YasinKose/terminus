@@ -66,7 +66,7 @@ export function CommandPalette({
         <DialogHeader className="sr-only">
           <DialogTitle>{t("commandPalette.title")}</DialogTitle>
         </DialogHeader>
-        <div className="flex h-13 items-center gap-2 border-b border-border/90 px-3">
+        <div className="flex h-13 items-center gap-2 border-b border-border/90 px-3 transition-[background-color,border-color] duration-150 focus-within:border-ring/55 focus-within:bg-surface/35">
           <Search
             aria-hidden
             className="size-4 shrink-0 text-muted-foreground"
@@ -78,7 +78,7 @@ export function CommandPalette({
             spellCheck={false}
             aria-label={t("commandPalette.searchLabel")}
             placeholder={t("commandPalette.searchPlaceholder")}
-            className="h-11 border-0 bg-transparent px-0 shadow-none hover:border-0 focus-visible:border-0 focus-visible:bg-transparent focus-visible:ring-0"
+            className="h-11 border-0 bg-transparent px-0 shadow-none hover:border-0 focus-visible:border-0 focus-visible:bg-transparent focus-visible:shadow-none focus-visible:ring-0"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {

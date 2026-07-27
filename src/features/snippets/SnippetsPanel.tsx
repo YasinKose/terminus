@@ -158,7 +158,7 @@ export function SnippetsPanel({ projectId, open, onClose }: SnippetsPanelProps) 
                     placeholder={t("snippets.inputPlaceholder")}
                     rows={3}
                     disabled={busy}
-                    className="w-full resize-y rounded-lg border border-input bg-surface-raised px-2.5 py-2 font-mono text-[11px] normal-case tracking-normal text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/35 disabled:opacity-60"
+                    className="w-full resize-y rounded-lg border border-input bg-surface-raised px-2.5 py-2 font-mono text-[11px] normal-case tracking-normal text-foreground outline-none transition-[background-color,border-color,box-shadow] duration-150 placeholder:text-muted-foreground focus-visible:border-ring focus-visible:bg-surface focus-visible:shadow-field-focus disabled:opacity-60"
                   />
                 </label>
                 <Button
@@ -338,7 +338,7 @@ export function SnippetsPanel({ projectId, open, onClose }: SnippetsPanelProps) 
                 onChange={(event) => setEditBody(event.target.value)}
                 rows={6}
                 disabled={busy}
-                className="w-full resize-y rounded-lg border border-input bg-background px-3 py-2 font-mono text-xs text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/35 disabled:opacity-60"
+                className="w-full resize-y rounded-lg border border-input bg-background px-3 py-2 font-mono text-xs text-foreground outline-none transition-[background-color,border-color,box-shadow] duration-150 focus-visible:border-ring focus-visible:bg-surface focus-visible:shadow-field-focus disabled:opacity-60"
               />
             </label>
           </div>

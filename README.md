@@ -15,7 +15,7 @@
   [Download](#downloads) · [Features](#features) · [Build from source](#build-from-source) · [Roadmap](#project-status-and-roadmap)
 </div>
 
-![Terminus workspace with a project, workspace tab, and two local terminal panes](docs/assets/readme/terminus-workspace.png)
+![Terminus workspace with a project, workspace tab, and two local terminal panes](.github/assets/readme/terminus-workspace.png)
 
 ## What is Terminus?
 
@@ -73,10 +73,10 @@ including compressed macOS `.app` bundles.
 <table>
   <tr>
     <td width="50%">
-      <img src="docs/assets/readme/terminus-appearance-settings.png" alt="Terminus appearance settings in English">
+      <img src=".github/assets/readme/terminus-appearance-settings.png" alt="Terminus appearance settings in English">
     </td>
     <td width="50%">
-      <img src="docs/assets/readme/terminus-command-palette.png" alt="Terminus command palette in English">
+      <img src=".github/assets/readme/terminus-command-palette.png" alt="Terminus command palette in English">
     </td>
   </tr>
   <tr>
@@ -95,7 +95,7 @@ including compressed macOS `.app` bundles.
    Snippets, or tmux from the top toolbar as needed.
 
 <p align="center">
-  <img src="docs/assets/readme/terminus-empty-workspace.png" width="760" alt="Terminus first-launch screen in English">
+  <img src=".github/assets/readme/terminus-empty-workspace.png" width="760" alt="Terminus first-launch screen in English">
 </p>
 
 Projects, layout metadata, profiles, shortcuts, and settings are persisted in
@@ -155,9 +155,8 @@ side effects, PTY lifecycle, persistence, Git operations, and path validation.
 High-frequency terminal output travels directly to the terminal runtime rather
 than through Zustand.
 
-For deeper context, see the
-[v0.2 scope](docs/plans/2026-07-25-terminus-v0.2-scope-design.md) and the
-[frozen terminal-core design](docs/plans/2026-07-23-terminus-terminal-core-design.md).
+Repository-level product boundaries and architecture invariants are maintained
+in [AGENTS.md](AGENTS.md) and [CLAUDE.md](CLAUDE.md).
 
 ## Security model
 
@@ -190,9 +189,8 @@ Common commands:
 The
 [Verify v0.2 workflow](.github/workflows/verify-v02.yml) runs frontend checks,
 tests, Rust tests, and a package-free desktop build on macOS, Ubuntu, and
-Windows. Detailed automated evidence and the remaining human smoke checks are
-tracked in
-[v0.2 completion evidence](docs/phases/03-v0.2-completion-evidence.md).
+Windows. Native release packages remain unsigned and should receive packaged
+human smoke testing on each supported operating system.
 
 ## Project status and roadmap
 
@@ -201,15 +199,15 @@ workflows and light project tools. SSH/remote access, signing/notarization,
 automatic updates, additional distribution channels, and any optional AI or
 plugin surface belong to separately designed v0.3+ work.
 
-See the [v0.2/v0.3 roadmap](docs/plans/2026-07-25-terminus-roadmap-v0.2-v0.3.md)
-and [changelog](CHANGELOG.md) for the current boundaries and release history.
+See [AGENTS.md](AGENTS.md), [CLAUDE.md](CLAUDE.md), and the
+[changelog](CHANGELOG.md) for the current boundaries and release history.
 
 ## Contributing
 
 Issues and focused pull requests are welcome. Before proposing a change:
 
-1. Read the [v0.2 scope](docs/plans/2026-07-25-terminus-v0.2-scope-design.md).
-2. Keep `legacy/` read-only and do not import from it.
+1. Read [AGENTS.md](AGENTS.md) and [CLAUDE.md](CLAUDE.md).
+2. Do not reintroduce tracked `docs/` or `legacy/` trees.
 3. Preserve the PTY, security, persistence, and typed-command invariants.
 4. Run `pnpm verify:v02` and `pnpm audit:rust`.
 5. Use Conventional Commit prefixes such as `feat:`, `fix:`, `docs:`, or

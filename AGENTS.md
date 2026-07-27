@@ -7,13 +7,9 @@
 **v0.2 (active):** multi-OS + Git UI (light) + tasks + snippets + optional tmux bridge.  
 **v0.3+:** SSH/remote, AI, signing/updater/Homebrew, etc. — park until designed.
 
-**Authoritative docs:**
-
-- v0.2 scope: `docs/plans/2026-07-25-terminus-v0.2-scope-design.md`
-- Roadmap: `docs/plans/2026-07-25-terminus-roadmap-v0.2-v0.3.md`
-- v0.1 frozen design/plan: `docs/plans/2026-07-23-terminus-terminal-core-*.md`
-- Evidence: `docs/phases/02-v0.1-completion-evidence.md`
-- Agent deep-dive: `CLAUDE.md` · Process: `docs/phases/00-process-overview.md`
+Repository-level product boundaries live in this file and `CLAUDE.md`.
+Standalone `docs/` and archived `legacy/` trees are intentionally excluded
+from version control.
 
 ## Project structure
 
@@ -21,8 +17,7 @@
 |------|------|
 | `src/` | React 19 + TypeScript UI (`features/`, `stores/`, `lib/tauri/`) |
 | `src-tauri/` | Tauri v2 Rust: PTY, persistence, commands |
-| `docs/` | Design, implementation plans, phase process, research |
-| `legacy/` | Frozen previous app + old docs — **read-only**, never import |
+| `.github/` | CI/release workflows and repository-facing media |
 | `scripts/` | `verify-v01.sh`, `audit-rust.sh` |
 
 ## Commands
@@ -49,9 +44,9 @@ cargo test --manifest-path src-tauri/Cargo.toml
 
 - Unit: Vitest + Cargo for domain/PTY/SQL
 - Lifecycle: real Tauri smoke (jsdom is not enough)
-- Release gate: `pnpm verify:v01` + `pnpm audit:rust`
-- v0.1 daily-driver claim: automated + human packaged smoke/M2 (evidence doc)
-- Do not claim Final DoD without evidence §3–§4 PASS
+- Release gate: `pnpm verify:v02` + `pnpm audit:rust`
+- Do not claim cross-platform release readiness without automated gates and
+  packaged human smoke evidence
 
 ## Security
 
@@ -62,5 +57,8 @@ cargo test --manifest-path src-tauri/Cargo.toml
 
 ## Scope discipline
 
-- v0.2 work must match `docs/plans/2026-07-25-terminus-v0.2-scope-design.md`
-- Park non-v0.2 ideas as dated docs under `docs/plans/`; do not merge into frozen v0.1 core
+- Keep v0.2 focused on multi-OS local terminals, light Git, tasks, snippets,
+  and the optional tmux bridge.
+- SSH/remote, AI, signing/updater, distribution channels, plugins, and editor
+  surfaces require explicit product design before implementation.
+- Do not reintroduce tracked `docs/` or `legacy/` trees.

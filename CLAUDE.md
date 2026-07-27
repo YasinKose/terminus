@@ -6,22 +6,10 @@ Instructions for AI agents working in this repository.
 
 **v0.1 (agent-closed core):** macOS-first **local** terminal workspace — project folders → workspaces → split terminal panes. Compact, keyboard-first. Not an IDE, remote orchestrator, or AI platform.
 
-**v0.2 (active product direction):** multi-OS runtime + light Git UI + tasks + snippets + optional tmux bridge. See v0.2 scope design.
+**v0.2 (active product direction):** multi-OS runtime + light Git UI + tasks + snippets + optional tmux bridge.
 
-**Authoritative product docs (read these first):**
-
-| Doc | Role |
-|-----|------|
-| `docs/plans/2026-07-25-terminus-v0.2-scope-design.md` | **v0.2 product SoT** (new features) |
-| `docs/plans/2026-07-25-terminus-roadmap-v0.2-v0.3.md` | Version sequencing + parking lot |
-| `docs/plans/2026-07-23-terminus-terminal-core-design.md` | Frozen v0.1 design (terminal core architecture) |
-| `docs/plans/2026-07-23-terminus-terminal-core.md` | Frozen v0.1 implementation plan (phases 0–6) |
-| `docs/phases/02-v0.1-completion-evidence.md` | v0.1 automated vs human residual |
-| `docs/phases/00-process-overview.md` | Process, gates, roles |
-| `docs/research/2026-07-25-peer-landscape.md` | Peer research notes (absorb / skip) |
-| `docs/README.md` | Docs index and precedence |
-
-If docs conflict: **v0.2 SoT wins for new features**; **v0.1 design wins for terminal-core invariants**.
+Repository guidance lives in this file and `AGENTS.md`. Standalone `docs/` and
+archived `legacy/` trees are intentionally excluded from version control.
 
 ## Explicit non-goals
 
@@ -39,8 +27,6 @@ If docs conflict: **v0.2 SoT wins for new features**; **v0.1 design wins for ter
 - Git UI (light workbench)  
 - Tasks, snippets (+ optional Makefile import)  
 - Optional tmux **bridge** (user’s tmux; not a Terminus daemon)
-
-`legacy/` is a **read-only behavioral reference**. Never import from it into the app graph.
 
 ## Stack (approved)
 
@@ -71,20 +57,16 @@ If docs conflict: **v0.2 SoT wins for new features**; **v0.1 design wins for ter
 ```text
 .
 ├── CLAUDE.md / AGENTS.md
-├── docs/
-│   ├── README.md
-│   ├── phases/          # process + phase gates
-│   ├── plans/           # design + implementation plans
-│   └── research/        # peer / external research
+├── .github/             # workflows + repository-facing media
 ├── src/                 # React app (features/*, stores, lib/tauri)
 ├── src-tauri/           # Rust: commands, pty, persistence
-└── legacy/              # frozen old app + old docs — do not import
+└── scripts/             # verification and audit entry points
 ```
 
 ## Working process
 
-1. **Baseline first** — Archival move + plan files need a clean Git baseline before feature work (Task 1). Prefer an isolated git worktree for implementation.
-2. **One phase at a time** — Follow `docs/plans/2026-07-23-terminus-terminal-core.md`. Do not start Phase N+1 while Phase N gate is red.
+1. **Baseline first** — Start feature work from a clean Git baseline. Prefer an isolated git worktree for large implementation slices.
+2. **One slice at a time** — Keep each implementation slice focused and do not continue while its verification gate is red.
 3. **TDD for behavior** — Pure domain and unit-testable logic first (failing test → implement → pass). PTY/UI lifecycle needs real Tauri smoke, not jsdom alone.
 4. **Commits** — Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, `test:`). Atomic, reviewable. Suggested messages in the plan are hints; stage deliberately.
 5. **Gates** — After each phase: automated checks listed in the plan + phase smoke. Before claiming done: `verification-before-completion` evidence.
@@ -102,11 +84,11 @@ If docs conflict: **v0.2 SoT wins for new features**; **v0.1 design wins for ter
 | 5 | Activity / settings / recovery | Lifecycle, OSC, profiles, shortcuts, 6 presets, DB recovery UI |
 | 6 | Hardening | Regression suite, smoke matrix, perf gates, local `.app`/`.dmg`, security |
 
-Full tasks: implementation plan Tasks 1–22. Process detail: `docs/phases/00-process-overview.md`.
-
 ### Final DoD (all must be true)
 
-See implementation plan “Final definition of done” (14 points). Highlights: usable local shell; SQLite layouts; stable pane identity under move/split; no accidental PTY kill; confirms on close; activity/OSC; recovery never silent-delete; perf gates; **no scope leak**.
+Highlights: usable local shell; SQLite layouts; stable pane identity under
+move/split; no accidental PTY kill; confirms on close; activity/OSC; recovery
+never silent-delete; performance gates; **no scope leak**.
 
 ### Performance gates (M2 workstation)
 
@@ -160,7 +142,7 @@ cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 - Never commit secrets, machine paths, or `.firecrawl/` research dumps  
 - Do not commit unless the user asks  
 
-## Legacy lessons (carry / skip)
+## Historical lessons (carry / skip)
 
 **Carry (behavior):** ID-idempotent spawn; explicit close; mounted workspace stability; stable leaf identity; empty-workspace recovery; Fit/WebGL fallback lessons.
 
@@ -168,22 +150,24 @@ cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 
 ## Peer product posture
 
-Closest peer stack: **Dispatcher** (Tauri + React + xterm, project sidebar, splits, activity dots). Absorb UX patterns (activity dots, project-first); **do not** copy tmux `-CC`, notes-as-product, or multi-remote scope into v0.1. Tabby → profiles/tabs/shortcuts inspiration only. Wave → skip AI-native pivot. Details: `docs/research/2026-07-25-peer-landscape.md`.
+Closest peer stack: **Dispatcher** (Tauri + React + xterm, project sidebar,
+splits, activity dots). Absorb UX patterns (activity dots, project-first);
+**do not** copy tmux `-CC`, notes-as-product, or multi-remote scope into v0.1.
+Tabby → profiles/tabs/shortcuts inspiration only. Wave → skip AI-native pivot.
 
 ## Agent anti-patterns
 
-- Implementing from `legacy/docs/prd.md` “agent-native fleet” vision without a dated design  
-- Treating old Svelte `AGENTS.md` layout as current target  
+- Reintroducing tracked `docs/` or `legacy/` trees
+- Treating an old Svelte layout as the current target
 - Closing PTYs on React unmount / workspace hide  
 - Using Zustand or global events for PTY byte stream  
 - Pulling v0.3 park-lot items (SSH/AI/signing/updater) into v0.2  
-- Claiming v0.1 Final DoD / daily-driver without evidence §3–§4 PASS  
+- Claiming cross-platform readiness without automated and packaged smoke evidence
 - Declaring a phase complete without gate evidence  
 
 ## When stuck
 
-1. Re-read the approved design section for the feature.  
-2. Check the matching Task steps in the implementation plan.  
-3. Prefer pure domain tests before UI.  
-4. For PTY races/lifecycle: real `tauri:dev` smoke, not speculation.  
-5. Hard architecture tradeoffs: stop and ask the human; do not expand scope.  
+1. Re-read the product boundaries and architecture rules in this file.
+2. Prefer pure domain tests before UI.
+3. For PTY races/lifecycle: real `tauri:dev` smoke, not speculation.
+4. Hard architecture tradeoffs: stop and ask the human; do not expand scope.

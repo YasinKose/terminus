@@ -23,19 +23,14 @@ src-tauri/gen/schemas/
 *.pem
 credentials*
 
+# Repository-external documentation and archived implementations
+/docs/
+/legacy/
+
 # Local peer-repo research clones (not part of the product)
 .peer-research/
-legacy/.peer-research/
-legacy/tabby-repo/
-legacy/dist/
-legacy/**/node_modules/
-legacy/**/target/
-legacy/**/.git/
-legacy/**/.env
-legacy/**/.env.*
-legacy/**/.DS_Store
 
-# Firecrawl CLI research dumps (durable notes live in docs/research/)
+# Firecrawl CLI research dumps
 .firecrawl/
 
 # Git worktrees (local isolation)

@@ -218,8 +218,23 @@ fn resolve_cwd(profile: &ProfileRecord, project_root: &Path) -> Result<PathBuf, 
         )));
     }
 
-    raw.canonicalize()
-        .map_err(|e| AppError::profile_invalid(format!("cannot canonicalize cwd: {e}")))
+    let canonical = raw
+        .canonicalize()
+        .map_err(|e| AppError::profile_invalid(format!("cannot canonicalize cwd: {e}")))?;
+    Ok(normalize_windows_verbatim_cwd(canonical))
+}
+
+fn normalize_windows_verbatim_cwd(path: PathBuf) -> PathBuf {
+    let Some(raw) = path.to_str() else {
+        return path;
+    };
+    let Some(stripped) = raw.strip_prefix(r"\\?\") else {
+        return path;
+    };
+    if let Some(unc) = stripped.strip_prefix(r"UNC\") {
+        return PathBuf::from(format!(r"\\{unc}"));
+    }
+    PathBuf::from(stripped)
 }
 
 fn apply_term_defaults(vars: &mut HashMap<String, String>) {
@@ -227,4 +242,24 @@ fn apply_term_defaults(vars: &mut HashMap<String, String>) {
         .or_insert_with(|| "xterm-256color".to_string());
     vars.entry("COLORTERM".to_string())
         .or_insert_with(|| "truecolor".to_string());
+}
+
+#[cfg(test)]
+mod tests {
+    use super::normalize_windows_verbatim_cwd;
+    use std::path::PathBuf;
+
+    #[test]
+    fn removes_the_windows_verbatim_prefix_before_spawning_a_shell() {
+        assert_eq!(
+            normalize_windows_verbatim_cwd(PathBuf::from(r"\\?\C:\Users\Public\PPL_ANTREMAN",)),
+            PathBuf::from(r"C:\Users\Public\PPL_ANTREMAN"),
+        );
+    }
+
+    #[test]
+    fn preserves_normal_paths() {
+        let path = PathBuf::from("/tmp/terminus");
+        assert_eq!(normalize_windows_verbatim_cwd(path.clone()), path);
+    }
 }

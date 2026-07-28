@@ -1,4 +1,11 @@
-import { cleanup, render, waitFor, within } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppShell } from "@/app/AppShell";
@@ -222,7 +229,7 @@ describe("chrome toolbar discoverability", () => {
     expect(useSettingsStore.getState().settingsOpen).toBe(true);
   });
 
-  it("exposes workspace action toolbar for new terminal and splits", async () => {
+  it("shows the active project and workspace with terminal actions in the titlebar", async () => {
     const p1 = project("p1", "/a", "w1");
     const w1 = workspace("w1", "p1", "Main", 0);
     const api = createMockApi({ projects: [p1], workspaces: [w1] });
@@ -232,7 +239,12 @@ describe("chrome toolbar discoverability", () => {
 
     const { container } = renderShell(api);
 
-    const toolbar = within(container).getByTestId("workspace-action-toolbar");
+    const titlebar = within(container).getByRole("banner");
+    expect(within(titlebar).getByTestId("titlebar-context")).toHaveTextContent(
+      "aMain",
+    );
+
+    const toolbar = within(titlebar).getByTestId("workspace-action-toolbar");
     expect(
       within(toolbar).getByTestId("workspace-action-new-terminal"),
     ).toBeEnabled();
@@ -275,5 +287,30 @@ describe("chrome toolbar discoverability", () => {
       const root = JSON.parse(ws!.rootJson!) as { type: string };
       expect(root.type).toBe("split");
     });
+  });
+
+  it("offers titlebar actions from the compact overflow menu", async () => {
+    const p1 = project("p1", "/a", "w1");
+    const w1 = workspace("w1", "p1", "Main", 0);
+    const api = createMockApi({ projects: [p1], workspaces: [w1] });
+    resetStores(api);
+    await useProjectStore.getState().bootstrap();
+    await useProjectStore.getState().selectProject("p1");
+
+    const { container } = renderShell(api);
+    fireEvent.pointerDown(
+      within(container).getByTestId("titlebar-overflow-menu"),
+      { button: 0, ctrlKey: false },
+    );
+
+    expect(
+      await screen.findByRole("menuitem", { name: "New terminal" }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("menuitem", { name: "Show git panel" }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("menuitem", { name: "Command palette" }),
+    ).toBeVisible();
   });
 });

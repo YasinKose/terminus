@@ -249,11 +249,13 @@ describe("App shell", () => {
     await user.click(screen.getByRole("button", { name: /open project/i }));
 
     await waitFor(() => {
-      expect(within(container).getByText("demo")).toBeVisible();
+      expect(
+        within(container).getByTestId("project-row-p-1"),
+      ).toHaveTextContent("demo");
     });
     expect(
-      within(container).getByRole("tab", { name: /workspace 1/i }),
-    ).toBeVisible();
+      within(container).getByRole("treeitem", { name: /workspace 1/i }),
+    ).toHaveAttribute("aria-current", "page");
     expect(dialog.openDirectory).toHaveBeenCalled();
   });
 
@@ -305,8 +307,8 @@ describe("App shell", () => {
     );
 
     expect(
-      within(container).getByRole("tab", { name: "Alpha" }),
-    ).toHaveAttribute("aria-selected", "true");
+      within(container).getByRole("treeitem", { name: "Alpha" }),
+    ).toHaveAttribute("aria-current", "page");
 
     await user.click(within(container).getByRole("button", { name: "b" }));
 
@@ -315,8 +317,8 @@ describe("App shell", () => {
       expect(useWorkspaceStore.getState().activeWorkspaceId).toBe("w2");
     });
     expect(
-      within(container).getByRole("tab", { name: "Beta" }),
-    ).toHaveAttribute("aria-selected", "true");
+      within(container).getByRole("treeitem", { name: /^Beta/ }),
+    ).toHaveAttribute("aria-current", "page");
   });
 
   it("switches to the navigator preview when hold modifiers are released", async () => {
@@ -381,7 +383,7 @@ describe("App shell", () => {
     });
   });
 
-  it("persists workspace selection from a workspace tab", async () => {
+  it("persists workspace selection from the project tree", async () => {
     const p1 = project("p1", "/a", "w1");
     const w1 = workspace("w1", "p1", "One", 0);
     const w2 = workspace("w2", "p1", "Two", 1);
@@ -401,14 +403,16 @@ describe("App shell", () => {
       />,
     );
 
-    await user.click(within(container).getByRole("tab", { name: "Two" }));
+    await user.click(
+      within(container).getByRole("treeitem", { name: "Two" }),
+    );
 
     await waitFor(() => {
       expect(persistSelection).toHaveBeenCalledWith("p1", "w2");
     });
   });
 
-  it("opens a Git file in the source workspace and returns to the terminal tab", async () => {
+  it("opens a Git file in the source workspace and returns to the terminal workspace", async () => {
     const p1 = project("p1", "/a", "w1");
     const w1 = workspace("w1", "p1", "Main", 0);
     const api = createMockApi({ projects: [p1], workspaces: [w1] });
@@ -475,7 +479,7 @@ describe("App shell", () => {
       "export const app = true;",
     );
 
-    await user.click(screen.getByRole("tab", { name: "Main" }));
+    await user.click(screen.getByRole("treeitem", { name: /^Main/ }));
 
     await waitFor(() =>
       expect(
@@ -543,15 +547,21 @@ describe("App shell", () => {
       />,
     );
 
-    expect(within(container).getByLabelText("Projects")).toBeVisible();
+    expect(
+      within(container).getByRole("complementary", { name: "Projects" }),
+    ).toBeVisible();
     await user.click(
       within(container).getByRole("button", { name: /hide sidebar/i }),
     );
-    expect(within(container).queryByLabelText("Projects")).toBeNull();
+    expect(
+      within(container).queryByRole("complementary", { name: "Projects" }),
+    ).toBeNull();
     await user.click(
       within(container).getByRole("button", { name: /show sidebar/i }),
     );
-    expect(within(container).getByLabelText("Projects")).toBeVisible();
+    expect(
+      within(container).getByRole("complementary", { name: "Projects" }),
+    ).toBeVisible();
   });
 
   it("opens an accessible dialog to rename a workspace", async () => {
@@ -571,7 +581,7 @@ describe("App shell", () => {
     );
 
     await user.dblClick(
-      within(container).getByRole("tab", { name: "Main" }),
+      within(container).getByRole("treeitem", { name: "Main" }),
     );
 
     const dialog = screen.getByRole("dialog", { name: "Rename workspace" });

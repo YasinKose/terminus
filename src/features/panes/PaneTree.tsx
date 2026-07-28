@@ -119,10 +119,12 @@ function TerminalLeafView({
     if (drag.source.pointerId !== e.pointerId) return;
     const el = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
     const paneEl = el?.closest?.("[data-pane-id]") as HTMLElement | null;
-    const tabEl = el?.closest?.("[data-workspace-tab-id]") as HTMLElement | null;
+    const workspaceEl = el?.closest?.(
+      "[data-workspace-drop-id]",
+    ) as HTMLElement | null;
 
-    if (tabEl) {
-      const wsId = tabEl.getAttribute("data-workspace-tab-id");
+    if (workspaceEl) {
+      const wsId = workspaceEl.getAttribute("data-workspace-drop-id");
       if (wsId) {
         setOver({ kind: "workspace", workspaceId: wsId });
         return;

@@ -57,6 +57,8 @@
   "titlebar": {
     "showSidebar": "Show sidebar",
     "hideSidebar": "Hide sidebar",
+    "activeContext": "{{project}}, workspace {{workspace}}",
+    "moreActions": "More actions",
     "showGit": "Show git panel",
     "hideGit": "Hide git panel",
     "showSnippets": "Show snippets",
@@ -285,6 +287,9 @@
     "title": "Projects",
     "open": "Open project",
     "openShort": "Open",
+    "expandWorkspaces": "Expand {{name}} workspaces",
+    "collapseWorkspaces": "Collapse {{name}} workspaces",
+    "resizeSidebar": "Resize project sidebar",
     "empty": "Open a folder to create your first project.",
     "closeNamed": "Close {{name}}",
     "renameTitle": "Rename project",
@@ -297,6 +302,9 @@
     "tabsLabel": "Workspaces",
     "closeNamed": "Close {{name}}",
     "new": "New workspace",
+    "newInProject": "New workspace in {{name}}",
+    "terminalCount_one": "{{count}} terminal",
+    "terminalCount_other": "{{count}} terminals",
     "defaultName": "Workspace {{number}}",
     "overflow": "Show {{count}} more workspace",
     "overflow_other": "Show {{count}} more workspaces",
@@ -308,8 +316,8 @@
     "rename": "Rename workspace",
     "menu": {
       "rename": "Rename…",
-      "moveLeft": "Move left",
-      "moveRight": "Move right",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
       "close": "Close workspace…"
     },
     "area": {

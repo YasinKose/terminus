@@ -18,7 +18,6 @@ import { useUiStore } from "@/features/ui/uiStore";
 import { collectTerminalIds } from "@/features/panes/tree";
 import type { PaneNode } from "@/features/panes/model";
 import { WorkspaceArea } from "@/features/workspaces/WorkspaceArea";
-import { WorkspaceTabs } from "@/features/workspaces/WorkspaceTabs";
 import { useWorkspaceStore } from "@/features/workspaces/workspaceStore";
 import { reportError } from "@/lib/errors";
 import type { WorkspaceRecord } from "@/lib/tauri/contracts";
@@ -93,6 +92,8 @@ export function AppShell({
   const listForProject = useWorkspaceStore((s) => s.listForProject);
 
   const sidebarCollapsed = useUiStore((s) => s.sidebarCollapsed);
+  const sidebarWidth = useUiStore((s) => s.sidebarWidth);
+  const setSidebarWidth = useUiStore((s) => s.setSidebarWidth);
   const sidePanel = useUiStore((s) => s.sidePanel);
   const setSidePanel = useUiStore((s) => s.setSidePanel);
   const sourceActive = useSourcePreviewStore((s) => s.active);
@@ -106,6 +107,10 @@ export function AppShell({
   const projectWorkspaces = activeProjectId
     ? listForProject(activeProjectId)
     : [];
+  const activeProject =
+    projects.find((project) => project.id === activeProjectId) ?? null;
+  const activeWorkspace =
+    workspaces.find((workspace) => workspace.id === activeWorkspaceId) ?? null;
   const sourceVisible =
     sourceActive &&
     sourceProjectId !== null &&
@@ -134,12 +139,11 @@ export function AppShell({
   }, [addProject, dialogApi, t]);
 
   const handleSelectWorkspace = useCallback(
-    async (workspaceId: string) => {
-      if (!activeProjectId) return;
+    async (projectId: string, workspaceId: string) => {
       closeSource();
-      await selectWorkspace(activeProjectId, workspaceId);
+      await selectWorkspace(projectId, workspaceId);
     },
-    [activeProjectId, closeSource, selectWorkspace],
+    [closeSource, selectWorkspace],
   );
 
   const handleNavigatorCommit = useCallback(
@@ -173,10 +177,9 @@ export function AppShell({
     [saveWorkspace, workspaces],
   );
 
-  const handleCreateWorkspace = useCallback(async () => {
-    if (!activeProjectId) return;
+  const handleCreateWorkspace = useCallback(async (projectId: string) => {
     closeSource();
-    const existing = listForProject(activeProjectId);
+    const existing = listForProject(projectId);
     const id = crypto.randomUUID();
     const position =
       existing.length === 0
@@ -184,7 +187,7 @@ export function AppShell({
         : Math.max(...existing.map((w) => w.position)) + 1;
     const record: WorkspaceRecord = {
       id,
-      projectId: activeProjectId,
+      projectId,
       name: t("workspaces.defaultName", { number: existing.length + 1 }),
       rootJson: null,
       activePaneId: null,
@@ -193,9 +196,8 @@ export function AppShell({
       updatedAt: Date.now(),
     };
     const saved = await saveWorkspace(record);
-    await selectWorkspace(activeProjectId, saved.id);
+    await selectWorkspace(projectId, saved.id);
   }, [
-    activeProjectId,
     closeSource,
     listForProject,
     saveWorkspace,
@@ -250,13 +252,44 @@ export function AppShell({
         <Titlebar
           onOpenSettings={() => commandContext.openSettings()}
           onOpenPalette={() => commandContext.openPalette()}
+          projectName={activeProject?.displayName}
+          workspaceName={activeWorkspace?.name}
+          onNewTerminal={
+            activeProjectId
+              ? () => {
+                  closeSource();
+                  void commandContext.newTerminal();
+                }
+              : undefined
+          }
+          onSplitHorizontal={
+            activeProjectId
+              ? () => {
+                  closeSource();
+                  void commandContext.splitHorizontal();
+                }
+              : undefined
+          }
+          onSplitVertical={
+            activeProjectId
+              ? () => {
+                  closeSource();
+                  void commandContext.splitVertical();
+                }
+              : undefined
+          }
+          workspaceActionsDisabled={!activeWorkspaceId}
         />
         <div className="flex min-h-0 flex-1">
           {!focusMode && (
             <ProjectSidebar
               projects={projects}
+              workspaces={workspaces}
               activeProjectId={activeProjectId}
+              activeWorkspaceId={activeWorkspaceId}
               collapsed={sidebarCollapsed}
+              width={sidebarWidth}
+              onWidthChange={setSidebarWidth}
               onOpenProject={() => {
                 runAction(t("errors.openProject"), handleOpenProject);
               }}
@@ -270,52 +303,32 @@ export function AppShell({
                   renameProject(projectId, name),
                 );
               }}
+              onSelectWorkspace={(projectId, workspaceId) => {
+                runAction(t("errors.selectWorkspace"), () =>
+                  handleSelectWorkspace(projectId, workspaceId),
+                );
+              }}
+              onCreateWorkspace={(projectId) => {
+                runAction(t("errors.createWorkspace"), () =>
+                  handleCreateWorkspace(projectId),
+                );
+              }}
+              onCloseWorkspace={handleCloseWorkspace}
+              onRenameWorkspace={(workspaceId, name) => {
+                runAction(t("errors.renameWorkspace"), () =>
+                  handleRenameWorkspace(workspaceId, name),
+                );
+              }}
+              onMoveWorkspace={(workspaceId, direction) => {
+                runAction(t("errors.reorderWorkspace"), () =>
+                  reorderWorkspace(workspaceId, direction),
+                );
+              }}
             />
           )}
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
             {activeProjectId ? (
               <>
-                {!focusMode && (
-                  <WorkspaceTabs
-                    workspaces={projectWorkspaces}
-                    activeWorkspaceId={activeWorkspaceId}
-                    onSelectWorkspace={(id) => {
-                      runAction(t("errors.selectWorkspace"), () =>
-                        handleSelectWorkspace(id),
-                      );
-                    }}
-                    onRenameWorkspace={(id, name) => {
-                      runAction(t("errors.renameWorkspace"), () =>
-                        handleRenameWorkspace(id, name),
-                      );
-                    }}
-                    onCreateWorkspace={() => {
-                      runAction(
-                        t("errors.createWorkspace"),
-                        handleCreateWorkspace,
-                      );
-                    }}
-                    onCloseWorkspace={handleCloseWorkspace}
-                    onMoveWorkspace={(workspaceId, direction) => {
-                      runAction(t("errors.reorderWorkspace"), () =>
-                        reorderWorkspace(workspaceId, direction),
-                      );
-                    }}
-                    onNewTerminal={() => {
-                      closeSource();
-                      void commandContext.newTerminal();
-                    }}
-                    onSplitHorizontal={() => {
-                      closeSource();
-                      void commandContext.splitHorizontal();
-                    }}
-                    onSplitVertical={() => {
-                      closeSource();
-                      void commandContext.splitVertical();
-                    }}
-                    actionsDisabled={!activeWorkspaceId}
-                  />
-                )}
                 <main
                   id="workspace-main"
                   tabIndex={-1}

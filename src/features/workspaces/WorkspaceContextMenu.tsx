@@ -38,13 +38,13 @@ export function WorkspaceContextMenu({
           disabled={!canMoveLeft}
           onSelect={() => onMove(-1)}
         >
-          {t("workspaces.menu.moveLeft")}
+          {t("workspaces.menu.moveUp")}
         </ContextMenuItem>
         <ContextMenuItem
           disabled={!canMoveRight}
           onSelect={() => onMove(1)}
         >
-          {t("workspaces.menu.moveRight")}
+          {t("workspaces.menu.moveDown")}
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem variant="destructive" onSelect={onClose}>

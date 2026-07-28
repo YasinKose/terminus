@@ -57,6 +57,8 @@
   "titlebar": {
     "showSidebar": "Kenar çubuğunu göster",
     "hideSidebar": "Kenar çubuğunu gizle",
+    "activeContext": "{{project}}, çalışma alanı {{workspace}}",
+    "moreActions": "Diğer işlemler",
     "showGit": "Git panelini göster",
     "hideGit": "Git panelini gizle",
     "showSnippets": "Kod parçalarını göster",
@@ -285,6 +287,9 @@
     "title": "Projeler",
     "open": "Proje aç",
     "openShort": "Aç",
+    "expandWorkspaces": "{{name}} çalışma alanlarını genişlet",
+    "collapseWorkspaces": "{{name}} çalışma alanlarını daralt",
+    "resizeSidebar": "Proje kenar çubuğunu yeniden boyutlandır",
     "empty": "İlk projenizi oluşturmak için bir klasör açın.",
     "closeNamed": "{{name}} projesini kapat",
     "renameTitle": "Projeyi yeniden adlandır",
@@ -297,6 +302,9 @@
     "tabsLabel": "Çalışma alanları",
     "closeNamed": "{{name}} çalışma alanını kapat",
     "new": "Yeni çalışma alanı",
+    "newInProject": "{{name}} içinde yeni çalışma alanı",
+    "terminalCount_one": "{{count}} terminal",
+    "terminalCount_other": "{{count}} terminal",
     "defaultName": "Çalışma Alanı {{number}}",
     "overflow": "{{count}} çalışma alanı daha göster",
     "overflow_other": "{{count}} çalışma alanı daha göster",
@@ -308,8 +316,8 @@
     "rename": "Çalışma alanını yeniden adlandır",
     "menu": {
       "rename": "Yeniden adlandır…",
-      "moveLeft": "Sola taşı",
-      "moveRight": "Sağa taşı",
+      "moveUp": "Yukarı taşı",
+      "moveDown": "Aşağı taşı",
       "close": "Çalışma alanını kapat…"
     },
     "area": {

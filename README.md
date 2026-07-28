@@ -8,14 +8,14 @@
   Keep shells and lightweight project tools together without turning your
   terminal into an IDE.
 
-  [![Latest release](https://img.shields.io/badge/release-v0.2.1-22c55e)](https://github.com/YasinKose/terminus/releases/latest)
+  [![Latest release](https://img.shields.io/badge/release-v0.2.2-22c55e)](https://github.com/YasinKose/terminus/releases/latest)
   [![Verify v0.2](https://github.com/YasinKose/terminus/actions/workflows/verify-v02.yml/badge.svg)](https://github.com/YasinKose/terminus/actions/workflows/verify-v02.yml)
   [![Platforms](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-6b7280)](#downloads)
 
   [Download](#downloads) · [Features](#features) · [Build from source](#build-from-source) · [Roadmap](#project-status-and-roadmap)
 </div>
 
-![Terminus workspace with a project, workspace tab, and two local terminal panes](.github/assets/readme/terminus-workspace.png)
+![Terminus v0.2.2 with project workspaces nested in the sidebar and terminal controls in the titlebar](.github/assets/readme/terminus-workspace.png)
 
 ## What is Terminus?
 
@@ -30,20 +30,23 @@ general-purpose editor.
 
 ## Downloads
 
-The latest release is **v0.2.1**. Choose the native package for your platform:
+The latest release is **v0.2.2**. Choose the native package for your platform:
 
 | Platform | Package | Download |
 | --- | --- | --- |
-| macOS — Apple Silicon | DMG | [Terminus_0.2.1_aarch64.dmg](https://github.com/YasinKose/terminus/releases/download/v0.2.1/Terminus_0.2.1_aarch64.dmg) |
-| macOS — Intel | DMG | [Terminus_0.2.1_x64.dmg](https://github.com/YasinKose/terminus/releases/download/v0.2.1/Terminus_0.2.1_x64.dmg) |
-| Windows — x64 | NSIS installer | [Terminus_0.2.1_x64-setup.exe](https://github.com/YasinKose/terminus/releases/download/v0.2.1/Terminus_0.2.1_x64-setup.exe) |
-| Windows — x64 | MSI | [Terminus_0.2.1_x64_en-US.msi](https://github.com/YasinKose/terminus/releases/download/v0.2.1/Terminus_0.2.1_x64_en-US.msi) |
-| Linux — x64 | AppImage | [Terminus_0.2.1_amd64.AppImage](https://github.com/YasinKose/terminus/releases/download/v0.2.1/Terminus_0.2.1_amd64.AppImage) |
-| Ubuntu/Debian — x64 | DEB | [Terminus_0.2.1_amd64.deb](https://github.com/YasinKose/terminus/releases/download/v0.2.1/Terminus_0.2.1_amd64.deb) |
+| macOS — Apple Silicon | DMG | [Terminus_0.2.2_aarch64.dmg](https://github.com/YasinKose/terminus/releases/download/v0.2.2/Terminus_0.2.2_aarch64.dmg) |
+| macOS — Intel | DMG | [Terminus_0.2.2_x64.dmg](https://github.com/YasinKose/terminus/releases/download/v0.2.2/Terminus_0.2.2_x64.dmg) |
+| Windows — x64 | NSIS installer | [Terminus_0.2.2_x64-setup.exe](https://github.com/YasinKose/terminus/releases/download/v0.2.2/Terminus_0.2.2_x64-setup.exe) |
+| Linux — x64 | AppImage | [Terminus_0.2.2_amd64.AppImage](https://github.com/YasinKose/terminus/releases/download/v0.2.2/Terminus_0.2.2_amd64.AppImage) |
+| Ubuntu/Debian — x64 | DEB | [Terminus_0.2.2_amd64.deb](https://github.com/YasinKose/terminus/releases/download/v0.2.2/Terminus_0.2.2_amd64.deb) |
 
 All packages are also available on the
-[v0.2.1 release page](https://github.com/YasinKose/terminus/releases/tag/v0.2.1),
+[v0.2.2 release page](https://github.com/YasinKose/terminus/releases/tag/v0.2.2),
 including compressed macOS `.app` bundles.
+
+Windows releases use the NSIS `.exe` installer. MSI packaging is temporarily
+disabled while its installation path is being hardened and independently
+smoke-tested.
 
 > [!IMPORTANT]
 > Current packages are unsigned. macOS Gatekeeper, Windows SmartScreen, or
@@ -52,10 +55,17 @@ including compressed macOS `.app` bundles.
 
 ## Features
 
-- **Project-first organization** — group local terminals by project and
-  persistent workspace.
+- **Project-first organization** — expand projects in the resizable sidebar
+  and switch between their nested, persistent workspaces.
+- **Unified workspace chrome** — see the active `Project › Workspace` path and
+  reach terminal, split, Git, Tasks, Snippets, and tmux actions from one
+  compact titlebar.
+- **Hold-to-navigate switcher** — hold **Control + Option + Shift**, use
+  up/down for projects and left/right for workspaces, then release to switch.
 - **Split-pane terminal layouts** — split, resize, reorder, rename, and focus
   panes while keeping PTY output outside the application state store.
+- **Automatic agent CLI titles** — recognize foreground Codex, Claude Code,
+  and OpenCode sessions while preserving OSC titles and user-locked names.
 - **Trusted shell profiles** — configure validated executables, ordered
   arguments, environment overrides, and working directories.
 - **Lightweight Git workbench** — inspect status and diffs; stage, unstage,
@@ -85,14 +95,20 @@ including compressed macOS `.app` bundles.
   </tr>
 </table>
 
+<p align="center">
+  <img src=".github/assets/readme/terminus-workspace-navigator.png" width="1000" alt="Terminus workspace navigator opened with Control, Option, and Shift">
+  <br>
+  <sub>Hold Control + Option + Shift to preview projects and workspaces; release to switch.</sub>
+</p>
+
 ## Getting started
 
 1. Install the package for your operating system.
 2. Launch Terminus and select **Open project**.
 3. Choose a local folder. Terminus creates the first workspace and trusted
    system-shell pane.
-4. Add terminals or splits from the workspace toolbar, then open Git, Tasks,
-   Snippets, or tmux from the top toolbar as needed.
+4. Add terminals or splits from the titlebar, then open Git, Tasks, Snippets,
+   or tmux from the same toolbar as needed.
 
 <p align="center">
   <img src=".github/assets/readme/terminus-empty-workspace.png" width="760" alt="Terminus first-launch screen in English">

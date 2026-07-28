@@ -1,6 +1,6 @@
 [package]
 name = "terminus"
-version = "0.2.1"
+version = "0.2.2"
 description = "Multi-OS local terminal workspace"
 authors = ["Terminus"]
 edition = "2021"

@@ -1,5 +1,49 @@
 # Changelog
 
+## 0.2.2 — 2026-07-28
+
+### Added
+
+- A project-first workspace tree in the resizable sidebar, with nested
+  workspace creation, rename, close, reorder, terminal counts, and
+  cross-workspace pane drag-and-drop.
+- A unified titlebar with `Project › Workspace` context, terminal and split
+  controls, one-at-a-time Git/Tasks/Snippets/tmux inspectors, and a compact
+  overflow menu for narrow windows.
+- Automatic foreground titles for Codex, Claude Code, and OpenCode processes,
+  while preserving OSC title fallback and user-locked names.
+- A hold-to-navigate project and workspace switcher using
+  Control + Option + Shift and the arrow keys.
+
+### Changed
+
+- Removed the separate horizontal workspace tab strip to return more vertical
+  space to terminal panes.
+- Standardized Windows distribution on the NSIS installer and added a silent
+  install smoke gate to the release workflow; MSI publishing is temporarily
+  disabled.
+- Updated repository screenshots and download links for the v0.2.2 interface.
+
+### Fixed
+
+- Converted canonical Windows `\\?\C:\...` project paths back to drive-letter
+  form before spawning a shell, preventing `cmd.exe` from rejecting the
+  working directory and falling back to `C:\Windows`.
+
+### Security
+
+- Kept foreground-process detection inside the existing structured PTY
+  session boundary; no free-form shell execution was introduced.
+
+## 0.2.1 — 2026-07-27
+
+### Changed
+
+- Refined search and form focus treatments for a more native desktop feel.
+- Replaced prominent outer focus halos with subtle border and inset emphasis
+  while preserving keyboard accessibility.
+- Added reproducible multi-platform release packaging.
+
 ## 0.2.0 — 2026-07-25
 
 ### Added

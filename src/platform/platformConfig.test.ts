@@ -11,7 +11,7 @@ describe("desktop platform configuration", () => {
     const config = json("src-tauri/tauri.conf.json");
     const window = config.app.windows[0];
 
-    expect(config.version).toBe("0.2.1");
+    expect(config.version).toBe("0.2.2");
     expect(config.app.macOSPrivateApi).toBe(true);
     expect(window.titleBarStyle).toBeUndefined();
     expect(window.hiddenTitle).toBeUndefined();
@@ -34,7 +34,18 @@ describe("desktop platform configuration", () => {
     expect(windows.app?.windows?.[0]?.titleBarStyle).toBeUndefined();
     expect(mac.bundle.targets).toEqual(["app", "dmg"]);
     expect(linux.bundle.targets).toEqual(["deb", "appimage"]);
-    expect(windows.bundle.targets).toEqual(["msi", "nsis"]);
+    expect(windows.bundle.targets).toEqual(["nsis"]);
+  });
+
+  it("smoke-installs the supported Windows NSIS package before release", () => {
+    const releaseWorkflow = readFileSync(
+      resolve(process.cwd(), ".github/workflows/release.yml"),
+      "utf8",
+    );
+
+    expect(releaseWorkflow).toContain("Smoke install Windows NSIS package");
+    expect(releaseWorkflow).toContain("bundle/nsis/*-setup.exe");
+    expect(releaseWorkflow).toContain('ArgumentList "/S"');
   });
 
   it("keeps all package manifests on the v0.2 product version", () => {
@@ -44,8 +55,8 @@ describe("desktop platform configuration", () => {
       "utf8",
     );
 
-    expect(packageJson.version).toBe("0.2.1");
-    expect(cargo).toMatch(/^version = "0\.2\.1"$/m);
+    expect(packageJson.version).toBe("0.2.2");
+    expect(cargo).toMatch(/^version = "0\.2\.2"$/m);
     expect(cargo).toContain(
       'tauri = { version = "2", features = ["macos-private-api"] }',
     );

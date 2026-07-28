@@ -35,7 +35,7 @@ jobs:
             rust_targets: ""
           - name: Windows (x64)
             platform: windows-latest
-            args: ""
+            args: --bundles nsis
             rust_targets: ""
 
     steps:
@@ -95,3 +95,22 @@ jobs:
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
+
+      - name: Smoke install Windows NSIS package
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem `
+            -Path "src-tauri/target/release/bundle/nsis/*-setup.exe" |
+            Select-Object -First 1
+          if (-not $installer) {
+            throw "Windows NSIS installer was not produced"
+          }
+          $install = Start-Process `
+            -FilePath $installer.FullName `
+            -ArgumentList "/S" `
+            -Wait `
+            -PassThru
+          if ($install.ExitCode -ne 0) {
+            throw "Windows NSIS installer failed with exit code $($install.ExitCode)"
+          }

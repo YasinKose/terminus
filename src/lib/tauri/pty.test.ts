@@ -18,7 +18,7 @@ vi.mock("@tauri-apps/api/core", () => {
 });
 
 describe("parsePtyEvent", () => {
-  it("parses started/output/exited/error tagged events", () => {
+  it("parses started/output/foreground-process/exited/error tagged events", () => {
     expect(
       parsePtyEvent({ event: "started", data: { sessionId: "s1" } }),
     ).toEqual({ event: "started", data: { sessionId: "s1" } });
@@ -31,6 +31,26 @@ describe("parsePtyEvent", () => {
     ).toEqual({
       event: "output",
       data: { sessionId: "s1", seq: 2, data: "hi" },
+    });
+
+    expect(
+      parsePtyEvent({
+        event: "foregroundProcess",
+        data: { sessionId: "s1", title: "Codex" },
+      }),
+    ).toEqual({
+      event: "foregroundProcess",
+      data: { sessionId: "s1", title: "Codex" },
+    });
+
+    expect(
+      parsePtyEvent({
+        event: "foregroundProcess",
+        data: { sessionId: "s1", title: null },
+      }),
+    ).toEqual({
+      event: "foregroundProcess",
+      data: { sessionId: "s1", title: null },
     });
 
     expect(
@@ -89,6 +109,7 @@ describe("tauriPtyApi", () => {
       cwd: "/tmp",
       cols: 80,
       rows: 24,
+      foregroundProcessTitle: null,
     });
 
     const onEvent = vi.fn();
@@ -163,6 +184,7 @@ describe("tauriPtyApi", () => {
       cwd: "/tmp",
       cols: 80,
       rows: 24,
+      foregroundProcessTitle: null,
     });
     const onEvent = vi.fn();
     await tauriPtyApi.openPty(

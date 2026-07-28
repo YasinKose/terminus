@@ -101,6 +101,7 @@ function createMockPtyApi() {
         cwd: "/tmp",
         cols: request.cols,
         rows: request.rows,
+        foregroundProcessTitle: null,
       };
     },
     writePty: async (sessionId, data) => {
@@ -121,6 +122,7 @@ function createMockPtyApi() {
         cwd: "/tmp",
         cols: request.cols,
         rows: request.rows,
+        foregroundProcessTitle: null,
       };
     },
     listPtyStates: async () => [],
@@ -376,6 +378,37 @@ describe("TerminalHost lifecycle", () => {
     expect(adapters.get("t1")?.writeLog).toContain("stream-chunk");
     const state = useTerminalStore.getState();
     expect(JSON.stringify(state)).not.toContain("stream-chunk");
+  });
+
+  it("projects foreground agent process changes into the terminal title", async () => {
+    render(
+      <TerminalHost
+        sessionId="t1"
+        projectId="p1"
+        registry={registry}
+        ptyApi={pty.api}
+        cols={80}
+        rows={24}
+      />,
+    );
+
+    await waitFor(() => expect(pty.openCalls).toHaveLength(1));
+
+    act(() => {
+      pty.emit("t1", {
+        event: "foregroundProcess",
+        data: { sessionId: "t1", title: "Codex" },
+      });
+    });
+    expect(useTerminalStore.getState().sessions.t1?.title).toBe("Codex");
+
+    act(() => {
+      pty.emit("t1", {
+        event: "foregroundProcess",
+        data: { sessionId: "t1", title: null },
+      });
+    });
+    expect(useTerminalStore.getState().sessions.t1?.title).toBe("Terminal");
   });
 
   it("exited event retains the panel and exposes Restart", async () => {

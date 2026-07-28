@@ -75,6 +75,9 @@ export function TerminalPane({
             runtime?.write(event.data.data);
             break;
           }
+          case "foregroundProcess":
+            store.setForegroundProcessTitle(sessionId, event.data.title);
+            break;
           case "exited":
             store.markExited(sessionId, event.data.code);
             break;

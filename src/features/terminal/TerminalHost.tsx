@@ -73,6 +73,9 @@ export function TerminalHost({
   const markExited = useTerminalStore((s) => s.markExited);
   const markError = useTerminalStore((s) => s.markError);
   const setTitle = useTerminalStore((s) => s.setTitle);
+  const setForegroundProcessTitle = useTerminalStore(
+    (s) => s.setForegroundProcessTitle,
+  );
   const setCwd = useTerminalStore((s) => s.setCwd);
   const applyActivity = useTerminalStore((s) => s.applyActivity);
 
@@ -161,6 +164,9 @@ export function TerminalHost({
           runtime.write(event.data.data);
           tracker.noteOutput();
           break;
+        case "foregroundProcess":
+          setForegroundProcessTitle(sessionId, event.data.title);
+          break;
         case "exited":
           markExited(sessionId, event.data.code);
           tracker.markExited();
@@ -193,6 +199,10 @@ export function TerminalHost({
           handleEvent,
         );
         if (cancelled) return;
+        setForegroundProcessTitle(
+          sessionId,
+          state.foregroundProcessTitle,
+        );
         markRunning(sessionId, state.cwd);
       } catch (err) {
         if (cancelled) return;
@@ -288,6 +298,7 @@ export function TerminalHost({
     markExited,
     markError,
     setTitle,
+    setForegroundProcessTitle,
     setCwd,
     applyActivity,
   ]);

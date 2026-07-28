@@ -8,6 +8,10 @@ export type PtyEvent =
       data: { sessionId: string; seq: number; data: string };
     }
   | {
+      event: "foregroundProcess";
+      data: { sessionId: string; title: string | null };
+    }
+  | {
       event: "exited";
       data: { sessionId: string; code: number | null };
     }
@@ -29,6 +33,7 @@ export interface PtySessionState {
   cwd: string;
   cols: number;
   rows: number;
+  foregroundProcessTitle: string | null;
 }
 
 export interface OpenPtyRequest {
@@ -105,6 +110,21 @@ export function parsePtyEvent(raw: unknown): PtyEvent {
           sessionId: data.sessionId,
           seq: data.seq,
           data: data.data,
+        },
+      };
+    }
+    case "foregroundProcess": {
+      if (
+        typeof data.sessionId !== "string" ||
+        (data.title !== null && typeof data.title !== "string")
+      ) {
+        throw new Error("malformed PTY foreground process event");
+      }
+      return {
+        event: "foregroundProcess",
+        data: {
+          sessionId: data.sessionId,
+          title: data.title as string | null,
         },
       };
     }

@@ -11,6 +11,7 @@ use portable_pty::{Child, ChildKiller, MasterPty, PtySize};
 use serde::Serialize;
 
 use super::events::PtyEvent;
+use super::process_title::{process_name, recognized_process_title};
 use crate::AppError;
 
 const COALESCE_MAX_BYTES: usize = 32 * 1024;
@@ -18,6 +19,7 @@ const COALESCE_MAX_WAIT: Duration = Duration::from_millis(16);
 const CLOSE_WAIT: Duration = Duration::from_millis(500);
 const FORCE_CLOSE_WAIT: Duration = Duration::from_millis(500);
 const THREAD_JOIN_WAIT: Duration = Duration::from_millis(250);
+const PROCESS_POLL_INTERVAL: Duration = Duration::from_millis(250);
 
 pub type EventSink = Arc<dyn Fn(PtyEvent) + Send + Sync>;
 
@@ -39,6 +41,7 @@ pub struct SessionInfo {
     pub cwd: PathBuf,
     pub cols: u16,
     pub rows: u16,
+    pub foreground_process_title: Option<String>,
 }
 
 pub struct PtySession {
@@ -55,8 +58,10 @@ pub struct PtySession {
     sink: RwLock<EventSink>,
     closing: AtomicBool,
     exit_emitted: AtomicBool,
+    foreground_process_title: RwLock<Option<String>>,
     reader_join: Mutex<Option<JoinHandle<()>>>,
     waiter_join: Mutex<Option<JoinHandle<()>>>,
+    process_monitor_join: Mutex<Option<JoinHandle<()>>>,
 }
 
 impl PtySession {
@@ -88,8 +93,10 @@ impl PtySession {
             sink: RwLock::new(sink),
             closing: AtomicBool::new(false),
             exit_emitted: AtomicBool::new(false),
+            foreground_process_title: RwLock::new(None),
             reader_join: Mutex::new(None),
             waiter_join: Mutex::new(None),
+            process_monitor_join: Mutex::new(None),
         });
 
         {
@@ -116,8 +123,20 @@ impl PtySession {
             })
             .expect("spawn waiter");
 
+        let monitor_session = Arc::clone(&session);
+        let monitor_handle = thread::Builder::new()
+            .name(format!("pty-process-monitor-{}", session_id))
+            .spawn(move || {
+                monitor_session.monitor_foreground_process();
+            })
+            .expect("spawn process monitor");
+
         *session.reader_join.lock().expect("reader_join") = Some(reader_handle);
         *session.waiter_join.lock().expect("waiter_join") = Some(waiter_handle);
+        *session
+            .process_monitor_join
+            .lock()
+            .expect("process_monitor_join") = Some(monitor_handle);
 
         session
     }
@@ -129,6 +148,7 @@ impl PtySession {
             cwd: self.cwd.clone(),
             cols: self.cols.load(Ordering::Relaxed) as u16,
             rows: self.rows.load(Ordering::Relaxed) as u16,
+            foreground_process_title: self.foreground_process_title.read().clone(),
         }
     }
 
@@ -228,6 +248,7 @@ impl PtySession {
         }
 
         {
+            self.update_foreground_process_title(None);
             let mut life = self.lifecycle.write();
             *life = SessionLifecycle::Exited { code };
         }
@@ -297,6 +318,39 @@ impl PtySession {
     fn emit(&self, event: PtyEvent) {
         let sink = self.sink.read().clone();
         sink(event);
+    }
+
+    fn monitor_foreground_process(&self) {
+        loop {
+            if self.closing.load(Ordering::Relaxed)
+                || !matches!(*self.lifecycle.read(), SessionLifecycle::Running)
+            {
+                break;
+            }
+
+            let title = self
+                .foreground_process_group()
+                .and_then(process_name)
+                .as_deref()
+                .and_then(recognized_process_title)
+                .map(str::to_owned);
+            self.update_foreground_process_title(title);
+            thread::sleep(PROCESS_POLL_INTERVAL);
+        }
+    }
+
+    fn update_foreground_process_title(&self, title: Option<String>) {
+        {
+            let mut current = self.foreground_process_title.write();
+            if *current == title {
+                return;
+            }
+            *current = title.clone();
+        }
+        self.emit(PtyEvent::ForegroundProcess {
+            session_id: self.session_id.clone(),
+            title,
+        });
     }
 
     fn waiter_finished(&self) -> bool {
@@ -388,6 +442,10 @@ impl PtySession {
         let handles = [
             self.reader_join.lock().expect("reader_join").take(),
             self.waiter_join.lock().expect("waiter_join").take(),
+            self.process_monitor_join
+                .lock()
+                .expect("process_monitor_join")
+                .take(),
         ];
         for handle in handles.into_iter().flatten() {
             while !handle.is_finished() && Instant::now() < deadline {

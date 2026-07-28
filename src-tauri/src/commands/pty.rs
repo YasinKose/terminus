@@ -55,6 +55,7 @@ pub struct PtySessionState {
     pub cwd: String,
     pub cols: u16,
     pub rows: u16,
+    pub foreground_process_title: Option<String>,
 }
 
 impl From<SessionInfo> for PtySessionState {
@@ -65,6 +66,7 @@ impl From<SessionInfo> for PtySessionState {
             cwd: info.cwd.to_string_lossy().to_string(),
             cols: info.cols,
             rows: info.rows,
+            foreground_process_title: info.foreground_process_title,
         }
     }
 }
@@ -221,7 +223,8 @@ pub fn validate_cwd_path(path: &str) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
-    use super::validate_cwd_path;
+    use super::{validate_cwd_path, PtySessionState};
+    use crate::pty::{SessionInfo, SessionLifecycle};
     use std::fs;
     use tempfile::tempdir;
 
@@ -251,5 +254,19 @@ mod tests {
         let file = dir.path().join("file.txt");
         fs::write(&file, b"x").expect("write");
         assert!(validate_cwd_path(&file.to_string_lossy()).is_none());
+    }
+
+    #[test]
+    fn session_state_exposes_the_current_foreground_process_title() {
+        let state = PtySessionState::from(SessionInfo {
+            session_id: "agent".into(),
+            lifecycle: SessionLifecycle::Running,
+            cwd: std::env::temp_dir(),
+            cols: 80,
+            rows: 24,
+            foreground_process_title: Some("Codex".into()),
+        });
+
+        assert_eq!(state.foreground_process_title.as_deref(), Some("Codex"));
     }
 }

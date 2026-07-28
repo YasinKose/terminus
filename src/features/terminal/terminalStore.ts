@@ -17,6 +17,9 @@ export type TerminalSessionView = {
   error: ErrorPayload | null;
   title: string;
   titleLocked: boolean;
+  fallbackTitle: string;
+  oscTitle: string | null;
+  foregroundProcessTitle: string | null;
   cwd: string | null;
   activity: ActivityLevel;
   unread: boolean;
@@ -36,6 +39,10 @@ export type TerminalStoreState = {
   markError: (sessionId: string, error: ErrorPayload) => void;
   markClosing: (sessionId: string) => void;
   setTitle: (sessionId: string, title: string, options?: { force?: boolean }) => void;
+  setForegroundProcessTitle: (
+    sessionId: string,
+    title: string | null,
+  ) => void;
   lockTitle: (sessionId: string, title: string) => void;
   setCwd: (sessionId: string, cwd: string) => void;
   applyActivity: (sessionId: string, snap: TerminalActivitySnapshot) => void;
@@ -57,6 +64,9 @@ const emptySession = (
   error: null,
   title,
   titleLocked: false,
+  fallbackTitle: title,
+  oscTitle: null,
+  foregroundProcessTitle: null,
   cwd: null,
   activity: "quiet",
   unread: false,
@@ -76,6 +86,19 @@ function patchSession(
   };
 }
 
+function automaticTitle(
+  session: Pick<
+    TerminalSessionView,
+    "fallbackTitle" | "oscTitle" | "foregroundProcessTitle"
+  >,
+): string {
+  return (
+    session.foregroundProcessTitle ??
+    session.oscTitle ??
+    session.fallbackTitle
+  );
+}
+
 export const useTerminalStore = create<TerminalStoreState>((set, get) => ({
   sessions: {},
 
@@ -91,6 +114,9 @@ export const useTerminalStore = create<TerminalStoreState>((set, get) => ({
 
   markStarting: (sessionId) => {
     set((s) => {
+      const cur = s.sessions[sessionId];
+      if (!cur) return s;
+      const foregroundProcessTitle = null;
       const next = patchSession(s.sessions, sessionId, {
         status: "starting",
         exitCode: null,
@@ -98,6 +124,10 @@ export const useTerminalStore = create<TerminalStoreState>((set, get) => ({
         activity: "quiet",
         attention: false,
         unread: false,
+        foregroundProcessTitle,
+        title: cur.titleLocked
+          ? cur.title
+          : automaticTitle({ ...cur, foregroundProcessTitle }),
       });
       return next ? { sessions: next } : s;
     });
@@ -124,12 +154,19 @@ export const useTerminalStore = create<TerminalStoreState>((set, get) => ({
 
   markExited: (sessionId, code) => {
     set((s) => {
+      const cur = s.sessions[sessionId];
+      if (!cur) return s;
+      const foregroundProcessTitle = null;
       const next = patchSession(s.sessions, sessionId, {
         status: "exited",
         exitCode: code,
         error: null,
         activity: "quiet",
         attention: false,
+        foregroundProcessTitle,
+        title: cur.titleLocked
+          ? cur.title
+          : automaticTitle({ ...cur, foregroundProcessTitle }),
       });
       return next ? { sessions: next } : s;
     });
@@ -137,10 +174,17 @@ export const useTerminalStore = create<TerminalStoreState>((set, get) => ({
 
   markError: (sessionId, error) => {
     set((s) => {
+      const cur = s.sessions[sessionId];
+      if (!cur) return s;
+      const foregroundProcessTitle = null;
       const next = patchSession(s.sessions, sessionId, {
         status: "error",
         error,
         activity: "quiet",
+        foregroundProcessTitle,
+        title: cur.titleLocked
+          ? cur.title
+          : automaticTitle({ ...cur, foregroundProcessTitle }),
       });
       return next ? { sessions: next } : s;
     });
@@ -158,11 +202,32 @@ export const useTerminalStore = create<TerminalStoreState>((set, get) => ({
       const cur = s.sessions[sessionId];
       if (!cur) return s;
       if (cur.titleLocked && !options?.force) return s;
-      if (cur.title === title) return s;
+      if (cur.title === title && cur.oscTitle === title) return s;
+      const next = { ...cur, oscTitle: title };
       return {
         sessions: {
           ...s.sessions,
-          [sessionId]: { ...cur, title },
+          [sessionId]: {
+            ...next,
+            title: options?.force ? title : automaticTitle(next),
+          },
+        },
+      };
+    });
+  },
+
+  setForegroundProcessTitle: (sessionId, title) => {
+    set((s) => {
+      const cur = s.sessions[sessionId];
+      if (!cur || cur.foregroundProcessTitle === title) return s;
+      const next = { ...cur, foregroundProcessTitle: title };
+      return {
+        sessions: {
+          ...s.sessions,
+          [sessionId]: {
+            ...next,
+            title: cur.titleLocked ? cur.title : automaticTitle(next),
+          },
         },
       };
     });

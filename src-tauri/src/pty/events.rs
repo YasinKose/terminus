@@ -15,6 +15,11 @@ pub enum PtyEvent {
         seq: u64,
         data: String,
     },
+    ForegroundProcess {
+        #[serde(rename = "sessionId")]
+        session_id: String,
+        title: Option<String>,
+    },
     Exited {
         #[serde(rename = "sessionId")]
         session_id: String,

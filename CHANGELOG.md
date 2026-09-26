@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.3 — 2026-09-26
+
+### Fixed
+
+- Copy and paste in terminal panes on Windows and Linux, matching Windows
+  Terminal: Ctrl+C copies the selection (and still interrupts when nothing
+  is selected), Ctrl+V pastes, and Ctrl+Shift+C / Ctrl+Shift+V always copy
+  and paste. macOS keeps Ctrl chords as terminal control keys.
+- Prompt theme and file icons (powerlevel10k, eza, lsd) no longer render as
+  empty boxes: every terminal font stack now falls back to installed Nerd
+  Fonts for icon glyphs while the selected font still renders text.
+
 ## 0.2.2 — 2026-07-28
 
 ### Added

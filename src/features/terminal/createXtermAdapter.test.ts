@@ -10,6 +10,9 @@ const xtermHarness = vi.hoisted(() => ({
     options: Record<string, unknown>;
     cols: number;
     rows: number;
+    keyHandler: ((event: KeyboardEvent) => boolean) | null;
+    selection: string;
+    clearSelection: () => void;
   }>,
   fitCalls: 0,
 }));
@@ -19,6 +22,11 @@ vi.mock("@xterm/xterm", () => ({
     options: Record<string, unknown>;
     cols = 80;
     rows = 24;
+    keyHandler: ((event: KeyboardEvent) => boolean) | null = null;
+    selection = "";
+    clearSelection = vi.fn(() => {
+      this.selection = "";
+    });
     parser = {
       registerOscHandler: vi.fn(() => ({ dispose: vi.fn() })),
     };
@@ -41,6 +49,15 @@ vi.mock("@xterm/xterm", () => ({
     }
     onBell() {
       return { dispose: vi.fn() };
+    }
+    attachCustomKeyEventHandler(handler: (event: KeyboardEvent) => boolean) {
+      this.keyHandler = handler;
+    }
+    hasSelection() {
+      return this.selection.length > 0;
+    }
+    getSelection() {
+      return this.selection;
     }
   },
 }));
@@ -170,5 +187,68 @@ describe("createLiveXtermAdapter appearance", () => {
       expect(xtermHarness.fitCalls).toBeGreaterThan(fitCallsAfterOpen);
     });
     expect(resizeRequested).toHaveBeenCalled();
+  });
+});
+
+describe("createLiveXtermAdapter clipboard keys", () => {
+  const writeText = vi.fn(() => Promise.resolve());
+
+  beforeEach(() => {
+    xtermHarness.terminals.length = 0;
+    writeText.mockClear();
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+  });
+
+  function openTerminal(platform: "windows" | "macos") {
+    const adapter = createLiveXtermAdapter("terminal-1", {
+      enableWebgl: false,
+      platform,
+    });
+    adapter.open(document.createElement("div"));
+    const term = xtermHarness.terminals[0];
+    if (!term?.keyHandler) throw new Error("key handler not attached");
+    return { term, handler: term.keyHandler };
+  }
+
+  it("copies the selection on Ctrl+C and keeps the key away from the shell", () => {
+    const { term, handler } = openTerminal("windows");
+    term.selection = "hello";
+    const event = new KeyboardEvent("keydown", { key: "c", ctrlKey: true });
+
+    expect(handler(event)).toBe(false);
+    expect(writeText).toHaveBeenCalledWith("hello");
+    expect(term.clearSelection).toHaveBeenCalled();
+  });
+
+  it("lets Ctrl+V reach the browser's native paste instead of sending ^V", () => {
+    const { handler } = openTerminal("windows");
+    const event = new KeyboardEvent("keydown", {
+      key: "v",
+      ctrlKey: true,
+      cancelable: true,
+    });
+
+    expect(handler(event)).toBe(false);
+    expect(event.defaultPrevented).toBe(false);
+  });
+
+  it("forwards Ctrl+C to the shell when nothing is selected", () => {
+    const { handler } = openTerminal("windows");
+    const event = new KeyboardEvent("keydown", { key: "c", ctrlKey: true });
+
+    expect(handler(event)).toBe(true);
+    expect(writeText).not.toHaveBeenCalled();
+  });
+
+  it("does not intercept Ctrl+C on macOS", () => {
+    const { term, handler } = openTerminal("macos");
+    term.selection = "hello";
+    const event = new KeyboardEvent("keydown", { key: "c", ctrlKey: true });
+
+    expect(handler(event)).toBe(true);
+    expect(writeText).not.toHaveBeenCalled();
   });
 });

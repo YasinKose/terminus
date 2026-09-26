@@ -85,8 +85,12 @@ export const TERMINAL_CURSOR_STYLES = [
   "underline",
 ] as const satisfies ReadonlyArray<TerminalCursorStyle>;
 
+// Nerd Font glyphs (prompt themes, eza/lsd icons) live in the Private Use Area,
+// which the primary fonts lack; the browser falls back per glyph to these.
+const NERD_FONT_FALLBACK =
+  '"Symbols Nerd Font Mono", "MesloLGS NF", "MesloLGS Nerd Font", "MesloLGM Nerd Font", "JetBrainsMono Nerd Font"';
 const PORTABLE_MONO_FALLBACK =
-  'Consolas, "Liberation Mono", "Courier New", monospace';
+  `Consolas, "Liberation Mono", "Courier New", ${NERD_FONT_FALLBACK}, monospace`;
 const SYSTEM_MONO_STACK =
   `ui-monospace, SFMono-Regular, Menlo, Monaco, ${PORTABLE_MONO_FALLBACK}`;
 

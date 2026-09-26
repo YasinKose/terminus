@@ -2,6 +2,11 @@ import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import type { TerminalAdapter } from "@/features/terminal/runtime";
 import { isSupportedOscNotification, parseOsc7Cwd } from "./osc";
+import { resolveClipboardKeyAction } from "./clipboardKeys";
+import {
+  detectDesktopPlatform,
+  type DesktopPlatform,
+} from "@/platform/detection";
 import {
   DEFAULT_APPEARANCE,
   terminalPresentationFromAppearance,
@@ -33,9 +38,11 @@ export function createLiveXtermAdapter(
     scrollback?: number;
     enableWebgl?: boolean;
     appearance?: TerminalPresentation;
+    platform?: DesktopPlatform;
   } = {},
 ): LiveXtermHandle {
   const scrollback = options.scrollback ?? 10000;
+  const platform = options.platform ?? detectDesktopPlatform();
   const wantWebgl = options.enableWebgl ?? import.meta.env.PROD;
 
   let term: Terminal | null = null;
@@ -68,6 +75,29 @@ export function createLiveXtermAdapter(
       });
       fitAddon = new FitAddon();
       term.loadAddon(fitAddon);
+
+      const t = term;
+      t.attachCustomKeyEventHandler((event) => {
+        const action = resolveClipboardKeyAction(event, {
+          platform,
+          hasSelection: t.hasSelection(),
+        });
+        if (action === "copy") {
+          event.preventDefault();
+          void navigator.clipboard
+            ?.writeText(t.getSelection())
+            .catch(() => undefined);
+          t.clearSelection();
+          return false;
+        }
+        if (action === "ignore") {
+          event.preventDefault();
+          return false;
+        }
+        // "paste": skip xterm's ^V so the browser fires its native paste event,
+        // which xterm turns into (bracketed) input.
+        return action === "pass";
+      });
 
       disposables.push(
         term.onData((data) => {

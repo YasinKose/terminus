@@ -8,7 +8,7 @@
   Keep shells and lightweight project tools together without turning your
   terminal into an IDE.
 
-  [![Latest release](https://img.shields.io/badge/release-v0.2.2-22c55e)](https://github.com/YasinKose/terminus/releases/latest)
+  [![Latest release](https://img.shields.io/badge/release-v0.2.3-22c55e)](https://github.com/YasinKose/terminus/releases/latest)
   [![Verify v0.2](https://github.com/YasinKose/terminus/actions/workflows/verify-v02.yml/badge.svg)](https://github.com/YasinKose/terminus/actions/workflows/verify-v02.yml)
   [![Platforms](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-6b7280)](#downloads)
 
@@ -30,18 +30,18 @@ general-purpose editor.
 
 ## Downloads
 
-The latest release is **v0.2.2**. Choose the native package for your platform:
+The latest release is **v0.2.3**. Choose the native package for your platform:
 
 | Platform | Package | Download |
 | --- | --- | --- |
-| macOS — Apple Silicon | DMG | [Terminus_0.2.2_aarch64.dmg](https://github.com/YasinKose/terminus/releases/download/v0.2.2/Terminus_0.2.2_aarch64.dmg) |
-| macOS — Intel | DMG | [Terminus_0.2.2_x64.dmg](https://github.com/YasinKose/terminus/releases/download/v0.2.2/Terminus_0.2.2_x64.dmg) |
-| Windows — x64 | NSIS installer | [Terminus_0.2.2_x64-setup.exe](https://github.com/YasinKose/terminus/releases/download/v0.2.2/Terminus_0.2.2_x64-setup.exe) |
-| Linux — x64 | AppImage | [Terminus_0.2.2_amd64.AppImage](https://github.com/YasinKose/terminus/releases/download/v0.2.2/Terminus_0.2.2_amd64.AppImage) |
-| Ubuntu/Debian — x64 | DEB | [Terminus_0.2.2_amd64.deb](https://github.com/YasinKose/terminus/releases/download/v0.2.2/Terminus_0.2.2_amd64.deb) |
+| macOS — Apple Silicon | DMG | [Terminus_0.2.3_aarch64.dmg](https://github.com/YasinKose/terminus/releases/download/v0.2.3/Terminus_0.2.3_aarch64.dmg) |
+| macOS — Intel | DMG | [Terminus_0.2.3_x64.dmg](https://github.com/YasinKose/terminus/releases/download/v0.2.3/Terminus_0.2.3_x64.dmg) |
+| Windows — x64 | NSIS installer | [Terminus_0.2.3_x64-setup.exe](https://github.com/YasinKose/terminus/releases/download/v0.2.3/Terminus_0.2.3_x64-setup.exe) |
+| Linux — x64 | AppImage | [Terminus_0.2.3_amd64.AppImage](https://github.com/YasinKose/terminus/releases/download/v0.2.3/Terminus_0.2.3_amd64.AppImage) |
+| Ubuntu/Debian — x64 | DEB | [Terminus_0.2.3_amd64.deb](https://github.com/YasinKose/terminus/releases/download/v0.2.3/Terminus_0.2.3_amd64.deb) |
 
 All packages are also available on the
-[v0.2.2 release page](https://github.com/YasinKose/terminus/releases/tag/v0.2.2),
+[v0.2.3 release page](https://github.com/YasinKose/terminus/releases/tag/v0.2.3),
 including compressed macOS `.app` bundles.
 
 Windows releases use the NSIS `.exe` installer. MSI packaging is temporarily

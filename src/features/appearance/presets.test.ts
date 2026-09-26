@@ -5,6 +5,8 @@ import {
   APP_TOKEN_KEYS,
   PRESETS,
   PRESET_ORDER,
+  TERMINAL_FONT_FAMILY_IDS,
+  TERMINAL_FONT_STACKS,
   XTERM_THEME_KEYS,
   applyAppearanceToDocument,
   contrastRatio,
@@ -263,6 +265,17 @@ describe("appearance presets", () => {
       cursorInactiveStyle: "outline",
     });
     expect(presentation?.fontFamily).toContain("SF Mono");
+  });
+
+  it("falls back to installed Nerd Fonts for prompt and file icons in every font stack", () => {
+    for (const id of TERMINAL_FONT_FAMILY_IDS) {
+      const stack = TERMINAL_FONT_STACKS[id];
+      expect(stack, id).toContain('"Symbols Nerd Font Mono"');
+      expect(stack, id).toContain('"MesloLGS NF"');
+      expect(stack.indexOf('"MesloLGS NF"'), id).toBeLessThan(
+        stack.lastIndexOf("monospace"),
+      );
+    }
   });
 });
 
